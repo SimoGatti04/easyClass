@@ -1,0 +1,176 @@
+{
+  "timestamp": "2026-09-30T13:09:24.234083+00:00",
+  "source_file": "excel_demo.xlsx",
+  "source_sha256": "fb8a07d2bfc17839bf8cb3aa9955b36e12c7f4cbb9dfab620d38e05e60bd42b7",
+  "schema_version": "1.1.0",
+  "adapter_implementation": "CellAwareSpreadsheetAdapter (Python standard library: zipfile + xml.etree.ElementTree)",
+  "statistics": {
+    "total_sheets": 5,
+    "sheet_names": [
+      "LEGGIMI",
+      "Ripasso",
+      "Prodotti",
+      "Vendite",
+      "Riepilogo"
+    ],
+    "total_cells_addressed": 359,
+    "non_blank_cells": 184,
+    "blank_cells": 175,
+    "stored_formulas_count": 0,
+    "native_tables_count": 0,
+    "detected_regions_count": 5,
+    "formulas_status": "not_present_in_source_workbook (0 stored formulas; blank cells intended for runtime construction)"
+  },
+  "independent_ooxml_spot_check": {
+    "status": "PASS",
+    "invariants_tested": 10,
+    "invariants_passed": 10,
+    "checks": [
+      {
+        "name": "sha256_checksum",
+        "passed": true,
+        "raw_ooxml": "fb8a07d2bfc17839bf8cb3aa9955b36e12c7f4cbb9dfab620d38e05e60bd42b7",
+        "ast_extracted": "fb8a07d2bfc17839bf8cb3aa9955b36e12c7f4cbb9dfab620d38e05e60bd42b7",
+        "details": "Source file SHA-256 matches AST metadata."
+      },
+      {
+        "name": "sheet_names_match",
+        "passed": true,
+        "raw_ooxml": [
+          "LEGGIMI",
+          "Ripasso",
+          "Prodotti",
+          "Vendite",
+          "Riepilogo"
+        ],
+        "ast_extracted": [
+          "LEGGIMI",
+          "Ripasso",
+          "Prodotti",
+          "Vendite",
+          "Riepilogo"
+        ],
+        "details": "Exact ordered sheet names extracted from xl/workbook.xml."
+      },
+      {
+        "name": "sheet_count_match",
+        "passed": true,
+        "raw_ooxml": 5,
+        "ast_extracted": 5,
+        "details": "Number of sheet elements in xl/workbook.xml matches AST sheets count."
+      },
+      {
+        "name": "sheet1_merged_ranges",
+        "passed": true,
+        "raw_ooxml": [
+          "A1:F1"
+        ],
+        "ast_extracted": [
+          "A1:F1"
+        ],
+        "details": "MergeCell elements on sheet 1 match AST metadata."
+      },
+      {
+        "name": "sheet2_merged_ranges",
+        "passed": true,
+        "raw_ooxml": [
+          "A1:H1",
+          "A11:H13"
+        ],
+        "ast_extracted": [
+          "A1:H1",
+          "A11:H13"
+        ],
+        "details": "MergeCell elements on sheet 2 match AST metadata."
+      },
+      {
+        "name": "cell_value_LEGGIMI_A1",
+        "passed": true,
+        "raw_ooxml": "Lezione Excel - File docente (DEMO)",
+        "ast_extracted": "Lezione Excel - File docente (DEMO)",
+        "details": "Cell A1 text matches raw XML value tag."
+      },
+      {
+        "name": "cell_values_Prodotti_row4",
+        "passed": true,
+        "raw_ooxml": {
+          "A4": "P01",
+          "B4": "Tastiera",
+          "C4": 25.9
+        },
+        "ast_extracted": {
+          "A4": "P01",
+          "B4": "Tastiera",
+          "C4": 25.9
+        },
+        "details": "Row 4 product code, name, and price match raw XML values."
+      },
+      {
+        "name": "cell_values_Vendite_sample",
+        "passed": true,
+        "raw_ooxml": {
+          "D4": "Anna",
+          "E5": 0.1
+        },
+        "ast_extracted": {
+          "D4": "Anna",
+          "E5": 0.1
+        },
+        "details": "Vendite seller and discount rate match raw XML values."
+      },
+      {
+        "name": "formula_tags_count",
+        "passed": true,
+        "raw_ooxml": 0,
+        "ast_extracted": 0,
+        "details": "Formula tags in raw XML match AST stored formulas (0 in demo file)."
+      },
+      {
+        "name": "custom_number_formats_ooxml",
+        "passed": true,
+        "raw_ooxml": {
+          "200": "\u20ac #,##0.00",
+          "201": "dd/mm/yyyy",
+          "202": "0%"
+        },
+        "ast_extracted": {
+          "200": "\u20ac #,##0.00",
+          "202": "0%"
+        },
+        "details": "Custom number format codes for Currency and Percentage verified."
+      }
+    ]
+  },
+  "semantic_queries_verified": {
+    "has_sheet_Vendite": true,
+    "has_sheet_Fantasia": false,
+    "cell_Vendite_B3_value": "Codice",
+    "cell_Vendite_Z99_exists": false,
+    "header_Vendite_col_E": "Sconto",
+    "header_Vendite_col_I": "Netto",
+    "header_Vendite_col_E_source": "detected_row",
+    "cell_Vendite_I4_has_stored_formula": false,
+    "cell_Vendite_I4_is_blank": true,
+    "formula_C4_times_G4_present_in_workbook": false,
+    "formula_H4_times_1_minus_E4_present_in_workbook": false,
+    "has_native_table_Catalogo": false,
+    "has_table_Catalogo_strict": false,
+    "has_detected_region_Prodotti": true,
+    "range_Prodotti_A3_C9_valid": true,
+    "range_Prodotti_A3_Z99_rejected": true,
+    "coordinate_Prodotti_Z100_rejected": true,
+    "ripasso_merged_cell_C12_valid": true,
+    "ripasso_merged_cell_H13_in_merged_range": true
+  },
+  "fixtures_verified": {
+    "native_table_fixture": "PASS",
+    "stored_formula_fixture": "PASS"
+  },
+  "failure_modes_tested": {
+    "missing_file": "PASS (FileNotFoundError)",
+    "non_xlsx_file": "PASS (InvalidWorkbookError)",
+    "corrupted_zip": "PASS (InvalidWorkbookError)",
+    "non_existent_sheet_query": "PASS (Returns False/None)",
+    "out_of_bounds_coordinate": "PASS (Rejected)"
+  }
+}

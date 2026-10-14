@@ -1,0 +1,32 @@
+{
+  "selected_top2_model_ids": [
+    "agy/gemini-3.8-flash-tiered",
+    "groq/qwen/qwen3.8-27b"
+  ],
+  "frozen_ranking_path": "validation/work/Gate-C-v2/metrics/attempt-08/frozen-phase1-ranking.json",
+  "frozen_ranking_sha256": "8f16a5eb7427742d9babb510ec98b410f5581cb82982e32168d4827c14795dec",
+  "selection_recomputed_after_remote_calls": false,
+  "replacement_or_reserve_used": false,
+  "availability": {
+    "agy/gemini-3.8-flash-tiered": {
+      "status": "CANDIDATE_UNAVAILABLE",
+      "guard": {
+        "candidate_model_id": "agy/gemini-3.8-flash-tiered",
+        "guard_classification": "CANDIDATE_UNAVAILABLE",
+        "failure_reason": "transport_failure_or_non_200",
+        "metrics_path": "validation/work/Gate-C-v2/outputs/attempt-09/by-model/agy__gemini-3.8-flash-tiered/availability-guard/run-01/run-metrics.json"
+      },
+      "frozen_root": "gemini-3.8-flash-tiered"
+    },
+    "groq/qwen/qwen3.8-27b": {
+      "status": "CANDIDATE_UNAVAILABLE",
+      "guard": {
+        "candidate_model_id": "groq/qwen/qwen3.8-27b",
+        "guard_classification": "CANDIDATE_UNAVAILABLE",
+        "failure_reason": "transport_failure_or_non_200",
+        "metrics_path": "validation/work/Gate-C-v2/outputs/attempt-09/by-model/groq__qwen__qwen3.8-27b/availability-guard/run-01/run-metrics.json"
+      },
+      "frozen_root": "qwen/qwen3.8-27b"
+    }
+  }
+}

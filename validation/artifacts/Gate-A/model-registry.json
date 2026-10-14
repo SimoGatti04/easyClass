@@ -1,0 +1,914 @@
+{
+  "schema_version": 1,
+  "total_models": 14,
+  "models": [
+    {
+      "canonical_id": "omlx/omlx/MiniCPM5-2B-MLX",
+      "source_catalog": "omlx",
+      "provider": "omlx",
+      "provider_model_id": "MiniCPM5-2B-MLX",
+      "execution_location": "local",
+      "modalities": [
+        "text"
+      ],
+      "declared_capabilities": {
+        "text_generation": true,
+        "vision": "unknown",
+        "tool_calling": "unknown",
+        "reasoning": "unknown",
+        "structured_output": true,
+        "embedding": false,
+        "reranking": false
+      },
+      "observed_capabilities": {
+        "text_generation": true,
+        "chat": true,
+        "vision": "unknown",
+        "tool_calling": "unknown",
+        "reasoning": "unknown",
+        "structured_output": "unknown",
+        "embedding": false,
+        "reranking": false,
+        "tools": "unknown"
+      },
+      "context_window": 65536,
+      "output_limit": null,
+      "structured_output": true,
+      "tools": "unknown",
+      "reasoning": "unknown",
+      "vision": "unknown",
+      "lifecycle_status": "COMPATIBLE",
+      "availability": "available",
+      "discovered_at": "2026-09-30T00:03:59.903662+00:00",
+      "last_seen_at": "2026-09-30T00:03:59.903662+00:00",
+      "raw_metadata_hash": "ce48ffd9980b58d9ed469d1e3f4f6d03d1b4b8dc026306be8388cf2a382ec2eb",
+      "observed_at": "2026-09-29T18:00:00Z",
+      "display_name": "MiniCPM5-2B-MLX",
+      "declared_profile_compatibility": [
+        {
+          "profile": "local.semantic_small",
+          "declared_candidate": true,
+          "validated": false
+        },
+        {
+          "profile": "local.typed_decision",
+          "declared_candidate": true,
+          "validated": false
+        }
+      ],
+      "notes": {
+        "created": 1790726639,
+        "owned_by": "omlx"
+      }
+    },
+    {
+      "canonical_id": "omlx/omlx/Ornith-1.5-9B-MLX-4bit",
+      "source_catalog": "omlx",
+      "provider": "omlx",
+      "provider_model_id": "Ornith-1.5-9B-MLX-4bit",
+      "execution_location": "local",
+      "modalities": [
+        "text"
+      ],
+      "declared_capabilities": {
+        "text_generation": true,
+        "vision": "unknown",
+        "tool_calling": "unknown",
+        "reasoning": "unknown",
+        "structured_output": true,
+        "embedding": false,
+        "reranking": false
+      },
+      "observed_capabilities": {
+        "text_generation": "unknown",
+        "chat": "unknown",
+        "vision": "unknown",
+        "tool_calling": "unknown",
+        "reasoning": "unknown",
+        "structured_output": "unknown",
+        "embedding": "unknown",
+        "reranking": "unknown"
+      },
+      "context_window": 32768,
+      "output_limit": null,
+      "structured_output": true,
+      "tools": "unknown",
+      "reasoning": "unknown",
+      "vision": "unknown",
+      "lifecycle_status": "COMPATIBLE",
+      "availability": "available",
+      "discovered_at": "2026-09-30T00:03:59.903662+00:00",
+      "last_seen_at": "2026-09-30T00:03:59.903662+00:00",
+      "raw_metadata_hash": "efcbb95ca2f28e4c797a59a11847806a11c7e62dab6825d76fea301576de2dc8",
+      "observed_at": null,
+      "display_name": "Ornith-1.5-9B-MLX-4bit",
+      "declared_profile_compatibility": [
+        {
+          "profile": "local.semantic_small",
+          "declared_candidate": true,
+          "validated": false
+        },
+        {
+          "profile": "local.typed_decision",
+          "declared_candidate": true,
+          "validated": false
+        }
+      ],
+      "notes": {
+        "created": 1790726639,
+        "owned_by": "omlx"
+      }
+    },
+    {
+      "canonical_id": "omlx/omlx/Ornith-1.5-9B-uncensored-MLX-6bit",
+      "source_catalog": "omlx",
+      "provider": "omlx",
+      "provider_model_id": "Ornith-1.5-9B-uncensored-MLX-6bit",
+      "execution_location": "local",
+      "modalities": [
+        "text"
+      ],
+      "declared_capabilities": {
+        "text_generation": true,
+        "vision": "unknown",
+        "tool_calling": "unknown",
+        "reasoning": "unknown",
+        "structured_output": true,
+        "embedding": false,
+        "reranking": false
+      },
+      "observed_capabilities": {
+        "text_generation": "unknown",
+        "chat": "unknown",
+        "vision": "unknown",
+        "tool_calling": "unknown",
+        "reasoning": "unknown",
+        "structured_output": "unknown",
+        "embedding": "unknown",
+        "reranking": "unknown"
+      },
+      "context_window": 32768,
+      "output_limit": null,
+      "structured_output": true,
+      "tools": "unknown",
+      "reasoning": "unknown",
+      "vision": "unknown",
+      "lifecycle_status": "COMPATIBLE",
+      "availability": "available",
+      "discovered_at": "2026-09-30T00:03:59.903662+00:00",
+      "last_seen_at": "2026-09-30T00:03:59.903662+00:00",
+      "raw_metadata_hash": "735ae024cc791d627b584cb7e93187a9f18ad9be3adf4366888c67d967f71c90",
+      "observed_at": null,
+      "display_name": "Ornith-1.5-9B-uncensored-MLX-6bit",
+      "declared_profile_compatibility": [
+        {
+          "profile": "local.semantic_small",
+          "declared_candidate": true,
+          "validated": false
+        },
+        {
+          "profile": "local.typed_decision",
+          "declared_candidate": true,
+          "validated": false
+        }
+      ],
+      "notes": {
+        "created": 1790726639,
+        "owned_by": "omlx"
+      }
+    },
+    {
+      "canonical_id": "omlx/omlx/Qwen3-Embedding-0.6B",
+      "source_catalog": "omlx",
+      "provider": "omlx",
+      "provider_model_id": "Qwen3-Embedding-0.6B",
+      "execution_location": "local",
+      "modalities": [
+        "text"
+      ],
+      "declared_capabilities": {
+        "text_generation": false,
+        "vision": "unknown",
+        "tool_calling": "unknown",
+        "reasoning": "unknown",
+        "structured_output": false,
+        "embedding": true,
+        "reranking": false
+      },
+      "observed_capabilities": {
+        "text_generation": false,
+        "chat": false,
+        "vision": "unknown",
+        "tool_calling": "unknown",
+        "reasoning": "unknown",
+        "structured_output": "unknown",
+        "embedding": true,
+        "reranking": false,
+        "tools": "unknown"
+      },
+      "context_window": 32768,
+      "output_limit": null,
+      "structured_output": false,
+      "tools": "unknown",
+      "reasoning": "unknown",
+      "vision": "unknown",
+      "lifecycle_status": "COMPATIBLE",
+      "availability": "available",
+      "discovered_at": "2026-09-30T00:03:59.903662+00:00",
+      "last_seen_at": "2026-09-30T00:03:59.903662+00:00",
+      "raw_metadata_hash": "72aa17e286740fb5641d18db0fee76755c11357c9a570d09753e8d119bc84efd",
+      "observed_at": "2026-09-29T18:00:00Z",
+      "display_name": "Qwen3-Embedding-0.6B",
+      "declared_profile_compatibility": [
+        {
+          "profile": "local.embedding",
+          "declared_candidate": true,
+          "validated": false
+        }
+      ],
+      "notes": {
+        "created": 1790726639,
+        "owned_by": "omlx"
+      }
+    },
+    {
+      "canonical_id": "omlx/omlx/Qwen3-Reranker-0.6B",
+      "source_catalog": "omlx",
+      "provider": "omlx",
+      "provider_model_id": "Qwen3-Reranker-0.6B",
+      "execution_location": "local",
+      "modalities": [
+        "text"
+      ],
+      "declared_capabilities": {
+        "text_generation": false,
+        "vision": "unknown",
+        "tool_calling": "unknown",
+        "reasoning": "unknown",
+        "structured_output": false,
+        "embedding": false,
+        "reranking": true
+      },
+      "observed_capabilities": {
+        "text_generation": false,
+        "chat": false,
+        "vision": "unknown",
+        "tool_calling": "unknown",
+        "reasoning": "unknown",
+        "structured_output": "unknown",
+        "embedding": false,
+        "reranking": true,
+        "tools": "unknown"
+      },
+      "context_window": 40960,
+      "output_limit": null,
+      "structured_output": false,
+      "tools": "unknown",
+      "reasoning": "unknown",
+      "vision": "unknown",
+      "lifecycle_status": "COMPATIBLE",
+      "availability": "available",
+      "discovered_at": "2026-09-30T00:03:59.903662+00:00",
+      "last_seen_at": "2026-09-30T00:03:59.903662+00:00",
+      "raw_metadata_hash": "a03a28b5d09bba883d7979bd3ed07e8fe3ef86e237f84d9fb9b4e69527c46795",
+      "observed_at": "2026-09-29T18:00:00Z",
+      "display_name": "Qwen3-Reranker-0.6B",
+      "declared_profile_compatibility": [
+        {
+          "profile": "local.reranker",
+          "declared_candidate": true,
+          "validated": false
+        }
+      ],
+      "notes": {
+        "created": 1790726639,
+        "owned_by": "omlx"
+      }
+    },
+    {
+      "canonical_id": "omlx/omlx/Qwen3.8-27B-oQ4e-mtp",
+      "source_catalog": "omlx",
+      "provider": "omlx",
+      "provider_model_id": "Qwen3.8-27B-oQ4e-mtp",
+      "execution_location": "local",
+      "modalities": [
+        "text"
+      ],
+      "declared_capabilities": {
+        "text_generation": true,
+        "vision": "unknown",
+        "tool_calling": "unknown",
+        "reasoning": "unknown",
+        "structured_output": true,
+        "embedding": false,
+        "reranking": false
+      },
+      "observed_capabilities": {
+        "text_generation": "unknown",
+        "chat": "unknown",
+        "vision": "unknown",
+        "tool_calling": "unknown",
+        "reasoning": "unknown",
+        "structured_output": "unknown",
+        "embedding": "unknown",
+        "reranking": "unknown"
+      },
+      "context_window": 32768,
+      "output_limit": null,
+      "structured_output": true,
+      "tools": "unknown",
+      "reasoning": "unknown",
+      "vision": "unknown",
+      "lifecycle_status": "COMPATIBLE",
+      "availability": "available",
+      "discovered_at": "2026-09-30T00:03:59.903662+00:00",
+      "last_seen_at": "2026-09-30T00:03:59.903662+00:00",
+      "raw_metadata_hash": "2d37489e8745b8ee150f06e9f30f794ae4fcc216a5afdec2a49b0f256ca7f553",
+      "observed_at": null,
+      "display_name": "Qwen3.8-27B-oQ4e-mtp",
+      "declared_profile_compatibility": [
+        {
+          "profile": "local.typed_decision",
+          "declared_candidate": true,
+          "validated": false
+        }
+      ],
+      "notes": {
+        "created": 1790726639,
+        "owned_by": "omlx"
+      }
+    },
+    {
+      "canonical_id": "omniroute/agy/gemini-3.8-flash-tiered",
+      "source_catalog": "omniroute",
+      "provider": "agy",
+      "provider_model_id": "agy/gemini-3.8-flash-tiered",
+      "execution_location": "remote",
+      "modalities": [
+        "text",
+        "image"
+      ],
+      "declared_capabilities": {
+        "text_generation": true,
+        "vision": true,
+        "tool_calling": true,
+        "reasoning": true,
+        "structured_output": "unknown",
+        "embedding": false,
+        "reranking": false
+      },
+      "observed_capabilities": {
+        "text_generation": "unknown",
+        "chat": "unknown",
+        "vision": "unknown",
+        "tool_calling": "unknown",
+        "reasoning": "unknown",
+        "structured_output": "unknown",
+        "embedding": "unknown",
+        "reranking": "unknown"
+      },
+      "context_window": 1000000,
+      "output_limit": 65536,
+      "structured_output": "unknown",
+      "tools": true,
+      "reasoning": true,
+      "vision": true,
+      "lifecycle_status": "COMPATIBLE",
+      "availability": "available",
+      "discovered_at": "2026-09-30T00:03:59.903662+00:00",
+      "last_seen_at": "2026-09-30T00:03:59.903662+00:00",
+      "raw_metadata_hash": "aec58d8570581b9a6b77c194c09a9ad8a9e8cdf80d4f9c052aa56e2e8a6c8e2f",
+      "observed_at": null,
+      "display_name": "gemini-3.8-flash-tiered",
+      "declared_profile_compatibility": [
+        {
+          "profile": "remote.fast",
+          "declared_candidate": true,
+          "validated": false
+        },
+        {
+          "profile": "remote.generation",
+          "declared_candidate": true,
+          "validated": false
+        },
+        {
+          "profile": "remote.longform",
+          "declared_candidate": true,
+          "validated": false
+        },
+        {
+          "profile": "remote.reasoning",
+          "declared_candidate": true,
+          "validated": false
+        },
+        {
+          "profile": "remote.research",
+          "declared_candidate": true,
+          "validated": false
+        },
+        {
+          "profile": "remote.multimodal",
+          "declared_candidate": true,
+          "validated": false
+        }
+      ],
+      "notes": {
+        "root": "gemini-3.8-flash-tiered"
+      }
+    },
+    {
+      "canonical_id": "omniroute/codex/codex-auto-review",
+      "source_catalog": "omniroute",
+      "provider": "codex",
+      "provider_model_id": "cx/codex-auto-review",
+      "execution_location": "remote",
+      "modalities": [
+        "text"
+      ],
+      "declared_capabilities": {
+        "text_generation": true,
+        "vision": false,
+        "tool_calling": true,
+        "reasoning": true,
+        "structured_output": "unknown",
+        "embedding": false,
+        "reranking": false
+      },
+      "observed_capabilities": {
+        "text_generation": "unknown",
+        "chat": "unknown",
+        "vision": "unknown",
+        "tool_calling": "unknown",
+        "reasoning": "unknown",
+        "structured_output": "unknown",
+        "embedding": "unknown",
+        "reranking": "unknown"
+      },
+      "context_window": 400000,
+      "output_limit": null,
+      "structured_output": "unknown",
+      "tools": true,
+      "reasoning": true,
+      "vision": false,
+      "lifecycle_status": "COMPATIBLE",
+      "availability": "available",
+      "discovered_at": "2026-09-30T00:03:59.903662+00:00",
+      "last_seen_at": "2026-09-30T00:03:59.903662+00:00",
+      "raw_metadata_hash": "cb314171c9aa3c5509360d8202f5295f461ecd7532c96808017ad8b8390c54b2",
+      "observed_at": null,
+      "display_name": "codex-auto-review",
+      "declared_profile_compatibility": [
+        {
+          "profile": "remote.generation",
+          "declared_candidate": true,
+          "validated": false
+        },
+        {
+          "profile": "remote.longform",
+          "declared_candidate": true,
+          "validated": false
+        },
+        {
+          "profile": "remote.reasoning",
+          "declared_candidate": true,
+          "validated": false
+        },
+        {
+          "profile": "remote.research",
+          "declared_candidate": true,
+          "validated": false
+        }
+      ],
+      "notes": {
+        "root": "codex-auto-review"
+      }
+    },
+    {
+      "canonical_id": "omniroute/codex/gpt-6-astra",
+      "source_catalog": "omniroute",
+      "provider": "codex",
+      "provider_model_id": "cx/gpt-6-astra",
+      "execution_location": "remote",
+      "modalities": [
+        "text",
+        "image"
+      ],
+      "declared_capabilities": {
+        "text_generation": true,
+        "vision": true,
+        "tool_calling": true,
+        "reasoning": true,
+        "structured_output": "unknown",
+        "embedding": false,
+        "reranking": false
+      },
+      "observed_capabilities": {
+        "text_generation": "unknown",
+        "chat": "unknown",
+        "vision": "unknown",
+        "tool_calling": "unknown",
+        "reasoning": "unknown",
+        "structured_output": "unknown",
+        "embedding": "unknown",
+        "reranking": "unknown"
+      },
+      "context_window": 872000,
+      "output_limit": null,
+      "structured_output": "unknown",
+      "tools": true,
+      "reasoning": true,
+      "vision": true,
+      "lifecycle_status": "COMPATIBLE",
+      "availability": "available",
+      "discovered_at": "2026-09-30T00:03:59.903662+00:00",
+      "last_seen_at": "2026-09-30T00:03:59.903662+00:00",
+      "raw_metadata_hash": "955f959484bc37dc361a91b1ab9023425f2eaa9b5fa4f3ae81ddd6a6bc56d09b",
+      "observed_at": null,
+      "display_name": "gpt-6-astra",
+      "declared_profile_compatibility": [
+        {
+          "profile": "remote.generation",
+          "declared_candidate": true,
+          "validated": false
+        },
+        {
+          "profile": "remote.longform",
+          "declared_candidate": true,
+          "validated": false
+        },
+        {
+          "profile": "remote.reasoning",
+          "declared_candidate": true,
+          "validated": false
+        },
+        {
+          "profile": "remote.research",
+          "declared_candidate": true,
+          "validated": false
+        },
+        {
+          "profile": "remote.multimodal",
+          "declared_candidate": true,
+          "validated": false
+        }
+      ],
+      "notes": {
+        "api_format": "responses",
+        "supported_endpoints": [
+          "responses"
+        ],
+        "root": "gpt-6-astra"
+      }
+    },
+    {
+      "canonical_id": "omniroute/codex/gpt-6-luna",
+      "source_catalog": "omniroute",
+      "provider": "codex",
+      "provider_model_id": "cx/gpt-6-luna",
+      "execution_location": "remote",
+      "modalities": [
+        "text",
+        "image"
+      ],
+      "declared_capabilities": {
+        "text_generation": true,
+        "vision": true,
+        "tool_calling": true,
+        "reasoning": true,
+        "structured_output": "unknown",
+        "embedding": false,
+        "reranking": false
+      },
+      "observed_capabilities": {
+        "text_generation": "unknown",
+        "chat": "unknown",
+        "vision": "unknown",
+        "tool_calling": "unknown",
+        "reasoning": "unknown",
+        "structured_output": "unknown",
+        "embedding": "unknown",
+        "reranking": "unknown"
+      },
+      "context_window": 872000,
+      "output_limit": null,
+      "structured_output": "unknown",
+      "tools": true,
+      "reasoning": true,
+      "vision": true,
+      "lifecycle_status": "COMPATIBLE",
+      "availability": "available",
+      "discovered_at": "2026-09-30T00:03:59.903662+00:00",
+      "last_seen_at": "2026-09-30T00:03:59.903662+00:00",
+      "raw_metadata_hash": "8f9a7964336ec8f3e6aef5cf122fafdf93cab1994cb10de8711cf18bb17a7c79",
+      "observed_at": null,
+      "display_name": "gpt-6-luna",
+      "declared_profile_compatibility": [
+        {
+          "profile": "remote.generation",
+          "declared_candidate": true,
+          "validated": false
+        },
+        {
+          "profile": "remote.longform",
+          "declared_candidate": true,
+          "validated": false
+        },
+        {
+          "profile": "remote.reasoning",
+          "declared_candidate": true,
+          "validated": false
+        },
+        {
+          "profile": "remote.research",
+          "declared_candidate": true,
+          "validated": false
+        },
+        {
+          "profile": "remote.multimodal",
+          "declared_candidate": true,
+          "validated": false
+        }
+      ],
+      "notes": {
+        "api_format": "responses",
+        "supported_endpoints": [
+          "responses"
+        ],
+        "root": "gpt-6-luna"
+      }
+    },
+    {
+      "canonical_id": "omniroute/codex/gpt-6-sol",
+      "source_catalog": "omniroute",
+      "provider": "codex",
+      "provider_model_id": "cx/gpt-6-sol",
+      "execution_location": "remote",
+      "modalities": [
+        "text",
+        "image"
+      ],
+      "declared_capabilities": {
+        "text_generation": true,
+        "vision": true,
+        "tool_calling": true,
+        "reasoning": true,
+        "structured_output": "unknown",
+        "embedding": false,
+        "reranking": false
+      },
+      "observed_capabilities": {
+        "text_generation": "unknown",
+        "chat": "unknown",
+        "vision": "unknown",
+        "tool_calling": "unknown",
+        "reasoning": "unknown",
+        "structured_output": "unknown",
+        "embedding": "unknown",
+        "reranking": "unknown"
+      },
+      "context_window": 872000,
+      "output_limit": null,
+      "structured_output": "unknown",
+      "tools": true,
+      "reasoning": true,
+      "vision": true,
+      "lifecycle_status": "COMPATIBLE",
+      "availability": "available",
+      "discovered_at": "2026-09-30T00:03:59.903662+00:00",
+      "last_seen_at": "2026-09-30T00:03:59.903662+00:00",
+      "raw_metadata_hash": "b428dc2b9da360b4462a6add5c80d9875328826687933617556e1065c57666db",
+      "observed_at": null,
+      "display_name": "gpt-6-sol",
+      "declared_profile_compatibility": [
+        {
+          "profile": "remote.generation",
+          "declared_candidate": true,
+          "validated": false
+        },
+        {
+          "profile": "remote.longform",
+          "declared_candidate": true,
+          "validated": false
+        },
+        {
+          "profile": "remote.reasoning",
+          "declared_candidate": true,
+          "validated": false
+        },
+        {
+          "profile": "remote.research",
+          "declared_candidate": true,
+          "validated": false
+        },
+        {
+          "profile": "remote.multimodal",
+          "declared_candidate": true,
+          "validated": false
+        }
+      ],
+      "notes": {
+        "api_format": "responses",
+        "supported_endpoints": [
+          "responses"
+        ],
+        "root": "gpt-6-sol"
+      }
+    },
+    {
+      "canonical_id": "omniroute/github/gpt-6.1-sol",
+      "source_catalog": "omniroute",
+      "provider": "github",
+      "provider_model_id": "gh/gpt-6.1-sol",
+      "execution_location": "remote",
+      "modalities": [
+        "text"
+      ],
+      "declared_capabilities": {
+        "text_generation": true,
+        "vision": false,
+        "tool_calling": true,
+        "reasoning": true,
+        "structured_output": "unknown",
+        "embedding": false,
+        "reranking": false
+      },
+      "observed_capabilities": {
+        "text_generation": "unknown",
+        "chat": "unknown",
+        "vision": "unknown",
+        "tool_calling": "unknown",
+        "reasoning": "unknown",
+        "structured_output": "unknown",
+        "embedding": "unknown",
+        "reranking": "unknown"
+      },
+      "context_window": 128000,
+      "output_limit": null,
+      "structured_output": "unknown",
+      "tools": true,
+      "reasoning": true,
+      "vision": false,
+      "lifecycle_status": "COMPATIBLE",
+      "availability": "available",
+      "discovered_at": "2026-09-30T00:03:59.903662+00:00",
+      "last_seen_at": "2026-09-30T00:03:59.903662+00:00",
+      "raw_metadata_hash": "477305553051bfec1e6b12e47decc7abb4184d89698b22acaac8b56c5a2fb702",
+      "observed_at": null,
+      "display_name": "gh/gpt-6.1-sol",
+      "declared_profile_compatibility": [
+        {
+          "profile": "remote.generation",
+          "declared_candidate": true,
+          "validated": false
+        },
+        {
+          "profile": "remote.longform",
+          "declared_candidate": true,
+          "validated": false
+        },
+        {
+          "profile": "remote.reasoning",
+          "declared_candidate": true,
+          "validated": false
+        }
+      ],
+      "notes": {
+        "root": "gpt-6.1-sol"
+      }
+    },
+    {
+      "canonical_id": "omniroute/opencode-zen/gpt-6.1-sol",
+      "source_catalog": "omniroute",
+      "provider": "opencode-zen",
+      "provider_model_id": "opencode-zen/gpt-6.1-sol",
+      "execution_location": "remote",
+      "modalities": [
+        "text"
+      ],
+      "declared_capabilities": {
+        "text_generation": true,
+        "vision": false,
+        "tool_calling": true,
+        "reasoning": true,
+        "structured_output": "unknown",
+        "embedding": false,
+        "reranking": false
+      },
+      "observed_capabilities": {
+        "text_generation": "unknown",
+        "chat": "unknown",
+        "vision": "unknown",
+        "tool_calling": "unknown",
+        "reasoning": "unknown",
+        "structured_output": "unknown",
+        "embedding": "unknown",
+        "reranking": "unknown"
+      },
+      "context_window": 200000,
+      "output_limit": null,
+      "structured_output": "unknown",
+      "tools": true,
+      "reasoning": true,
+      "vision": false,
+      "lifecycle_status": "COMPATIBLE",
+      "availability": "available",
+      "discovered_at": "2026-09-30T00:03:59.903662+00:00",
+      "last_seen_at": "2026-09-30T00:03:59.903662+00:00",
+      "raw_metadata_hash": "1330478e9da869cdc0995ccc7852ac58a5eb01d57c42cf95c4c14cd25f381f85",
+      "observed_at": null,
+      "display_name": "opencode-zen/gpt-6.1-sol",
+      "declared_profile_compatibility": [
+        {
+          "profile": "remote.generation",
+          "declared_candidate": true,
+          "validated": false
+        },
+        {
+          "profile": "remote.longform",
+          "declared_candidate": true,
+          "validated": false
+        },
+        {
+          "profile": "remote.reasoning",
+          "declared_candidate": true,
+          "validated": false
+        },
+        {
+          "profile": "remote.research",
+          "declared_candidate": true,
+          "validated": false
+        }
+      ],
+      "notes": {
+        "root": "gpt-6.1-sol"
+      }
+    },
+    {
+      "canonical_id": "omniroute/opencode/gpt-6.1-sol",
+      "source_catalog": "omniroute",
+      "provider": "opencode",
+      "provider_model_id": "oc/gpt-6.1-sol",
+      "execution_location": "remote",
+      "modalities": [
+        "text"
+      ],
+      "declared_capabilities": {
+        "text_generation": true,
+        "vision": false,
+        "tool_calling": true,
+        "reasoning": true,
+        "structured_output": "unknown",
+        "embedding": false,
+        "reranking": false
+      },
+      "observed_capabilities": {
+        "text_generation": "unknown",
+        "chat": "unknown",
+        "vision": "unknown",
+        "tool_calling": "unknown",
+        "reasoning": "unknown",
+        "structured_output": "unknown",
+        "embedding": "unknown",
+        "reranking": "unknown"
+      },
+      "context_window": 200000,
+      "output_limit": null,
+      "structured_output": "unknown",
+      "tools": true,
+      "reasoning": true,
+      "vision": false,
+      "lifecycle_status": "COMPATIBLE",
+      "availability": "available",
+      "discovered_at": "2026-09-30T00:03:59.903662+00:00",
+      "last_seen_at": "2026-09-30T00:03:59.903662+00:00",
+      "raw_metadata_hash": "506605eb31be549c9c90839fefca8158d1c5492a4e2312bb360f5d1e1b5c840b",
+      "observed_at": null,
+      "display_name": "oc/gpt-6.1-sol",
+      "declared_profile_compatibility": [
+        {
+          "profile": "remote.generation",
+          "declared_candidate": true,
+          "validated": false
+        },
+        {
+          "profile": "remote.longform",
+          "declared_candidate": true,
+          "validated": false
+        },
+        {
+          "profile": "remote.reasoning",
+          "declared_candidate": true,
+          "validated": false
+        },
+        {
+          "profile": "remote.research",
+          "declared_candidate": true,
+          "validated": false
+        }
+      ],
+      "notes": {
+        "root": "gpt-6.1-sol"
+      }
+    }
+  ]
+}

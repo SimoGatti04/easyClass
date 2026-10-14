@@ -1,0 +1,329 @@
+{
+  "schema_version": 1,
+  "attempt": "attempt-03",
+  "catalog_captured_at_utc": "2026-09-30T17:17:20.949426+00:00",
+  "timeout_seconds": 120,
+  "corpus_sent": false,
+  "stopped_on_http_auth_status": true,
+  "credential_attribution": "undetermined; live /v1/models succeeded and five recorded chat requests returned HTTP 200, but one later candidate route raised an HTTP 401/403 branch without persisted response details",
+  "candidate_results": [
+    {
+      "candidate_model_id": "agy/gemini-3.8-flash-tiered",
+      "stage_a_classification": "ROUTE_OPERATIONAL",
+      "stage_a": {
+        "candidate_model_id": "agy/gemini-3.8-flash-tiered",
+        "stage": "stage-a",
+        "probe_index": 1,
+        "timestamp_utc": "2026-09-30T17:17:20.953860+00:00",
+        "http_status": 200,
+        "requested_model_id": "agy/gemini-3.8-flash-tiered",
+        "actual_model_ids_seen": [
+          "gemini-3.8-flash-tiered"
+        ],
+        "returned_model_id": "gemini-3.8-flash-tiered",
+        "identity_verified": true,
+        "identity_failure": null,
+        "response_id": "chatcmpl-IUS9aueKHdOjnsEPlsnxcA",
+        "heartbeat_events": 1,
+        "heartbeat_ids": [
+          "chatcmpl-keepalive"
+        ],
+        "stream_termination": "done",
+        "content_non_empty": true,
+        "finish_reason": "stop",
+        "finish_reason_valid": true,
+        "ttft_seconds": 2.394,
+        "ttft_basis": "first_nonempty_delta.content",
+        "total_latency_seconds": 2.414,
+        "input_tokens": 98,
+        "output_tokens": 200,
+        "usage": {
+          "prompt_tokens": 98,
+          "completion_tokens": 200,
+          "total_tokens": 298,
+          "completion_tokens_details": {
+            "reasoning_tokens": 197
+          }
+        },
+        "cost": null,
+        "cost_source": "unknown",
+        "output_words_whitespace": 2,
+        "json_schema_requested": false,
+        "response_format_mode": "none",
+        "response_headers_sanitized": {
+          "content-type": "text/event-stream; charset=utf-8",
+          "x-request-id": "4beded5f-1119-4a5e-8c58-6958dc9313fb"
+        },
+        "error": null,
+        "fallback_events": 0,
+        "raw_response_path": "validation/work/Gate-C-v2/outputs/attempt-03/by-model/agy__gemini-3.8-flash-tiered/stage-a/response.sse.txt",
+        "request_path": "validation/work/Gate-C-v2/outputs/attempt-03/by-model/agy__gemini-3.8-flash-tiered/stage-a/request.json"
+      },
+      "failure_reason": null,
+      "stage_b_classification": null,
+      "stage_b": null
+    },
+    {
+      "candidate_model_id": "groq/qwen/qwen3.8-27b",
+      "stage_a_classification": "ROUTE_OPERATIONAL",
+      "stage_a": {
+        "candidate_model_id": "groq/qwen/qwen3.8-27b",
+        "stage": "stage-a",
+        "probe_index": 2,
+        "timestamp_utc": "2026-09-30T17:17:23.370547+00:00",
+        "http_status": 200,
+        "requested_model_id": "groq/qwen/qwen3.8-27b",
+        "actual_model_ids_seen": [
+          "qwen/qwen3.8-27b"
+        ],
+        "returned_model_id": "qwen/qwen3.8-27b",
+        "identity_verified": true,
+        "identity_failure": null,
+        "response_id": "chatcmpl-c72346af-36db-4f88-a682-b54a21f71e73",
+        "heartbeat_events": 0,
+        "heartbeat_ids": [],
+        "stream_termination": "done",
+        "content_non_empty": true,
+        "finish_reason": "stop",
+        "finish_reason_valid": true,
+        "ttft_seconds": 0.607,
+        "ttft_basis": "first_nonempty_delta.content",
+        "total_latency_seconds": 0.628,
+        "input_tokens": 34,
+        "output_tokens": 6,
+        "usage": {
+          "queue_time": 0.016281207,
+          "prompt_tokens": 34,
+          "prompt_time": 0.002474719,
+          "completion_tokens": 6,
+          "completion_time": 0.01253743,
+          "total_tokens": 40,
+          "total_time": 0.015012149
+        },
+        "cost": null,
+        "cost_source": "unknown",
+        "output_words_whitespace": 3,
+        "json_schema_requested": false,
+        "response_format_mode": "none",
+        "response_headers_sanitized": {
+          "content-type": "text/event-stream",
+          "server": "cloudflare",
+          "x-ratelimit-limit-requests": "1000",
+          "x-ratelimit-limit-tokens": "8000",
+          "x-ratelimit-remaining-requests": "999",
+          "x-ratelimit-remaining-tokens": "7887",
+          "x-ratelimit-reset-requests": "1m26.4s",
+          "x-ratelimit-reset-tokens": "847ms",
+          "x-request-id": "9154d0a8-738f-406a-a64c-b9edfa4a33d5"
+        },
+        "error": null,
+        "fallback_events": 0,
+        "raw_response_path": "validation/work/Gate-C-v2/outputs/attempt-03/by-model/groq__qwen__qwen3.8-27b/stage-a/response.sse.txt",
+        "request_path": "validation/work/Gate-C-v2/outputs/attempt-03/by-model/groq__qwen__qwen3.8-27b/stage-a/request.json"
+      },
+      "failure_reason": null,
+      "stage_b_classification": null,
+      "stage_b": null
+    },
+    {
+      "candidate_model_id": "openrouter/dots-studio/dots-3-note-preview:free",
+      "stage_a_classification": "ROUTE_OPERATIONAL",
+      "stage_a": {
+        "candidate_model_id": "openrouter/dots-studio/dots-3-note-preview:free",
+        "stage": "stage-a",
+        "probe_index": 3,
+        "timestamp_utc": "2026-09-30T17:17:24.001734+00:00",
+        "http_status": 200,
+        "requested_model_id": "openrouter/dots-studio/dots-3-note-preview:free",
+        "actual_model_ids_seen": [
+          "dots-studio/dots-3-note-preview:free"
+        ],
+        "returned_model_id": "dots-studio/dots-3-note-preview:free",
+        "identity_verified": true,
+        "identity_failure": null,
+        "response_id": "gen-1790788644-H56j9RhyNYMOtqj3MG5H",
+        "heartbeat_events": 0,
+        "heartbeat_ids": [],
+        "stream_termination": "done",
+        "content_non_empty": true,
+        "finish_reason": "stop",
+        "finish_reason_valid": true,
+        "ttft_seconds": 1.843,
+        "ttft_basis": "first_nonempty_delta.content",
+        "total_latency_seconds": 2.226,
+        "input_tokens": 37,
+        "output_tokens": 59,
+        "usage": {
+          "prompt_tokens": 37,
+          "completion_tokens": 59,
+          "total_tokens": 96,
+          "cached_tokens": 0,
+          "reasoning_tokens": 50,
+          "prompt_tokens_details": {
+            "cached_tokens": 0
+          },
+          "cache_creation_input_tokens": 0
+        },
+        "cost": null,
+        "cost_source": "unknown",
+        "output_words_whitespace": 2,
+        "json_schema_requested": false,
+        "response_format_mode": "none",
+        "response_headers_sanitized": {
+          "content-type": "text/event-stream",
+          "server": "cloudflare",
+          "x-request-id": "d44931f8-a068-4409-bc43-bc0b51ca4550"
+        },
+        "error": null,
+        "fallback_events": 0,
+        "raw_response_path": "validation/work/Gate-C-v2/outputs/attempt-03/by-model/openrouter__dots-studio__dots-3-note-preview__free/stage-a/response.sse.txt",
+        "request_path": "validation/work/Gate-C-v2/outputs/attempt-03/by-model/openrouter__dots-studio__dots-3-note-preview__free/stage-a/request.json"
+      },
+      "failure_reason": null,
+      "stage_b_classification": null,
+      "stage_b": null
+    },
+    {
+      "candidate_model_id": "groq/openai/gpt-oss-120b",
+      "stage_a_classification": "ROUTE_UNAVAILABLE",
+      "stage_a": {
+        "candidate_model_id": "groq/openai/gpt-oss-120b",
+        "stage": "stage-a",
+        "probe_index": 4,
+        "timestamp_utc": "2026-09-30T17:17:26.231383+00:00",
+        "http_status": 200,
+        "requested_model_id": "groq/openai/gpt-oss-120b",
+        "actual_model_ids_seen": [
+          "openai/gpt-oss-120b"
+        ],
+        "returned_model_id": "openai/gpt-oss-120b",
+        "identity_verified": true,
+        "identity_failure": null,
+        "response_id": "chatcmpl-4fad4ae8-02e4-4935-b23f-8fa0ed2cb687",
+        "heartbeat_events": 0,
+        "heartbeat_ids": [],
+        "stream_termination": "done",
+        "content_non_empty": false,
+        "finish_reason": "length",
+        "finish_reason_valid": true,
+        "ttft_seconds": null,
+        "ttft_basis": "not_measurable",
+        "total_latency_seconds": 0.684,
+        "input_tokens": 94,
+        "output_tokens": 96,
+        "usage": {
+          "queue_time": 0.295290839,
+          "prompt_tokens": 94,
+          "prompt_time": 0.01934164,
+          "completion_tokens": 96,
+          "completion_time": 0.200507691,
+          "total_tokens": 190,
+          "total_time": 0.219849331,
+          "completion_tokens_details": {
+            "reasoning_tokens": 94
+          }
+        },
+        "cost": null,
+        "cost_source": "unknown",
+        "output_words_whitespace": 0,
+        "json_schema_requested": false,
+        "response_format_mode": "none",
+        "response_headers_sanitized": {
+          "content-type": "text/event-stream",
+          "server": "cloudflare",
+          "x-ratelimit-limit-requests": "1000",
+          "x-ratelimit-limit-tokens": "8000",
+          "x-ratelimit-remaining-requests": "999",
+          "x-ratelimit-remaining-tokens": "7810",
+          "x-ratelimit-reset-requests": "1m26.4s",
+          "x-ratelimit-reset-tokens": "1.425s",
+          "x-request-id": "c5155596-543c-4145-afcf-5c55d881be6b"
+        },
+        "error": null,
+        "fallback_events": 0,
+        "raw_response_path": "validation/work/Gate-C-v2/outputs/attempt-03/by-model/groq__openai__gpt-oss-120b/stage-a/response.sse.txt",
+        "request_path": "validation/work/Gate-C-v2/outputs/attempt-03/by-model/groq__openai__gpt-oss-120b/stage-a/request.json"
+      },
+      "failure_reason": "empty_output_with_finish_reason_length",
+      "stage_b_classification": null,
+      "stage_b": null
+    },
+    {
+      "candidate_model_id": "openrouter/thinkingmachines/inkling-small:free",
+      "stage_a_classification": "ROUTE_UNAVAILABLE",
+      "stage_a": {
+        "candidate_model_id": "openrouter/thinkingmachines/inkling-small:free",
+        "stage": "stage-a",
+        "probe_index": 5,
+        "timestamp_utc": "2026-09-30T17:17:26.918747+00:00",
+        "http_status": 200,
+        "requested_model_id": "openrouter/thinkingmachines/inkling-small:free",
+        "actual_model_ids_seen": [],
+        "returned_model_id": null,
+        "identity_verified": false,
+        "identity_failure": null,
+        "response_id": null,
+        "heartbeat_events": 13,
+        "heartbeat_ids": [
+          "chatcmpl-keepalive"
+        ],
+        "stream_termination": "eof",
+        "content_non_empty": false,
+        "finish_reason": null,
+        "finish_reason_valid": false,
+        "ttft_seconds": null,
+        "ttft_basis": "not_measurable",
+        "total_latency_seconds": 34.178,
+        "input_tokens": null,
+        "output_tokens": null,
+        "usage": null,
+        "cost": null,
+        "cost_source": "unknown",
+        "output_words_whitespace": 0,
+        "json_schema_requested": false,
+        "response_format_mode": "none",
+        "response_headers_sanitized": {
+          "content-type": "text/event-stream; charset=utf-8",
+          "x-request-id": "e23abb7d-2fb1-4596-8b44-786d3fefaf62"
+        },
+        "error": null,
+        "fallback_events": 0,
+        "raw_response_path": "validation/work/Gate-C-v2/outputs/attempt-03/by-model/openrouter__thinkingmachines__inkling-small__free/stage-a/response.sse.txt",
+        "request_path": "validation/work/Gate-C-v2/outputs/attempt-03/by-model/openrouter__thinkingmachines__inkling-small__free/stage-a/request.json"
+      },
+      "failure_reason": "heartbeat_only_then_eof_without_actual_model_event",
+      "stage_b_classification": null,
+      "stage_b": null
+    },
+    {
+      "candidate_model_id": "openrouter/thinkingmachines/inkling-small:free-high",
+      "stage_a_classification": "STOPPED_ON_HTTP_AUTH_STATUS",
+      "stage_a": null,
+      "stage_a_http_status": "401_or_403 (exact status not persisted)",
+      "stage_b_classification": null,
+      "stage_b": null,
+      "failure_reason": "The original driver raised its auth-stop branch for HTTP 401/403 before persisting response metrics/body. Whether this was gateway credential auth or model/provider route authorization is undetermined. No alternate credential was used and no further remote calls were made."
+    }
+  ],
+  "stage_a_operational_routes": [
+    "agy/gemini-3.8-flash-tiered",
+    "groq/qwen/qwen3.8-27b",
+    "openrouter/dots-studio/dots-3-note-preview:free"
+  ],
+  "stage_b_structured_output_routes": [],
+  "cohort_model_ids": [],
+  "target_cohort_size": 3,
+  "status": "PARTIAL",
+  "technical_anomalies": [
+    "Initial attempt-03 preflight driver had a local AttributeError when checking a null error field; this caused three successful Stage A routes to be mislabeled as transport failures and prevented Stage B calls for those routes. The local classifier is corrected in run_attempt03_preflight.py.",
+    "The reserve effort-tier candidate openrouter/thinkingmachines/inkling-small:free-high triggered an HTTP 401/403 stop branch; its HTTP status/body were not persisted by the initial driver. No further API calls were made after this event.",
+    "No Stage B structured-output probe was run; no cohort can be certified."
+  ],
+  "remote_reasoning_historical_state": {
+    "model_id": "agy/gemini-3.8-flash-tiered",
+    "historical_status": "HISTORICAL_ELIGIBLE",
+    "current_availability": "CURRENT_ROUTE_OPERATIONAL",
+    "updated_after_valid_stage_a": true,
+    "quality_retested": false
+  }
+}

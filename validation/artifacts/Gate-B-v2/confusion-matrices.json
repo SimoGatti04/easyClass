@@ -1,0 +1,132 @@
+{
+  "source_grounding": {
+    "labels": [
+      "SUPPORTED",
+      "UNSUPPORTED"
+    ],
+    "rows_gold_columns_prediction": {
+      "deterministic_baseline": {
+        "SUPPORTED": {
+          "SUPPORTED": 11,
+          "UNSUPPORTED": 22,
+          "__FAILURE__": 0
+        },
+        "UNSUPPORTED": {
+          "SUPPORTED": 0,
+          "UNSUPPORTED": 18,
+          "__FAILURE__": 0
+        }
+      },
+      "local_model": {
+        "SUPPORTED": {
+          "SUPPORTED": 31,
+          "UNSUPPORTED": 2,
+          "__FAILURE__": 0
+        },
+        "UNSUPPORTED": {
+          "SUPPORTED": 11,
+          "UNSUPPORTED": 7,
+          "__FAILURE__": 0
+        }
+      }
+    }
+  },
+  "artifact_semantic_check": {
+    "labels": [
+      "SATISFIED",
+      "PARTIAL",
+      "VIOLATED",
+      "UNKNOWN"
+    ],
+    "rows_gold_columns_prediction": {
+      "deterministic_baseline": {
+        "SATISFIED": {
+          "SATISFIED": 0,
+          "PARTIAL": 0,
+          "VIOLATED": 0,
+          "UNKNOWN": 18,
+          "__FAILURE__": 0
+        },
+        "PARTIAL": {
+          "SATISFIED": 0,
+          "PARTIAL": 0,
+          "VIOLATED": 0,
+          "UNKNOWN": 2,
+          "__FAILURE__": 0
+        },
+        "VIOLATED": {
+          "SATISFIED": 0,
+          "PARTIAL": 0,
+          "VIOLATED": 0,
+          "UNKNOWN": 9,
+          "__FAILURE__": 0
+        },
+        "UNKNOWN": {
+          "SATISFIED": 0,
+          "PARTIAL": 0,
+          "VIOLATED": 0,
+          "UNKNOWN": 1,
+          "__FAILURE__": 0
+        }
+      },
+      "local_model": {
+        "SATISFIED": {
+          "SATISFIED": 0,
+          "PARTIAL": 7,
+          "VIOLATED": 11,
+          "UNKNOWN": 0,
+          "__FAILURE__": 0
+        },
+        "PARTIAL": {
+          "SATISFIED": 0,
+          "PARTIAL": 1,
+          "VIOLATED": 1,
+          "UNKNOWN": 0,
+          "__FAILURE__": 0
+        },
+        "VIOLATED": {
+          "SATISFIED": 1,
+          "PARTIAL": 1,
+          "VIOLATED": 7,
+          "UNKNOWN": 0,
+          "__FAILURE__": 0
+        },
+        "UNKNOWN": {
+          "SATISFIED": 0,
+          "PARTIAL": 0,
+          "VIOLATED": 1,
+          "UNKNOWN": 0,
+          "__FAILURE__": 0
+        }
+      }
+    },
+    "secondary_satisfied_vs_needs_review": {
+      "rows_gold_columns_prediction": {
+        "deterministic_fail_closed": {
+          "SATISFIED": {
+            "SATISFIED": 0,
+            "NEEDS_REVIEW": 18,
+            "__FAILURE__": 0
+          },
+          "NEEDS_REVIEW": {
+            "SATISFIED": 0,
+            "NEEDS_REVIEW": 12,
+            "__FAILURE__": 0
+          }
+        },
+        "local_model": {
+          "SATISFIED": {
+            "SATISFIED": 0,
+            "NEEDS_REVIEW": 18,
+            "__FAILURE__": 0
+          },
+          "NEEDS_REVIEW": {
+            "SATISFIED": 1,
+            "NEEDS_REVIEW": 11,
+            "__FAILURE__": 0
+          }
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,51 @@
+{
+  "gate": "Gate B — Local Capability Validation",
+  "gate_status": "BLOCKED",
+  "status_vocabulary": ["VALIDATED", "ELIGIBLE", "SUGGEST_ONLY", "REJECTED_FOR_PROFILE", "NOT_NEEDED"],
+  "registry_lifecycle_mutated": false,
+  "profiles": [
+    {
+      "profile": "local.document_pdf",
+      "implementation": "Marker",
+      "status": "VALIDATED",
+      "evidence": ["validation/results/B1-parsing-report.md", "validation/results/B5-B6-integration-report.md"],
+      "scope_note": "Reuse B1/B5 parsing evidence only; not a new Gate B benchmark."
+    },
+    {
+      "profile": "local.document_office",
+      "implementation": "MinerU",
+      "status": "VALIDATED",
+      "evidence": ["validation/results/B1-parsing-report.md", "validation/results/B5-B6-integration-report.md"],
+      "scope_note": "Reuse B1/B5 parsing evidence only; preserve the B1 XLSX cell-level limitation."
+    },
+    {
+      "profile": "local.embedding",
+      "implementation": "Qwen3-Embedding-0.6B",
+      "status": "ELIGIBLE",
+      "evidence": ["validation/results/B2-retrieval-report.md"],
+      "scope_note": "Eligible for the demonstrated dense-retrieval role. No semantic-grounding, tagging, or artifact-check role is validated by Gate B."
+    },
+    {
+      "profile": "local.reranker",
+      "implementation": "Qwen3-Reranker-0.6B",
+      "status": "SUGGEST_ONLY",
+      "evidence": ["validation/results/B2-retrieval-report.md"],
+      "scope_note": "Not a default retrieval stage; retain only as an optional experiment under the B2 limitations."
+    },
+    {
+      "profile": "local.semantic_small",
+      "implementation": "MiniCPM5-2B-MLX",
+      "status": null,
+      "gate_status": "BLOCKED",
+      "evidence": ["validation/results/B3-models-report.md", "validation/results/B5-B6-integration-report.md"],
+      "scope_note": "Those reports concern long-form generation and do not establish bounded semantic-check quality. No profile status is assigned until independent human gold is available."
+    },
+    {
+      "profile": "local.typed_decision",
+      "implementation": "Rizzo Flow / Spark-X2.5",
+      "status": "SUGGEST_ONLY",
+      "evidence": ["validation/results/B4-decisions-report.md"],
+      "scope_note": "Limited to optional relevance/candidate expansion; B4 supports simpler deterministic or baseline methods for the other tested decisions. No Gate B Rizzo benchmark was repeated."
+    }
+  ]
+}

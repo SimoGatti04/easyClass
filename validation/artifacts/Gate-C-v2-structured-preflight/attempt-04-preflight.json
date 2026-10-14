@@ -1,0 +1,391 @@
+{
+  "schema_version": 1,
+  "attempt": "attempt-04",
+  "started_at_utc": "2026-09-30T17:42:15.497261+00:00",
+  "corpus_sent": false,
+  "generation_started": false,
+  "longform_started": false,
+  "candidate_results": [
+    {
+      "candidate_model_id": "agy/gemini-3.8-flash-tiered",
+      "root": "gemini-3.8-flash-tiered",
+      "is_reserve": false,
+      "stage_a_classification": "ROUTE_OPERATIONAL",
+      "stage_a_source": "attempt-03 historical PASS; not rerun",
+      "stage_a": {
+        "candidate_model_id": "agy/gemini-3.8-flash-tiered",
+        "stage": "stage-a",
+        "probe_index": 1,
+        "timestamp_utc": "2026-09-30T17:17:20.953860+00:00",
+        "http_status": 200,
+        "requested_model_id": "agy/gemini-3.8-flash-tiered",
+        "actual_model_ids_seen": [
+          "gemini-3.8-flash-tiered"
+        ],
+        "returned_model_id": "gemini-3.8-flash-tiered",
+        "identity_verified": true,
+        "identity_failure": null,
+        "response_id": "chatcmpl-IUS9aueKHdOjnsEPlsnxcA",
+        "heartbeat_events": 1,
+        "heartbeat_ids": [
+          "chatcmpl-keepalive"
+        ],
+        "stream_termination": "done",
+        "content_non_empty": true,
+        "finish_reason": "stop",
+        "finish_reason_valid": true,
+        "ttft_seconds": 2.394,
+        "ttft_basis": "first_nonempty_delta.content",
+        "total_latency_seconds": 2.414,
+        "input_tokens": 98,
+        "output_tokens": 200,
+        "usage": {
+          "prompt_tokens": 98,
+          "completion_tokens": 200,
+          "total_tokens": 298,
+          "completion_tokens_details": {
+            "reasoning_tokens": 197
+          }
+        },
+        "cost": null,
+        "cost_source": "unknown",
+        "output_words_whitespace": 2,
+        "json_schema_requested": false,
+        "response_format_mode": "none",
+        "response_headers_sanitized": {
+          "content-type": "text/event-stream; charset=utf-8",
+          "x-request-id": "4beded5f-1119-4a5e-8c58-6958dc9313fb"
+        },
+        "error": null,
+        "fallback_events": 0,
+        "raw_response_path": "validation/work/Gate-C-v2/outputs/attempt-03/by-model/agy__gemini-3.8-flash-tiered/stage-a/response.sse.txt",
+        "request_path": "validation/work/Gate-C-v2/outputs/attempt-03/by-model/agy__gemini-3.8-flash-tiered/stage-a/request.json"
+      },
+      "stage_b": {
+        "candidate_model_id": "agy/gemini-3.8-flash-tiered",
+        "stage": "stage-b",
+        "probe_index": 1,
+        "timestamp_utc": "2026-09-30T17:42:19.713127+00:00",
+        "http_status": 200,
+        "request_id": "f9174b8d-fb76-4d5c-87d6-9a67ffbb3b07",
+        "requested_model_id": "agy/gemini-3.8-flash-tiered",
+        "actual_model_ids_seen": [
+          "gemini-3.8-flash-tiered"
+        ],
+        "returned_model_id": "gemini-3.8-flash-tiered",
+        "identity_verified": true,
+        "identity_failure": null,
+        "response_id": "chatcmpl-_Em9aq_hC8DQnsEPgauCuA0",
+        "heartbeat_events": 1,
+        "heartbeat_ids": [
+          "chatcmpl-keepalive"
+        ],
+        "stream_termination": "done",
+        "content_non_empty": true,
+        "finish_reason": "stop",
+        "total_latency_seconds": 3.44,
+        "usage": {
+          "prompt_tokens": 101,
+          "completion_tokens": 356,
+          "total_tokens": 457,
+          "completion_tokens_details": {
+            "reasoning_tokens": 343
+          }
+        },
+        "response_format_mode": "json_schema",
+        "response_headers_sanitized": {
+          "content-type": "text/event-stream; charset=utf-8",
+          "x-request-id": "f9174b8d-fb76-4d5c-87d6-9a67ffbb3b07"
+        },
+        "response_body_sanitized": null,
+        "response_body_path": "validation/work/Gate-C-v2/outputs/attempt-04/by-model/agy__gemini-3.8-flash-tiered/stage-b/response.sse.txt",
+        "error": null,
+        "classification": "STRUCTURED_OUTPUT_SUPPORTED",
+        "corpus_sent": false,
+        "schema_protocol_supported": true,
+        "json_parse_valid": true,
+        "schema_valid": true,
+        "semantic_valid": true
+      },
+      "classification": "STRUCTURED_OUTPUT_SUPPORTED",
+      "stage_b_classification": "STRUCTURED_OUTPUT_SUPPORTED"
+    },
+    {
+      "candidate_model_id": "groq/qwen/qwen3.8-27b",
+      "root": "qwen/qwen3.8-27b",
+      "is_reserve": false,
+      "stage_a_classification": "ROUTE_OPERATIONAL",
+      "stage_a_source": "attempt-03 historical PASS; not rerun",
+      "stage_a": {
+        "candidate_model_id": "groq/qwen/qwen3.8-27b",
+        "stage": "stage-a",
+        "probe_index": 2,
+        "timestamp_utc": "2026-09-30T17:17:23.370547+00:00",
+        "http_status": 200,
+        "requested_model_id": "groq/qwen/qwen3.8-27b",
+        "actual_model_ids_seen": [
+          "qwen/qwen3.8-27b"
+        ],
+        "returned_model_id": "qwen/qwen3.8-27b",
+        "identity_verified": true,
+        "identity_failure": null,
+        "response_id": "chatcmpl-c72346af-36db-4f88-a682-b54a21f71e73",
+        "heartbeat_events": 0,
+        "heartbeat_ids": [],
+        "stream_termination": "done",
+        "content_non_empty": true,
+        "finish_reason": "stop",
+        "finish_reason_valid": true,
+        "ttft_seconds": 0.607,
+        "ttft_basis": "first_nonempty_delta.content",
+        "total_latency_seconds": 0.628,
+        "input_tokens": 34,
+        "output_tokens": 6,
+        "usage": {
+          "queue_time": 0.016281207,
+          "prompt_tokens": 34,
+          "prompt_time": 0.002474719,
+          "completion_tokens": 6,
+          "completion_time": 0.01253743,
+          "total_tokens": 40,
+          "total_time": 0.015012149
+        },
+        "cost": null,
+        "cost_source": "unknown",
+        "output_words_whitespace": 3,
+        "json_schema_requested": false,
+        "response_format_mode": "none",
+        "response_headers_sanitized": {
+          "content-type": "text/event-stream",
+          "server": "cloudflare",
+          "x-ratelimit-limit-requests": "1000",
+          "x-ratelimit-limit-tokens": "8000",
+          "x-ratelimit-remaining-requests": "999",
+          "x-ratelimit-remaining-tokens": "7887",
+          "x-ratelimit-reset-requests": "1m26.4s",
+          "x-ratelimit-reset-tokens": "847ms",
+          "x-request-id": "9154d0a8-738f-406a-a64c-b9edfa4a33d5"
+        },
+        "error": null,
+        "fallback_events": 0,
+        "raw_response_path": "validation/work/Gate-C-v2/outputs/attempt-03/by-model/groq__qwen__qwen3.8-27b/stage-a/response.sse.txt",
+        "request_path": "validation/work/Gate-C-v2/outputs/attempt-03/by-model/groq__qwen__qwen3.8-27b/stage-a/request.json"
+      },
+      "stage_b": {
+        "candidate_model_id": "groq/qwen/qwen3.8-27b",
+        "stage": "stage-b",
+        "probe_index": 2,
+        "timestamp_utc": "2026-09-30T17:42:23.155479+00:00",
+        "http_status": 200,
+        "request_id": "ce1f5410-4afc-420e-ba4a-162eef7fc135",
+        "requested_model_id": "groq/qwen/qwen3.8-27b",
+        "actual_model_ids_seen": [
+          "qwen/qwen3.8-27b"
+        ],
+        "returned_model_id": "qwen/qwen3.8-27b",
+        "identity_verified": true,
+        "identity_failure": null,
+        "response_id": "chatcmpl-c3c4ff72-0918-4dff-a011-63285722e226",
+        "heartbeat_events": 0,
+        "heartbeat_ids": [],
+        "stream_termination": "done",
+        "content_non_empty": true,
+        "finish_reason": "stop",
+        "total_latency_seconds": 0.615,
+        "usage": {
+          "queue_time": 0.021463377,
+          "prompt_tokens": 32,
+          "prompt_time": 0.002412873,
+          "completion_tokens": 16,
+          "completion_time": 0.033820213,
+          "total_tokens": 48,
+          "total_time": 0.036233086
+        },
+        "response_format_mode": "json_schema",
+        "response_headers_sanitized": {
+          "content-type": "text/event-stream",
+          "server": "cloudflare",
+          "x-ratelimit-limit-requests": "1000",
+          "x-ratelimit-limit-tokens": "8000",
+          "x-ratelimit-remaining-requests": "999",
+          "x-ratelimit-remaining-tokens": "7952",
+          "x-ratelimit-reset-requests": "1m26.4s",
+          "x-ratelimit-reset-tokens": "360ms",
+          "x-request-id": "ce1f5410-4afc-420e-ba4a-162eef7fc135"
+        },
+        "response_body_sanitized": null,
+        "response_body_path": "validation/work/Gate-C-v2/outputs/attempt-04/by-model/groq__qwen__qwen3.8-27b/stage-b/response.sse.txt",
+        "error": null,
+        "classification": "STRUCTURED_OUTPUT_SUPPORTED",
+        "corpus_sent": false,
+        "schema_protocol_supported": true,
+        "json_parse_valid": true,
+        "schema_valid": true,
+        "semantic_valid": true
+      },
+      "classification": "STRUCTURED_OUTPUT_SUPPORTED",
+      "stage_b_classification": "STRUCTURED_OUTPUT_SUPPORTED"
+    },
+    {
+      "candidate_model_id": "openrouter/dots-studio/dots-3-note-preview:free",
+      "root": "dots-studio/dots-3-note-preview:free",
+      "is_reserve": false,
+      "stage_a_classification": "ROUTE_OPERATIONAL",
+      "stage_a_source": "attempt-03 historical PASS; not rerun",
+      "stage_a": {
+        "candidate_model_id": "openrouter/dots-studio/dots-3-note-preview:free",
+        "stage": "stage-a",
+        "probe_index": 3,
+        "timestamp_utc": "2026-09-30T17:17:24.001734+00:00",
+        "http_status": 200,
+        "requested_model_id": "openrouter/dots-studio/dots-3-note-preview:free",
+        "actual_model_ids_seen": [
+          "dots-studio/dots-3-note-preview:free"
+        ],
+        "returned_model_id": "dots-studio/dots-3-note-preview:free",
+        "identity_verified": true,
+        "identity_failure": null,
+        "response_id": "gen-1790788644-H56j9RhyNYMOtqj3MG5H",
+        "heartbeat_events": 0,
+        "heartbeat_ids": [],
+        "stream_termination": "done",
+        "content_non_empty": true,
+        "finish_reason": "stop",
+        "finish_reason_valid": true,
+        "ttft_seconds": 1.843,
+        "ttft_basis": "first_nonempty_delta.content",
+        "total_latency_seconds": 2.226,
+        "input_tokens": 37,
+        "output_tokens": 59,
+        "usage": {
+          "prompt_tokens": 37,
+          "completion_tokens": 59,
+          "total_tokens": 96,
+          "cached_tokens": 0,
+          "reasoning_tokens": 50,
+          "prompt_tokens_details": {
+            "cached_tokens": 0
+          },
+          "cache_creation_input_tokens": 0
+        },
+        "cost": null,
+        "cost_source": "unknown",
+        "output_words_whitespace": 2,
+        "json_schema_requested": false,
+        "response_format_mode": "none",
+        "response_headers_sanitized": {
+          "content-type": "text/event-stream",
+          "server": "cloudflare",
+          "x-request-id": "d44931f8-a068-4409-bc43-bc0b51ca4550"
+        },
+        "error": null,
+        "fallback_events": 0,
+        "raw_response_path": "validation/work/Gate-C-v2/outputs/attempt-03/by-model/openrouter__dots-studio__dots-3-note-preview__free/stage-a/response.sse.txt",
+        "request_path": "validation/work/Gate-C-v2/outputs/attempt-03/by-model/openrouter__dots-studio__dots-3-note-preview__free/stage-a/request.json"
+      },
+      "stage_b": {
+        "candidate_model_id": "openrouter/dots-studio/dots-3-note-preview:free",
+        "stage": "stage-b",
+        "probe_index": 3,
+        "timestamp_utc": "2026-09-30T17:42:23.773685+00:00",
+        "http_status": 200,
+        "request_id": "3c923dfa-a936-47ca-b783-3b26db56d1f4",
+        "requested_model_id": "openrouter/dots-studio/dots-3-note-preview:free",
+        "actual_model_ids_seen": [
+          "dots-studio/dots-3-note-preview:free"
+        ],
+        "returned_model_id": "dots-studio/dots-3-note-preview:free",
+        "identity_verified": true,
+        "identity_failure": null,
+        "response_id": "gen-1790790144-2sYx394mxCumimkjZuer",
+        "heartbeat_events": 0,
+        "heartbeat_ids": [],
+        "stream_termination": "done",
+        "content_non_empty": true,
+        "finish_reason": "stop",
+        "total_latency_seconds": 5.025,
+        "usage": {
+          "prompt_tokens": 39,
+          "completion_tokens": 302,
+          "total_tokens": 341,
+          "cached_tokens": 0,
+          "reasoning_tokens": 336,
+          "prompt_tokens_details": {
+            "cached_tokens": 0
+          },
+          "cache_creation_input_tokens": 0
+        },
+        "response_format_mode": "json_schema",
+        "response_headers_sanitized": {
+          "content-type": "text/event-stream",
+          "server": "cloudflare",
+          "x-request-id": "3c923dfa-a936-47ca-b783-3b26db56d1f4"
+        },
+        "response_body_sanitized": null,
+        "response_body_path": "validation/work/Gate-C-v2/outputs/attempt-04/by-model/openrouter__dots-studio__dots-3-note-preview__free/stage-b/response.sse.txt",
+        "error": null,
+        "classification": "STRUCTURED_OUTPUT_SUPPORTED",
+        "corpus_sent": false,
+        "schema_protocol_supported": true,
+        "json_parse_valid": true,
+        "schema_valid": true,
+        "semantic_valid": true
+      },
+      "classification": "STRUCTURED_OUTPUT_SUPPORTED",
+      "stage_b_classification": "STRUCTURED_OUTPUT_SUPPORTED"
+    }
+  ],
+  "stage_a_operational_routes": [
+    "agy/gemini-3.8-flash-tiered",
+    "groq/qwen/qwen3.8-27b",
+    "openrouter/dots-studio/dots-3-note-preview:free"
+  ],
+  "stage_b_structured_output_routes": [
+    "agy/gemini-3.8-flash-tiered",
+    "groq/qwen/qwen3.8-27b",
+    "openrouter/dots-studio/dots-3-note-preview:free"
+  ],
+  "structured_output_supported_routes": [
+    "agy/gemini-3.8-flash-tiered",
+    "groq/qwen/qwen3.8-27b",
+    "openrouter/dots-studio/dots-3-note-preview:free"
+  ],
+  "cohort_model_ids": [
+    "agy/gemini-3.8-flash-tiered",
+    "groq/qwen/qwen3.8-27b",
+    "openrouter/dots-studio/dots-3-note-preview:free"
+  ],
+  "target_cohort_size": 3,
+  "route_access_denied_count": 0,
+  "status": "READY_FOR_GATE_C_V2_RERUN",
+  "remote_reasoning_historical_state": "HISTORICAL_ELIGIBLE",
+  "gemini_current_route_state": "CURRENT_ROUTE_OPERATIONAL",
+  "classification_401_403_policy": "route-level denial unless /v1/models control independently returns 401/403",
+  "historical_stage_a_source": "validation/artifacts/Gate-C-v2-transport-fix/attempt-03-preflight.json",
+  "catalog_check": {
+    "stage": "catalog",
+    "candidate_model_id": null,
+    "endpoint_path": "/v1/models",
+    "timestamp_utc": "2026-09-30T17:42:15.498048+00:00",
+    "http_status": 200,
+    "request_id": "6400f847-ae4e-4ba9-bced-4d67ee57c611",
+    "response_headers_sanitized": {
+      "content-type": "application/json",
+      "x-request-id": "6400f847-ae4e-4ba9-bced-4d67ee57c611"
+    },
+    "response_body_sanitized": "{\"object\":\"list\",\"data\":[{\"id\":\"agy/gemini-3.8-flash-tiered\",\"object\":\"model\",\"created\":1790790135,\"owned_by\":\"agy\",\"permission\":[],\"root\":\"gemini-3.8-flash-tiered\",\"parent\":null,\"max_output_tokens\":65536,\"capabilities\":{\"vision\":true,\"tool_calling\":true,\"reasoning\":true},\"input_modalities\":[\"text\",\"image\"],\"output_modalities\":[\"text\"],\"name\":\"gemini-3.8-flash-tiered\",\"context_length\":1000000},{\"id\":\"oc/jev-1.13-free\",\"object\":\"model\",\"created\":1790790135,\"owned_by\":\"opencode\",\"permission\":[],\"root\":\"jev-1.13-free\",\"parent\":null,\"capabilities\":{\"tool_calling\":true,\"reasoning\":true},\"name\":\"oc/jev-1.13-free\",\"context_length\":200000},{\"id\":\"oc/deepseek-v4-flash-free\",\"object\":\"model\",\"created\":1790790135,\"owned_by\":\"opencode\",\"permission\":[],\"root\":\"deepseek-v4-flash-free\",\"parent\":null,\"capabilities\":{\"tool_calling\":true,\"reasoning\":true,\"thinking\":true,\"supportsThinking\":true,\"effort_tiers\":[\"none\",\"low\",\"medium\",\"high\",\"xhigh\"]},\"context_length\":1000000,\"max_output_tokens\":384000,\"max_input_tokens\":1000000,\"name\":\"DeepSeek V4 Flash Free\"},{\"id\":\"oc/muse-spark-1.3-contributor-free\",\"object\":\"model\",\"created\":1790790135,\"owned_by\":\"opencode\",\"permission\":[],\"root\":\"muse-spark-1.3-contributor-free\",\"parent\":null,\"capabilities\":{\"tool_calling\":true,\"reasoning\":true},\"name\":\"oc/muse-spark-1.3-contributor-free\",\"context_length\":200000},{\"id\":\"oc/mimo-v2.6-flash-free\",\"object\":\"model\",\"created\":1790790135,\"owned_by\":\"opencode\",\"permission\":[],\"root\":\"mimo-v2.6-flash-free\",\"parent\":null,\"capabilities\":{\"tool_calling\":true,\"reasoning\":true},\"name\":\"oc/mimo-v2.6-flash-free\",\"context_length\":200000},{\"id\":\"oc/space-bunny-free\",\"object\":\"model\",\"created\":1790790135,\"owned_by\":\"opencode\",\"permission\":[],\"root\":\"space-bunny-free\",\"parent\":null,\"capabilities\":{\"tool_calling\":true,\"reasoning\":true},\"name\":\"oc/space-bunny-free\",\"context_length\":200000},{\"id\":\"oc/longcat-2.5-preview-free\",\"object\":\"model\",\"created\":1790790135,\"owned_by\":\"opencode\",\"permission\":[],\"root\":\"longcat-2.5-preview-free\",\"parent\":null,\"capabilities\":{\"tool_calling\":true,\"reasoning\":true},\"name\":\"oc/longcat-2.5-preview-free\",\"context_length\":200000},{\"id\":\"oc/ling-3.0-flash-fin-free\",\"object\":\"model\",\"created\":1790790135,\"owned_by\":\"opencode\",\"permission\":[],\"root\":\"ling-3.0-flash-fin-free\",\"parent\":null,\"capabilities\":{\"tool_calling\":true,\"reasoning\":true},\"name\":\"ling-3.0-flash-fin-free\",\"context_length\":200000},{\"id\":\"oc/nemotron-3.5-lightning-free\",\"object\":\"model\",\"created\":1790790135,\"owned_by\":\"opencode\",\"permission\":[],\"root\":\"nemotron-3.5-lightning-free\",\"parent\":null,\"capabilities\":{\"tool_calling\":true,\"reasoning\":true},\"name\":\"oc/Nemotron 3.5 Lightning Free\",\"context_length\":200000},{\"id\":\"openrouter/inclusionai/ling-3.0-flash-sante:free\",\"object\":\"model\",\"created\":1790790135,\"owned_by\":\"openrouter\",\"permission\":[],\"root\":\"inclusionai/ling-3.0-flash-sante:free\",\"parent\":null,\"context_length\":262144,\"max_output_tokens\":32768,\"capabilities\":{\"tool_calling\":true,\"reasoning\":true},\"max_input_tokens\":262144,\"name\":\"inclusionai/ling-3.0-flash-sante:free\"},{\"id\":\"openrouter/qwen/qwen3.8-27b:free\",\"object\":\"model\",\"created\":1790790135,\"owned_by\":\"openrouter\",\"permission\":[],\"root\":\"qwen/qwen3.8-27b:free\",\"parent\":null,\"context_length\":262144,\"max_output_tokens\":235929,\"capabilities\":{\"vision\":true,\"effort_tiers\":[\"xhigh\",\"medium\",\"low\"],\"tool_calling\":true,\"reasoning\":true},\"max_input_tokens\":262144,\"name\":\"qwen/qwen3.8-27b:free\"},{\"id\":\"openrouter/dots-studio/dots-3-note-preview:free\",\"object\":\"model\",\"created\":1790790135,\"owned_by\":\"openrouter\",\"permission\":[],\"root\":\"dots-studio/dots-3-note-preview:free\",\"parent\":null,\"context_length\":512000,\"max_output_tokens\":460800,\"capabilities\":{\"vision\":true,\"tool_calling\":true,\"reasoning\":true},\"max_input_tokens\":512000,\"name\":\"dots-studio/dots-3-note-preview:free\"},{\"id\":\"openrouter/liquid/lfm-2.5-2.6b:free\",\"object\":\"model\",\"created\":1790790135,\"owned_by\":\"openrouter\",\"permission\":[],\"root\":\"liquid/lfm-2.5-2.6b:free\",\"parent\":null,\"context_length\":65536,\"max_output_tokens\":8192,\"capabilities\":{\"tool_calling\":true,\"reasoning\":true},\"max_input_tokens\":65536,\"name\":\"liquid/lfm-2.5-2.6b:free\"},{\"id\":\"openrouter/nvidia/nemotron-3.5-lightning:free\",\"object\":\"model\",\"created\":1790790135,\"owned_by\":\"openrouter\",\"permission\":[],\"root\":\"nvidia/nemotron-3.5-lightning:free\",\"parent\":null,\"context_length\":1000000,\"max_output_tokens\":65536,\"capabilities\":{\"tool_calling\":true,\"reasoning\":true},\"max_input_tokens\":1000000,\"name\":\"nvidia/nemotron-3.5-lightning:free\"},{\"id\":\"openrouter/thinkingmachines/inkling-small:free\",\"object\":\"model\",\"created\":1790790135,\"owned_by\":\"openrouter\",\"permission\":[],\"root\":\"thinkingmachines/inkling-small:free\",\"parent\":null,\"context_length\":1048576,\"max_output_tokens\":262144,\"capabilities\":{\"vision\":true,\"effort_tiers\":[\"xhigh\",\"high\",\"medium\",\"low\",\"minimal\",\"none\"],\"tool_calling\":true,\"reasoning\":true},\"max_input_tokens\":1048576,\"name\":\"thinkingmachines/inkling-small:free\"},{\"id\":\"openrouter/thinkingmachines/inkling:free\",\"object\":\"model\",\"created\":1790790135,\"owned_by\":\"openrouter\",\"permission\":[],\"root\":\"thinkingmachines/inkling:free\",\"parent\":null,\"context_length\":1048576,\"max_output_tokens\":262144,\"capabilities\":{\"vision\":true,\"effort_tiers\":[\"xhigh\",\"high\",\"medium\",\"low\",\"minimal\",\"none\"],\"tool_calling\":true,\"reasoning\":true},\"max_input_tokens\":1048576,\"name\":\"thinkingmachines/inkling:free\"},{\"id\":\"openrouter/poolside/laguna-xs-2.1:free\",\"object\":\"model\",\"created\":1790790135,\"owned_by\":\"openrouter\",\"permission\":[],\"root\":\"poolside/laguna-xs-2.1:free\",\"parent\":null,\"context_length\":262144,\"max_output_tokens\":32768,\"capabilities\":{\"tool_calling\":true,\"reasoning\":true},\"max_input_tokens\":262144,\"name\":\"poolside/laguna-xs-2.1:free\"},{\"id\":\"openrouter/cohere/north-mini-code:free\",\"object\":\"model\",\"created\":1790790135,\"owned_by\":\"openrouter\",\"permission\":[],\"root\":\"cohere/north-mini-code:free\",\"parent\":null,\"context_length\":256000,\"max_output_tokens\":64000,\"capabilities\":{\"tool_calling\":true,\"reasoning\":true},\"max_input_tokens\":256000,\"name\":\"cohere/north-mini-code:free\"},{\"id\":\"openrouter/nvidia/nemotron-3.5-content-safety:free\",\"object\":\"model\",\"created\":1790790135,\"owned_by\":\"openrouter\",\"permission\":[],\"root\":\"nvidia/nemotron-3.5-content-safety:free\",\"parent\":null,\"context_length\":128000,\"max_output_tokens\":8192,\"capabilities\":{\"vision\":true,\"tool_calling\":true,\"reasoning\":true},\"max_input_tokens\":128000,\"name\":\"nvidia/nemotron-3.5-content-safety:free\"},{\"id\":\"openrouter/nvidia/nemotron-3-ultra-550b-a55b:free\",\"object\":\"model\",\"created\":1790790135,\"owned_by\":\"openrouter\",\"permission\":[],\"root\":\"nvidia/nemotron-3-ultra-550b-a55b:free\",\"parent\":null,\"context_length\":1000000,\"max_output_tokens\":65536,\"capabilities\":{\"effort_tiers\":[\"high\",\"medium\"],\"tool_calling\":true,\"reasoning\":true},\"max_input_tokens\":1000000,\"name\":\"nvidia/nemotron-3-ultra-550b-a55b:free\"},{\"id\":\"openrouter/nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free\",\"object\":\"model\",\"created\":1790790135,\"owned_by\":\"openrouter\",\"permission\":[],\"root\":\"nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free\",\"parent\":null,\"context_length\":256000,\"max_output_tokens\":65536,\"capabilities\":{\"vision\":true,\"tool_calling\":true,\"reasoning\":true},\"max_input_tokens\":256000,\"name\":\"nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free\"},{\"id\":\"openrouter/google/gemma-4-26b-a4b-it:free\",\"object\":\"model\",\"created\":1790790135,\"owned_by\":\"openrouter\",\"permission\":[],\"root\":\"google/gemma-4-26b-a4b-it:free\",\"parent\":null,\"context_length\":262144,\"max_output_tokens\":32768,\"capabilities\":{\"vision\":true,\"tool_calling\":true,\"reasoning\":true},\"max_input_tokens\":262144,\"name\":\"google/gemma-4-26b-a4b-it:free\"},{\"id\":\"openrouter/google/gemma-4-31b-it:free\",\"object\":\"model\",\"created\":1790790135,\"owned_by\":\"openrouter\",\"permission\":[],\"root\":\"google/gemma-4-31b-it:free\",\"parent\":null,\"context_length\":262144,\"max_output_tokens\":32768,\"capabilities\":{\"vision\":true,\"tool_calling\":true,\"reasoning\":true},\"max_input_tokens\":262144,\"name\":\"google/gemma-4-31b-it:free\"},{\"id\":\"openrouter/nvidia/nemotron-3-super-120b-a12b:free\",\"object\":\"model\",\"created\":1790790135,\"owned_by\":\"openrouter\",\"permission\":[],\"root\":\"nvidia/nemotron-3-super-120b-a12b:free\",\"parent\":null,\"context_length\":262144,\"max_output_tokens\":235929,\"capabilities\":{\"effort_tiers\":[\"medium\",\"low\"],\"tool_calling\":true,\"reasoning\":true},\"max_input_tokens\":262144,\"name\":\"nvidia/nemotron-3-super-120b-a12b:free\"},{\"id\":\"openrouter/openrouter/free\",\"object\":\"model\",\"created\":1790790135,\"owned_by\":\"openrouter\",\"permission\":[],\"root\":\"openrouter/free\",\"parent\":null,\"context_length\":200000,\"capabilities\":{\"vision\":true,\"tool_calling\":true,\"reasoning\":true},\"max_input_tokens\":200000,\"name\":\"openrouter/free\"},{\"id\":\"openrouter/qwen/qwen3.8-27b:free-xhigh\",\"object\":\"model\",\"created\":1790790135,\"owned_by\":\"openrouter\",\"permission\":[],\"root\":\"qwen/qwen3.8-27b:free-xhigh\",\"parent\":null,\"context_length\":262144,\"max_output_tokens\":235929,\"capabilities\":{\"vision\":true,\"effort_tiers\":[\"xhigh\",\"medium\",\"low\"],\"tool_calling\":true,\"reasoning\":true},\"name\":\"qwen/qwen3.8-27b:free-xhigh\"},{\"id\":\"openrouter/qwen/qwen3.8-27b:free-medium\",\"object\":\"model\",\"created\":1790790135,\"owned_by\":\"openrouter\",\"permission\":[],\"root\":\"qwen/qwen3.8-27b:free-medium\",\"parent\":null,\"context_length\":262144,\"max_output_tokens\":235929,\"capabilities\":{\"vision\":true,\"effort_tiers\":[\"xhigh\",\"medium\",\"low\"],\"tool_calling\":true,\"reasoning\":true},\"name\":\"qwen/qwen3.8-27b:free-medium\"},{\"id\":\"openrouter/qwen/qwen3.8-27b:free-low\",\"object\":\"model\",\"created\":1790790135,\"owned_by\":\"openrouter\",\"permission\":[],\"root\":\"qwen/qwen3.8-27b:free-low\",\"parent\":null,\"context_length\":262144,\"max_output_tokens\":235929,\"capabilities\":{\"vision\":true,\"effort_tiers\":[\"xhigh\",\"medium\",\"low\"],\"tool_calling\":true,\"reasoning\":true},\"name\":\"qwen/qwen3.8-27b:free-low\"},{\"id\":\"openrouter/thinkingmachines/inkling-small:free-xhigh\",\"object\":\"model\",\"created\":1790790135,\"owned_by\":\"openrouter\",\"permission\":[],\"root\":\"thinkingmachines/inkling-small:free-xhigh\",\"parent\":null,\"context_length\":1048576,\"max_output_tokens\":262144,\"capabilities\":{\"vision\":true,\"effort_tiers\":[\"xhigh\",\"high\",\"medium\",\"low\",\"minimal\",\"none\"],\"tool_calling\":true,\"reasoning\":true},\"name\":\"thinkingmachines/inkling-small:free-xhigh\"},{\"id\":\"openrouter/thinkingmachines/inkling-small:free-high\",\"object\":\"model\",\"created\":1790790135,\"owned_by\":\"openrouter\",\"permission\":[],\"root\":\"thinkingmachines/inkling-small:free-high\",\"parent\":null,\"context_length\":1048576,\"max_output_tokens\":262144,\"capabilities\":{\"vision\":true,\"effort_tiers\":[\"xhigh\",\"high\",\"medium\",\"low\",\"minimal\",\"none\"],\"tool_calling\":true,\"reasoning\":true},\"name\":\"thinkingmachines/inkling-small:free-high\"},{\"id\":\"openrouter/thinkingmachines/inkling-small:free-medium\",\"object\":\"model\",\"created\":1790790135,\"owned_by\":\"openrouter\",\"permission\":[],\"root\":\"thinkingmachines/inkling-small:free-medium\",\"parent\":null,\"context_length\":1048576,\"max_output_tokens\":262144,\"capabilities\":{\"vision\":true,\"effort_tiers\":[\"xhigh\",\"high\",\"medium\",\"low\",\"minimal\",\"none\"],\"tool_calling\":true,\"reasoning\":true},\"name\":\"thinkingmachines/inkling-small:free-medium\"},{\"id\":\"openrouter/thinkingmachines/inkling-small:free-low\",\"object\":\"model\",\"created\":1790790135,\"owned_by\":\"openrouter\",\"permission\":[],\"root\":\"thinkingmachines/inkling-small:free-low\",\"parent\":null,\"context_length\":1048576,\"max_output_tokens\":262144,\"capabilities\":{\"vision\":true,\"effort_tiers\":[\"xhigh\",\"high\",\"medium\",\"low\",\"minimal\",\"none\"],\"tool_calling\":true,\"reasoning\":true},\"name\":\"thinkingmachines/inkling-small:free-low\"},{\"id\":\"openrouter/thinkingmachines/inkling-small:free-minimal\",\"object\":\"model\",\"created\":1790790135,\"owned_by\":\"openrouter\",\"permission\":[],\"root\":\"thinkingmachines/inkling-small:free-minimal\",\"parent\":null,\"context_length\":1048576,\"max_output_tokens\":262144,\"capabilities\":{\"vision\":true,\"effort_tiers\":[\"xhigh\",\"high\",\"medium\",\"low\",\"minimal\",\"none\"],\"tool_calling\":true,\"reasoning\":true},\"name\":\"thinkingmachines/inkling-small:free-minimal\"},{\"id\":\"openrouter/thinkingmachines/inkling-small:free-none\",\"object\":\"model\",\"created\":1790790135,\"owned_by\":\"openrouter\",\"permission\":[],\"root\":\"thinkingmachines/inkling-small:free-none\",\"parent\":null,\"context_length\":1048576,\"max_output_tokens\":262144,\"capabilities\":{\"vision\":true,\"effort_tiers\":[\"xhigh\",\"high\",\"medium\",\"low\",\"minimal\",\"none\"],\"tool_calling\":true,\"reasoning\":true},\"name\":\"thinkingmachines/inkling-small:free-none\"},{\"id\":\"openrouter/thinkingmachines/inkling:free-xhigh\",\"object\":\"model\",\"created\":1790790135,\"owned_by\":\"openrouter\",\"permission\":[],\"root\":\"thinkingmachines/inkling:free-xhigh\",\"parent\":null,\"context_length\":1048576,\"max_output_tokens\":262144,\"capabilities\":{\"vision\":true,\"effort_tiers\":[\"xhigh\",\"high\",\"medium\",\"low\",\"minimal\",\"none\"],\"tool_calling\":true,\"reasoning\":true},\"name\":\"thinkingmachines/inkling:free-xhigh\"},{\"id\":\"openrouter/thinkingmachines/inkling:free-high\",\"object\":\"model\",\"created\":1790790135,\"owned_by\":\"openrouter\",\"permission\":[],\"root\":\"thinkingmachines/inkling:free-high\",\"parent\":null,\"context_length\":1048576,\"max_output_tokens\":262144,\"capabilities\":{\"vision\":true,\"effort_tiers\":[\"xhigh\",\"high\",\"medium\",\"low\",\"minimal\",\"none\"],\"tool_calling\":true,\"reasoning\":true},\"name\":\"thinkingmachines/inkling:free-high\"},{\"id\":\"openrouter/thinkingmachines/inkling:free-medium\",\"object\":\"model\",\"created\":1790790135,\"owned_by\":\"openrouter\",\"permission\":[],\"root\":\"thinkingmachines/inkling:free-medium\",\"parent\":null,\"context_length\":1048576,\"max_output_tokens\":262144,\"capabilities\":{\"vision\":true,\"effort_tiers\":[\"xhigh\",\"high\",\"medium\",\"low\",\"minimal\",\"none\"],\"tool_calling\":true,\"reasoning\":true},\"name\":\"thinkingmachines/inkling:free-medium\"},{\"id\":\"openrouter/thinkingmachines/inkling:free-low\",\"object\":\"model\",\"created\":1790790135,\"owned_by\":\"openrouter\",\"permission\":[],\"root\":\"thinkingmachines/inkling:free-low\",\"parent\":null,\"context_length\":1048576,\"max_output_tokens\":262144,\"capabilities\":{\"vision\":true,\"effort_tiers\":[\"xhigh\",\"high\",\"medium\",\"low\",\"minimal\",\"none\"],\"tool_calling\":true,\"reasoning\":true},\"name\":\"thinkingmachines/inkling:free-low\"},{\"id\":\"openrouter/thinkingmachines/inkling:free-minimal\",\"object\":\"model\",\"created\":1790790135,\"owned_by\":\"openrouter\",\"permission\":[],\"root\":\"thinkingmachines/inkling:free-minimal\",\"parent\":null,\"context_length\":1048576,\"max_output_tokens\":262144,\"capabilities\":{\"vision\":true,\"effort_tiers\":[\"xhigh\",\"high\",\"medium\",\"low\",\"minimal\",\"none\"],\"tool_calling\":true,\"reasoning\":true},\"name\":\"thinkingmachines/inkling:free-minimal\"},{\"id\":\"openrouter/thinkingmachines/inkling:free-none\",\"object\":\"model\",\"created\":1790790135,\"owned_by\":\"openrouter\",\"permission\":[],\"root\":\"thinkingmachines/inkling:free-none\",\"parent\":null,\"context_length\":1048576,\"max_output_tokens\":262144,\"capabilities\":{\"vision\":true,\"effort_tiers\":[\"xhigh\",\"high\",\"medium\",\"low\",\"minimal\",\"none\"],\"tool_calling\":true,\"reasoning\":true},\"name\":\"thinkingmachines/inkling:free-none\"},{\"id\":\"openrouter/nvidia/nemotron-3-ultra-550b-a55b:free-high\",\"object\":\"model\",\"created\":1790790135,\"owned_by\":\"openrouter\",\"permission\":[],\"root\":\"nvidia/nemotron-3-ultra-550b-a55b:free-high\",\"parent\":null,\"context_length\":1000000,\"max_output_tokens\":65536,\"capabilities\":{\"effort_tiers\":[\"high\",\"medium\"],\"tool_calling\":true,\"reasoning\":true},\"name\":\"nvidia/nemotron-3-ultra-550b-a55b:free-high\"},{\"id\":\"openrouter/nvidia/nemotron-3-ultra-550b-a55b:free-medium\",\"object\":\"model\",\"created\":1790790135,\"owned_by\":\"openrouter\",\"permission\":[],\"root\":\"nvidia/nemotron-3-ultra-550b-a55b:free-medium\",\"parent\":null,\"context_length\":1000000,\"max_output_tokens\":65536,\"capabilities\":{\"effort_tiers\":[\"high\",\"medium\"],\"tool_calling\":true,\"reasoning\":true},\"name\":\"nvidia/nemotron-3-ultra-550b-a55b:free-medium\"},{\"id\":\"openrouter/nvidia/nemotron-3-super-120b-a12b:free-medium\",\"object\":\"model\",\"created\":1790790135,\"owned_by\":\"openrouter\",\"permission\":[],\"root\":\"nvidia/nemotron-3-super-120b-a12b:free-medium\",\"parent\":null,\"context_length\":262144,\"max_output_tokens\":235929,\"capabilities\":{\"effort_tiers\":[\"medium\",\"low\"],\"tool_calling\":true,\"reasoning\":true},\"name\":\"nvidia/nemotron-3-super-120b-a12b:free-medium\"},{\"id\":\"openrouter/nvidia/nemotron-3-super-120b-a12b:free-low\",\"object\":\"model\",\"created\":1790790135,\"owned_by\":\"openrouter\",\"permission\":[],\"root\":\"nvidia/nemotron-3-super-120b-a12b:free-low\",\"parent\":null,\"context_length\":262144,\"max_output_tokens\":235929,\"capabilities\":{\"effort_tiers\":[\"medium\",\"low\"],\"tool_calling\":true,\"reasoning\":true},\"name\":\"nvidia/nemotron-3-super-120b-a12b:free-low\"},{\"id\":\"opencode-zen/mimo-v2.5-free\",\"object\":\"model\",\"created\":1790790135,\"owned_by\":\"opencode-zen\",\"permission\":[],\"root\":\"mimo-v2.5-free\",\"parent\":null,\"capabilities\":{\"vision\":true,\"tool_calling\":true,\"reasoning\":true},\"input_modalities\":[\"text\",\"image\"],\"output_modalities\":[\"text\"],\"context_length\":200000,\"max_output_tokens\":131072,\"max_input_tokens\":200000,\"name\":\"MiMo V2.5 Free\"},{\"id\":\"opencode-zen/mimo-v2.6-flash-free\",\"object\":\"model\",\"created\":1790790135,\"owned_by\":\"opencode-zen\",\"permission\":[],\"root\":\"mimo-v2.6-flash-free\",\"parent\":null,\"capabilities\":{\"tool_calling\":true,\"reasoning\":true},\"name\":\"opencode-zen/mimo-v2.6-flash-free\",\"context_length\":200000},{\"id\":\"opencode-zen/muse-spark-1.2-contributor-free\",\"object\":\"model\",\"created\":1790790135,\"owned_by\":\"opencode-zen\",\"permission\":[],\"root\":\"muse-spark-1.2-contributor-free\",\"parent\":null,\"capabilities\":{\"tool_calling\":true,\"reasoning\":true,\"thinking\":true,\"supportsThinking\":true,\"effort_tiers\":[\"none\",\"low\",\"medium\",\"high\",\"xhigh\"]},\"name\":\"Muse Spark 1.2 Contributor Free\",\"context_length\":200000},{\"id\":\"opencode-zen/muse-spark-1.3-contributor-free\",\"object\":\"model\",\"created\":1790790135,\"owned_by\":\"opencode-zen\",\"permission\":[],\"root\":\"muse-spark-1.3-contributor-free\",\"parent\":null,\"capabilities\":{\"tool_calling\":true,\"reasoning\":true},\"name\":\"opencode-zen/muse-spark-1.3-contributor-free\",\"context_length\":200000},{\"id\":\"opencode-zen/nemotron-3-ultra-free\",\"object\":\"model\",\"created\":1790790135,\"owned_by\":\"opencode-zen\",\"permission\":[],\"root\":\"nemotron-3-ultra-free\",\"parent\":null,\"capabilities\":{\"tool_calling\":true,\"reasoning\":true},\"context_length\":1000000,\"max_input_tokens\":1000000,\"name\":\"Nemotron 3 Ultra Free\"},{\"id\":\"opencode-zen/nemotron-3.5-lightning-free\",\"object\":\"model\",\"created\":1790790135,\"owned_by\":\"opencode-zen\",\"permission\":[],\"root\":\"nemotron-3.5-lightning-free\",\"parent\":null,\"capabilities\":{\"tool_calling\":true,\"reasoning\":true},\"name\":\"opencode-zen/Nemotron 3.5 Lightning Free\",\"context_length\":200000},{\"id\":\"opencode-zen/jev-1.13-free\",\"object\":\"model\",\"created\":1790790135,\"owned_by\":\"opencode-zen\",\"permission\":[],\"root\":\"jev-1.13-free\",\"parent\":null,\"capabilities\":{\"tool_calling\":true,\"reasoning\":true},\"name\":\"opencode-zen/jev-1.13-free\",\"context_length\":200000},{\"id\":\"opencode-zen/longcat-2.5-preview-free\",\"object\":\"model\",\"created\":1790790135,\"owned_by\":\"opencode-zen\",\"permission\":[],\"root\":\"longcat-2.5-preview-free\",\"parent\":null,\"capabilities\":{\"tool_calling\":true,\"reasoning\":true},\"name\":\"opencode-zen/longcat-2.5-preview-free\",\"context_length\":200000},{\"id\":\"opencode-zen/space-bunny-free\",\"object\":\"model\",\"created\":1790790135,\"owned_by\":\"opencode-zen\",\"permission\":[],\"root\":\"space-bunny-free\",\"parent\":null,\"capabilities\":{\"tool_calling\":true,\"reasoning\":true},\"name\":\"opencode-zen/space-bunny-free\",\"context_length\":200000},{\"id\":\"opencode-zen/x-preview-f-free\",\"object\":\"model\",\"created\":1790790135,\"owned_by\":\"opencode-zen\",\"permission\":[],\"root\":\"x-preview-f-free\",\"parent\":null,\"capabilities\":{\"tool_calling\":true,\"reasoning\":true},\"name\":\"x-preview-f-free\",\"context_length\":200000},{\"id\":\"groq/openai/gpt-oss-120b\",\"object\":\"model\",\"created\":1790790135,\"owned_by\":\"groq\",\"permission\":[],\"root\":\"openai/gpt-oss-120b\",\"parent\":null,\"context_length\":131072,\"capabilities\":{\"tool_calling\":true,\"reasoning\":true},\"max_input_tokens\":131072,\"name\":\"GPT-OSS 120B\",\"pricing\":{\"input\":0,\"output\":0,\"cached\":0,\"reasoning\":0,\"cache_creation\":0}},{\"id\":\"groq/qwen/qwen3.8-27b\",\"object\":\"model\",\"created\":1790790135,\"owned_by\":\"groq\",\"permission\":[],\"root\":\"qwen/qwen3.8-27b\",\"parent\":null,\"context_length\":131072,\"capabilities\":{\"vision\":true,\"tool_calling\":true,\"reasoning\":true},\"max_input_tokens\":131072,\"name\":\"qwen/qwen3.8-27b\"},{\"id\":\"mistral/mistral-medium-3-5\",\"object\":\"model\",\"created\":1790790135,\"owned_by\":\"mistral\",\"permission\":[],\"root\":\"mistral-medium-3-5\",\"parent\":null,\"capabilities\":{\"vision\":true,\"tool_calling\":true,\"reasoning\":true},\"input_modalities\":[\"text\",\"image\"],\"output_modalities\":[\"text\"],\"name\":\"Mistral Medium 3.5\",\"context_length\":128000},{\"id\":\"nvidia/deepseek-ai/deepseek-v4.1-flash\",\"object\":\"model\",\"created\":1790790135,\"owned_by\":\"nvidia\",\"permission\":[],\"root\":\"deepseek-ai/deepseek-v4.1-flash\",\"parent\":null,\"capabilities\":{\"tool_calling\":true,\"reasoning\":true},\"name\":\"deepseek-ai/deepseek-v4.1-flash\",\"context_length\":128000},{\"id\":\"nvidia/meta/muse-glimmer-30b\",\"object\":\"model\",\"created\":1790790135,\"owned_by\":\"nvidia\",\"permission\":[],\"root\":\"meta/muse-glimmer-30b\",\"parent\":null,\"capabilities\":{\"tool_calling\":true,\"reasoning\":true},\"name\":\"meta/muse-glimmer-30b\",\"context_length\":128000},{\"id\":\"nvidia/moonshotai/kimi-k3\",\"object\":\"model\",\"created\":1790790135,\"owned_by\":\"nvidia\",\"permission\":[],\"root\":\"moonshotai/kimi-k3\",\"parent\":null,\"capabilities\":{\"vision\":true,\"tool_calling\":true,\"reasoning\":true},\"input_modalities\":[\"text\",\"image\"],\"output_modalities\":[\"text\"],\"name\":\"moonshotai/kimi-k3\",\"context_length\":128000},{\"id\":\"nvidia/nvidia/nemotron-3-super-120b-a12b\",\"object\":\"model\",\"created\":1790790135,\"owned_by\":\"nvidia\",\"permission\":[],\"root\":\"nvidia/nemotron-3-super-120b-a12b\",\"parent\":null,\"capabilities\":{\"tool_calling\":true,\"reasoning\":true},\"name\":\"Nemotron 3 Super 120B A12B\",\"context_length\":128000},{\"id\":\"nvidia/z-ai/glm-5.3\",\"object\":\"model\",\"created\":1790790135,\"owned_by\":\"nvidia\",\"permission\":[],\"root\":\"z-ai/glm-5.3\",\"parent\":null,\"capabilities\":{\"tool_calling\":true,\"reasoning\":true},\"name\":\"z-ai/glm-5.3\",\"context_length\":128000}]}",
+    "classification": "CATALOG_OPERATIONAL",
+    "latency_seconds": 4.208,
+    "error": null,
+    "model_count": 62
+  },
+  "global_auth_failure": false,
+  "completed_at_utc": "2026-09-30T17:42:28.800465+00:00",
+  "http_error_count": 0,
+  "reasoning_budget_adaptation": {
+    "reserve_stage_a_reasoning_models_max_tokens": 2048,
+    "reserve_stage_b_reasoning_models_max_tokens": 2048,
+    "gpt_oss_retry_policy": "not retried: 2048-token synthetic Stage A budget; length with no content is recorded as attempt-local OPERATIONAL_ERROR, not permanent route unavailability",
+    "qualitative_prompt_tuning": false
+  }
+}

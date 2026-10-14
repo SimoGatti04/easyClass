@@ -1,0 +1,316 @@
+{
+  "source_grounding": {
+    "dataset_size": 51,
+    "gold_distribution": {
+      "SUPPORTED": 33,
+      "UNSUPPORTED": 18
+    },
+    "deterministic_baseline": {
+      "n": 51,
+      "correct": 29,
+      "accuracy": 0.568627,
+      "macro_f1": 0.560345,
+      "weighted_f1": 0.542596,
+      "per_class": {
+        "SUPPORTED": {
+          "support": 33,
+          "precision": 1.0,
+          "recall": 0.333333,
+          "f1": 0.5
+        },
+        "UNSUPPORTED": {
+          "support": 18,
+          "precision": 0.45,
+          "recall": 1.0,
+          "f1": 0.62069
+        }
+      },
+      "failure_count": 0,
+      "failure_rate": 0.0,
+      "confusion_matrix": {
+        "SUPPORTED": {
+          "SUPPORTED": 11,
+          "UNSUPPORTED": 22,
+          "__FAILURE__": 0
+        },
+        "UNSUPPORTED": {
+          "SUPPORTED": 0,
+          "UNSUPPORTED": 18,
+          "__FAILURE__": 0
+        }
+      },
+      "false_supported_count": 0,
+      "false_supported_rate_among_unsupported": 0.0
+    },
+    "local_model": {
+      "n": 51,
+      "correct": 38,
+      "accuracy": 0.745098,
+      "macro_f1": 0.672593,
+      "weighted_f1": 0.717909,
+      "per_class": {
+        "SUPPORTED": {
+          "support": 33,
+          "precision": 0.738095,
+          "recall": 0.939394,
+          "f1": 0.826667
+        },
+        "UNSUPPORTED": {
+          "support": 18,
+          "precision": 0.777778,
+          "recall": 0.388889,
+          "f1": 0.518519
+        }
+      },
+      "failure_count": 0,
+      "failure_rate": 0.0,
+      "confusion_matrix": {
+        "SUPPORTED": {
+          "SUPPORTED": 31,
+          "UNSUPPORTED": 2,
+          "__FAILURE__": 0
+        },
+        "UNSUPPORTED": {
+          "SUPPORTED": 11,
+          "UNSUPPORTED": 7,
+          "__FAILURE__": 0
+        }
+      },
+      "false_supported_count": 11,
+      "false_supported_rate_among_unsupported": 0.611111
+    },
+    "embedding_similarity_signal_only": {
+      "evaluated_as_classifier": false,
+      "count": 51,
+      "mean_cosine_by_gold_label_posthoc_description_only": {
+        "SUPPORTED": 0.647296,
+        "UNSUPPORTED": 0.502006
+      },
+      "warning": "Similarity is not entailment and never determines a label."
+    }
+  },
+  "artifact_semantic_check": {
+    "dataset_size": 30,
+    "gold_distribution": {
+      "SATISFIED": 18,
+      "VIOLATED": 9,
+      "PARTIAL": 2,
+      "UNKNOWN": 1
+    },
+    "deterministic_baseline": {
+      "n": 30,
+      "correct": 1,
+      "accuracy": 0.033333,
+      "macro_f1": 0.016129,
+      "weighted_f1": 0.002151,
+      "per_class": {
+        "SATISFIED": {
+          "support": 18,
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0
+        },
+        "PARTIAL": {
+          "support": 2,
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0
+        },
+        "VIOLATED": {
+          "support": 9,
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0
+        },
+        "UNKNOWN": {
+          "support": 1,
+          "precision": 0.033333,
+          "recall": 1.0,
+          "f1": 0.064516
+        }
+      },
+      "failure_count": 0,
+      "failure_rate": 0.0,
+      "confusion_matrix": {
+        "SATISFIED": {
+          "SATISFIED": 0,
+          "PARTIAL": 0,
+          "VIOLATED": 0,
+          "UNKNOWN": 18,
+          "__FAILURE__": 0
+        },
+        "PARTIAL": {
+          "SATISFIED": 0,
+          "PARTIAL": 0,
+          "VIOLATED": 0,
+          "UNKNOWN": 2,
+          "__FAILURE__": 0
+        },
+        "VIOLATED": {
+          "SATISFIED": 0,
+          "PARTIAL": 0,
+          "VIOLATED": 0,
+          "UNKNOWN": 9,
+          "__FAILURE__": 0
+        },
+        "UNKNOWN": {
+          "SATISFIED": 0,
+          "PARTIAL": 0,
+          "VIOLATED": 0,
+          "UNKNOWN": 1,
+          "__FAILURE__": 0
+        }
+      }
+    },
+    "local_model": {
+      "n": 30,
+      "correct": 8,
+      "accuracy": 0.266667,
+      "macro_f1": 0.166144,
+      "weighted_f1": 0.156949,
+      "per_class": {
+        "SATISFIED": {
+          "support": 18,
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0
+        },
+        "PARTIAL": {
+          "support": 2,
+          "precision": 0.111111,
+          "recall": 0.5,
+          "f1": 0.181818
+        },
+        "VIOLATED": {
+          "support": 9,
+          "precision": 0.35,
+          "recall": 0.777778,
+          "f1": 0.482759
+        },
+        "UNKNOWN": {
+          "support": 1,
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0
+        }
+      },
+      "failure_count": 0,
+      "failure_rate": 0.0,
+      "confusion_matrix": {
+        "SATISFIED": {
+          "SATISFIED": 0,
+          "PARTIAL": 7,
+          "VIOLATED": 11,
+          "UNKNOWN": 0,
+          "__FAILURE__": 0
+        },
+        "PARTIAL": {
+          "SATISFIED": 0,
+          "PARTIAL": 1,
+          "VIOLATED": 1,
+          "UNKNOWN": 0,
+          "__FAILURE__": 0
+        },
+        "VIOLATED": {
+          "SATISFIED": 1,
+          "PARTIAL": 1,
+          "VIOLATED": 7,
+          "UNKNOWN": 0,
+          "__FAILURE__": 0
+        },
+        "UNKNOWN": {
+          "SATISFIED": 0,
+          "PARTIAL": 0,
+          "VIOLATED": 1,
+          "UNKNOWN": 0,
+          "__FAILURE__": 0
+        }
+      }
+    },
+    "secondary_satisfied_vs_needs_review": {
+      "gold_distribution": {
+        "SATISFIED": 18,
+        "NEEDS_REVIEW": 12
+      },
+      "deterministic_fail_closed": {
+        "n": 30,
+        "correct": 12,
+        "accuracy": 0.4,
+        "macro_f1": 0.285714,
+        "weighted_f1": 0.228572,
+        "per_class": {
+          "SATISFIED": {
+            "support": 18,
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1": 0.0
+          },
+          "NEEDS_REVIEW": {
+            "support": 12,
+            "precision": 0.4,
+            "recall": 1.0,
+            "f1": 0.571429
+          }
+        },
+        "failure_count": 0,
+        "failure_rate": 0.0,
+        "confusion_matrix": {
+          "SATISFIED": {
+            "SATISFIED": 0,
+            "NEEDS_REVIEW": 18,
+            "__FAILURE__": 0
+          },
+          "NEEDS_REVIEW": {
+            "SATISFIED": 0,
+            "NEEDS_REVIEW": 12,
+            "__FAILURE__": 0
+          }
+        },
+        "false_clearance_count": 0,
+        "needs_review_recall": 1.0,
+        "needs_review_precision": 0.4,
+        "review_rate": 1.0
+      },
+      "local_model": {
+        "n": 30,
+        "correct": 11,
+        "accuracy": 0.366667,
+        "macro_f1": 0.268293,
+        "weighted_f1": 0.214634,
+        "per_class": {
+          "SATISFIED": {
+            "support": 18,
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1": 0.0
+          },
+          "NEEDS_REVIEW": {
+            "support": 12,
+            "precision": 0.37931,
+            "recall": 0.916667,
+            "f1": 0.536585
+          }
+        },
+        "failure_count": 0,
+        "failure_rate": 0.0,
+        "confusion_matrix": {
+          "SATISFIED": {
+            "SATISFIED": 0,
+            "NEEDS_REVIEW": 18,
+            "__FAILURE__": 0
+          },
+          "NEEDS_REVIEW": {
+            "SATISFIED": 1,
+            "NEEDS_REVIEW": 11,
+            "__FAILURE__": 0
+          }
+        },
+        "false_clearance_count": 1,
+        "needs_review_recall": 0.916667,
+        "needs_review_precision": 0.37931,
+        "review_rate": 0.966667
+      },
+      "failure_policy": "Any failed/invalid model output routes to NEEDS_REVIEW."
+    }
+  }
+}

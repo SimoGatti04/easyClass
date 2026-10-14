@@ -1,0 +1,522 @@
+{
+  "schema_version": 1,
+  "benchmark": "Gate-C",
+  "created_on": "2026-09-30",
+  "result": "PARTIAL",
+  "gate_d_readiness": "BLOCKED",
+  "scope": "Offline completion of Gate C report and artifacts. Existing catalog snapshot and raw responses preserved; no new OmniRoute requests, no credential access, no candidate substitution or fallback.",
+  "raw_output_policy": "All pre-existing raw responses and request records under validation/work/Gate-C/outputs remain unchanged. No credential values are included in the manifest.",
+  "files": [
+    {
+      "path": "validation/work/Gate-C/inputs/candidate-selection.md",
+      "bytes": 5857,
+      "sha256": "fa158f3c5a3dedc95e5b14e274fb0f17cc2658ac65b811f7be59f12c0764f9a4"
+    },
+    {
+      "path": "validation/work/Gate-C/inputs/scenario_sources/dbms_partial_excerpt.md",
+      "bytes": 1162,
+      "sha256": "c8992a2c9d1b5476f64b905c268c0553e96287b51b6d23d0a9a0b675a6d6ce56"
+    },
+    {
+      "path": "validation/work/Gate-C/inputs/scenario_sources/dbms_student_lesson.md",
+      "bytes": 3623,
+      "sha256": "d0088409d21d6537e3b96e1581466966fc254fc17695b44c23b6e7dfa77c9035"
+    },
+    {
+      "path": "validation/work/Gate-C/inputs/scenario_sources/excel_demo_no_cellrefs.md",
+      "bytes": 10299,
+      "sha256": "ec0151a94b9ce9ed6ae4d505cbe0f300f7c33c7a11cbc071042954aeda5d960d"
+    },
+    {
+      "path": "validation/work/Gate-C/inputs/schema-probes/agy__gemini-3.8-flash-tiered.json",
+      "bytes": 269,
+      "sha256": "72952603205d2b400a8ad4d4fd836a17afb63cf6d77e150d5f462e517817f9cb"
+    },
+    {
+      "path": "validation/work/Gate-C/inputs/schema-probes/mistral__mistral-medium-3-5.json",
+      "bytes": 268,
+      "sha256": "1eacbbdc8972a2853549817667ceec5572e219b87e1bbebb697079da411496da"
+    },
+    {
+      "path": "validation/work/Gate-C/inputs/source-reference-audit.json",
+      "bytes": 7523,
+      "sha256": "902096f43b9fe8900b3d2865217d8d1557ac27ee7bcdf2d606da823a72102b0f"
+    },
+    {
+      "path": "validation/work/Gate-C/logs/run-index.jsonl",
+      "bytes": 6909,
+      "sha256": "766ac0585a2be7491393774ed0c0546bb3291f7bb05f23df9ad07201fdf7403a"
+    },
+    {
+      "path": "validation/work/Gate-C/metrics/candidate-route-status.json",
+      "bytes": 543,
+      "sha256": "b8ea67208c6695bd745d39aed721ac2a8aa3081ecc4f2248048af32e15ffcbfa"
+    },
+    {
+      "path": "validation/work/Gate-C/metrics/execution-status.json",
+      "bytes": 818,
+      "sha256": "31c35a02f993e1257bc8f8284731aadd70d5b7bbd80ad1195b5d51974f151335"
+    },
+    {
+      "path": "validation/work/Gate-C/metrics/interruption-events.json",
+      "bytes": 851,
+      "sha256": "5b81ff5122fdf2dbf3f02ab1400c7c6007e755dbc7e3059d7f5b7539d7f0c858"
+    },
+    {
+      "path": "validation/work/Gate-C/metrics/structured-output-probes.json",
+      "bytes": 822,
+      "sha256": "cf001b8cc2a99716b6569de6d33d14e8a164d578ad23d7f2cc298760a9fee41f"
+    },
+    {
+      "path": "validation/work/Gate-C/outputs/agy__gemini-3.8-flash-tiered/assessment_blueprint_dbms/run-01/parsed-output.json",
+      "bytes": 2520,
+      "sha256": "7c1cd99a3f909512b11e20ec411023a87d57ca18f74e3fcf17427d14f41a74e7"
+    },
+    {
+      "path": "validation/work/Gate-C/outputs/agy__gemini-3.8-flash-tiered/assessment_blueprint_dbms/run-01/request.json",
+      "bytes": 8745,
+      "sha256": "649a9dc00c293bdb84bbaf7fb955415912fefda8e1ffbe4ee02904c228cf1636"
+    },
+    {
+      "path": "validation/work/Gate-C/outputs/agy__gemini-3.8-flash-tiered/assessment_blueprint_dbms/run-01/response.raw.txt",
+      "bytes": 2125,
+      "sha256": "c63bade1e3150b7cb1a175c5dafeb8b6a366e1f1a45ffe3d24eb56b2dd02722a"
+    },
+    {
+      "path": "validation/work/Gate-C/outputs/agy__gemini-3.8-flash-tiered/assessment_blueprint_dbms/run-01/run-metrics.json",
+      "bytes": 1799,
+      "sha256": "f0ae32a6143dae52e3652484dad0d4fe3ea09ba338802508d7a06b4c274449c6"
+    },
+    {
+      "path": "validation/work/Gate-C/outputs/agy__gemini-3.8-flash-tiered/assessment_consistency_dbms/run-01/parsed-output.json",
+      "bytes": 3295,
+      "sha256": "b29e2141d186b7469763e4f2d22093ddda8fa9503fc43cccf8eb73ecb7f4bc54"
+    },
+    {
+      "path": "validation/work/Gate-C/outputs/agy__gemini-3.8-flash-tiered/assessment_consistency_dbms/run-01/request.json",
+      "bytes": 9474,
+      "sha256": "7cf6b5c055db0a9cffa364dd2d6d435dc9614d8af871cf338edf2b0103a459b5"
+    },
+    {
+      "path": "validation/work/Gate-C/outputs/agy__gemini-3.8-flash-tiered/assessment_consistency_dbms/run-01/response.raw.txt",
+      "bytes": 2915,
+      "sha256": "2eacc3299bd0df67fcfbf008a4e514ff66c5e22481fcdaea12f04aebff4112d3"
+    },
+    {
+      "path": "validation/work/Gate-C/outputs/agy__gemini-3.8-flash-tiered/assessment_consistency_dbms/run-01/run-metrics.json",
+      "bytes": 1799,
+      "sha256": "ca9eee41587ce1eb2db1e7789248fde8de0154f75ec60a4f95e949e9f32d1a65"
+    },
+    {
+      "path": "validation/work/Gate-C/outputs/agy__gemini-3.8-flash-tiered/curriculum_constraint_partial_dbms/run-01/parsed-output.json",
+      "bytes": 1820,
+      "sha256": "ad0efcccda4e35d0d31a2ee9739ddd1263f6553ec94b6391659ce5533f34b268"
+    },
+    {
+      "path": "validation/work/Gate-C/outputs/agy__gemini-3.8-flash-tiered/curriculum_constraint_partial_dbms/run-01/request.json",
+      "bytes": 5708,
+      "sha256": "8390dc377d4c72b61e9845f890982a0d7b2f9a7dc4faaf9dc3c750b679efdf79"
+    },
+    {
+      "path": "validation/work/Gate-C/outputs/agy__gemini-3.8-flash-tiered/curriculum_constraint_partial_dbms/run-01/response.raw.txt",
+      "bytes": 1647,
+      "sha256": "bae786f05f02d0509fb3755b1773c95f055649fb9fb713811893acfded693510"
+    },
+    {
+      "path": "validation/work/Gate-C/outputs/agy__gemini-3.8-flash-tiered/curriculum_constraint_partial_dbms/run-01/run-metrics.json",
+      "bytes": 1801,
+      "sha256": "5c9a4165e0691453b9d58d7d2eced14d29f82496b510d3b31393f40a7f57297f"
+    },
+    {
+      "path": "validation/work/Gate-C/outputs/agy__gemini-3.8-flash-tiered/dbms_sql/run-01/pairwise-distinctness.json",
+      "bytes": 186,
+      "sha256": "06f544ff0d4e2e10ec50f99e563c6330c44283352642b36d9401bff0c2d16dad"
+    },
+    {
+      "path": "validation/work/Gate-C/outputs/agy__gemini-3.8-flash-tiered/dbms_sql/run-01/parsed-output.json",
+      "bytes": 18011,
+      "sha256": "0aea8128fb6c8aba46ae646f27331fc13c82c6f1df0f16dd3711159e9e4e1594"
+    },
+    {
+      "path": "validation/work/Gate-C/outputs/agy__gemini-3.8-flash-tiered/dbms_sql/run-01/request.json",
+      "bytes": 11515,
+      "sha256": "0c85e96794691edacb3d4d62d9d03385e8c4d72b3ccf71a3be91d6f5d3c69561"
+    },
+    {
+      "path": "validation/work/Gate-C/outputs/agy__gemini-3.8-flash-tiered/dbms_sql/run-01/response.raw.txt",
+      "bytes": 18010,
+      "sha256": "05db90b72979860b9ffb1af7fca616acf67ea3a73fdf8d080f111f042982ff42"
+    },
+    {
+      "path": "validation/work/Gate-C/outputs/agy__gemini-3.8-flash-tiered/dbms_sql/run-01/run-metrics.json",
+      "bytes": 1749,
+      "sha256": "94dfc82d9bba502afce4873a0bef132ad631f0944a871b466c1d3ebd6e2a379c"
+    },
+    {
+      "path": "validation/work/Gate-C/outputs/agy__gemini-3.8-flash-tiered/dbms_sql/run-02/pairwise-distinctness.json",
+      "bytes": 187,
+      "sha256": "c15f7295979edf6368ed5f217af9906e828f5a642c71538630f4ec6c3fa3193b"
+    },
+    {
+      "path": "validation/work/Gate-C/outputs/agy__gemini-3.8-flash-tiered/dbms_sql/run-02/parsed-output.json",
+      "bytes": 19590,
+      "sha256": "d63875f1ef0de28ddfd870d29158f4a956fdce46b37b38d466cf6e84a8dcd814"
+    },
+    {
+      "path": "validation/work/Gate-C/outputs/agy__gemini-3.8-flash-tiered/dbms_sql/run-02/request.attempt-01-incomplete.json",
+      "bytes": 11515,
+      "sha256": "0c85e96794691edacb3d4d62d9d03385e8c4d72b3ccf71a3be91d6f5d3c69561"
+    },
+    {
+      "path": "validation/work/Gate-C/outputs/agy__gemini-3.8-flash-tiered/dbms_sql/run-02/request.json",
+      "bytes": 11515,
+      "sha256": "0c85e96794691edacb3d4d62d9d03385e8c4d72b3ccf71a3be91d6f5d3c69561"
+    },
+    {
+      "path": "validation/work/Gate-C/outputs/agy__gemini-3.8-flash-tiered/dbms_sql/run-02/response.attempt-01-aborted.txt",
+      "bytes": 141,
+      "sha256": "ad01457d41a756f6158e6ae7408913b040deac558db025fe1321938da4317663"
+    },
+    {
+      "path": "validation/work/Gate-C/outputs/agy__gemini-3.8-flash-tiered/dbms_sql/run-02/response.raw.txt",
+      "bytes": 19589,
+      "sha256": "32abfd05f15782ef1fb349063a29550c13d30d78aa0dd35d702d1e493a8197fb"
+    },
+    {
+      "path": "validation/work/Gate-C/outputs/agy__gemini-3.8-flash-tiered/dbms_sql/run-02/run-metrics.json",
+      "bytes": 1806,
+      "sha256": "618fb7a95cb52a48ba21fcd3ad27cbb0b0f1b476ea00e98c71c419ba3e76812d"
+    },
+    {
+      "path": "validation/work/Gate-C/outputs/agy__gemini-3.8-flash-tiered/dbms_sql__teacher_script/run-01/request.json",
+      "bytes": 6280,
+      "sha256": "7b75c9c0c0bef70591a5ce02ac8da70664a2d20b23aef5a7f5c764ba53e7405b"
+    },
+    {
+      "path": "validation/work/Gate-C/outputs/agy__gemini-3.8-flash-tiered/dbms_sql__teacher_script/run-01/response.raw.txt",
+      "bytes": 37793,
+      "sha256": "56ea91511f32ef9b3cf01568ef883cba1a1cb0c27011d9b4ab1a2416a7c48dec"
+    },
+    {
+      "path": "validation/work/Gate-C/outputs/agy__gemini-3.8-flash-tiered/dbms_sql__teacher_script/run-01/run-metrics.json",
+      "bytes": 1763,
+      "sha256": "96b381ddcb8b21a427c04a8d7c5a7b143400dbc8954b56b5be388275a9bd555b"
+    },
+    {
+      "path": "validation/work/Gate-C/outputs/agy__gemini-3.8-flash-tiered/dbms_sql__teacher_script/run-02/request.json",
+      "bytes": 6280,
+      "sha256": "7b75c9c0c0bef70591a5ce02ac8da70664a2d20b23aef5a7f5c764ba53e7405b"
+    },
+    {
+      "path": "validation/work/Gate-C/outputs/agy__gemini-3.8-flash-tiered/dbms_sql__teacher_script/run-02/response.raw.txt",
+      "bytes": 34511,
+      "sha256": "60cfbc09ad096c61cd0d160825f15d8f11f0a3a2c3e6fd48a6618569a0e6d41d"
+    },
+    {
+      "path": "validation/work/Gate-C/outputs/agy__gemini-3.8-flash-tiered/dbms_sql__teacher_script/run-02/run-metrics.json",
+      "bytes": 1788,
+      "sha256": "8b5b853e70bed40f1575f40e97425e1035f485804fff064cf4b2fb1299103e27"
+    },
+    {
+      "path": "validation/work/Gate-C/outputs/agy__gemini-3.8-flash-tiered/excel/run-01/pairwise-distinctness.json",
+      "bytes": 235,
+      "sha256": "879602261b57890192ac0f3ca219b886ea23ffb55445f4b2a1bc702798f635f8"
+    },
+    {
+      "path": "validation/work/Gate-C/outputs/agy__gemini-3.8-flash-tiered/excel/run-01/request.json",
+      "bytes": 18939,
+      "sha256": "cda747992a9b5ff6847ecc0f7281549a085587d01e37eed8cc8d63d02d16c2ef"
+    },
+    {
+      "path": "validation/work/Gate-C/outputs/agy__gemini-3.8-flash-tiered/excel/run-01/response.raw.txt",
+      "bytes": 15169,
+      "sha256": "fabc282114cc77ac9d5c2a5d3ec2026c2bc4a2146fa880d31427a2b73e0f7f59"
+    },
+    {
+      "path": "validation/work/Gate-C/outputs/agy__gemini-3.8-flash-tiered/excel/run-01/run-metrics.json",
+      "bytes": 1890,
+      "sha256": "ba63380e693b4bbb82bfff6a7b6da70088ae0a3b3e98b7d4af32e7a6d53c282f"
+    },
+    {
+      "path": "validation/work/Gate-C/outputs/agy__gemini-3.8-flash-tiered/excel/run-02/pairwise-distinctness.json",
+      "bytes": 185,
+      "sha256": "50b49705feba839620f7ceff935f4e6e6865d41d71ce6b8e48fcb3bdd5395524"
+    },
+    {
+      "path": "validation/work/Gate-C/outputs/agy__gemini-3.8-flash-tiered/excel/run-02/parsed-output.json",
+      "bytes": 25915,
+      "sha256": "fafd84dad523daf71e23b1dd4f4be219bdc2ac7707f4ed3f682c978ed687449d"
+    },
+    {
+      "path": "validation/work/Gate-C/outputs/agy__gemini-3.8-flash-tiered/excel/run-02/request.json",
+      "bytes": 18939,
+      "sha256": "cda747992a9b5ff6847ecc0f7281549a085587d01e37eed8cc8d63d02d16c2ef"
+    },
+    {
+      "path": "validation/work/Gate-C/outputs/agy__gemini-3.8-flash-tiered/excel/run-02/response.raw.txt",
+      "bytes": 25914,
+      "sha256": "b81d441cb35503f387913e7b176385182c9b644dbcc8f10a81720a363878dee0"
+    },
+    {
+      "path": "validation/work/Gate-C/outputs/agy__gemini-3.8-flash-tiered/excel/run-02/run-metrics.json",
+      "bytes": 1774,
+      "sha256": "21fed1c82ccae06cc5e7631f7b3f9cc0ad71ab87fb010b53aa07a134c2f2adc2"
+    },
+    {
+      "path": "validation/work/Gate-C/outputs/agy__gemini-3.8-flash-tiered/excel__teacher_script/run-01/request.json",
+      "bytes": 13682,
+      "sha256": "2297cf0f4faafa436a3b1010e82beeb999e76c4aa33f1d14e9fd5b8371bd54f9"
+    },
+    {
+      "path": "validation/work/Gate-C/outputs/agy__gemini-3.8-flash-tiered/excel__teacher_script/run-01/response.raw.txt",
+      "bytes": 35757,
+      "sha256": "9f9a5bf7e5131bdfe72645682e7a1a4bd30c2c7c70462f8a2eec1f51eab78b5c"
+    },
+    {
+      "path": "validation/work/Gate-C/outputs/agy__gemini-3.8-flash-tiered/excel__teacher_script/run-01/run-metrics.json",
+      "bytes": 1792,
+      "sha256": "339faff9b2f7f69d207b6f4cb7a8b54b7ec16f71862baee462591aa49e0d39d9"
+    },
+    {
+      "path": "validation/work/Gate-C/outputs/agy__gemini-3.8-flash-tiered/excel__teacher_script/run-02/request.json",
+      "bytes": 13682,
+      "sha256": "2297cf0f4faafa436a3b1010e82beeb999e76c4aa33f1d14e9fd5b8371bd54f9"
+    },
+    {
+      "path": "validation/work/Gate-C/outputs/agy__gemini-3.8-flash-tiered/excel__teacher_script/run-02/response.raw.txt",
+      "bytes": 33280,
+      "sha256": "66cb4ff4e8fe99cdb5a8e24c32fc15d60f96ef27317cebee9d98a2b79bc9d8ec"
+    },
+    {
+      "path": "validation/work/Gate-C/outputs/agy__gemini-3.8-flash-tiered/excel__teacher_script/run-02/run-metrics.json",
+      "bytes": 1791,
+      "sha256": "f92628c8b60dca729333be3458b1212739ae14c47d20a5af779f3d9ed988abaf"
+    },
+    {
+      "path": "validation/work/Gate-C/outputs/agy__gemini-3.8-flash-tiered/partial_source_dbms/run-01/pairwise-distinctness.json",
+      "bytes": 187,
+      "sha256": "b5fc9a5c9f0ea0f292b1e0afc4a95aea4efd5200ff0e464d833d285ba5a768b2"
+    },
+    {
+      "path": "validation/work/Gate-C/outputs/agy__gemini-3.8-flash-tiered/partial_source_dbms/run-01/parsed-output.json",
+      "bytes": 12318,
+      "sha256": "daad7c02b50f43db43b01add04bbbc9308707d0e4cbaf8a365a1add69fd867f6"
+    },
+    {
+      "path": "validation/work/Gate-C/outputs/agy__gemini-3.8-flash-tiered/partial_source_dbms/run-01/request.json",
+      "bytes": 9302,
+      "sha256": "4565cf5e3aee5a354c0c5bef5f97986f128c5b866d6053c735c06ac522426356"
+    },
+    {
+      "path": "validation/work/Gate-C/outputs/agy__gemini-3.8-flash-tiered/partial_source_dbms/run-01/response.raw.txt",
+      "bytes": 11904,
+      "sha256": "15c7692971852f4c295311c0e1788e2184f6346e16f405ee6164258ed3f3075d"
+    },
+    {
+      "path": "validation/work/Gate-C/outputs/agy__gemini-3.8-flash-tiered/partial_source_dbms/run-01/run-metrics.json",
+      "bytes": 1787,
+      "sha256": "8cb55b698a0f7bafcaef3a285d23d32568c9e0efe73815e491c27845e3829d58"
+    },
+    {
+      "path": "validation/work/Gate-C/outputs/agy__gemini-3.8-flash-tiered/partial_source_dbms/run-02/pairwise-distinctness.json",
+      "bytes": 184,
+      "sha256": "1bb2552b4c88707ee23948f7b3e0511f9bc623f2244f96c4e7325367b38eb02d"
+    },
+    {
+      "path": "validation/work/Gate-C/outputs/agy__gemini-3.8-flash-tiered/partial_source_dbms/run-02/parsed-output.json",
+      "bytes": 10495,
+      "sha256": "b7fc5951f6e76f19f408184dddf4b4672c0c16c14e8dccea2ff65009be5dd567"
+    },
+    {
+      "path": "validation/work/Gate-C/outputs/agy__gemini-3.8-flash-tiered/partial_source_dbms/run-02/request.json",
+      "bytes": 9302,
+      "sha256": "4565cf5e3aee5a354c0c5bef5f97986f128c5b866d6053c735c06ac522426356"
+    },
+    {
+      "path": "validation/work/Gate-C/outputs/agy__gemini-3.8-flash-tiered/partial_source_dbms/run-02/response.raw.txt",
+      "bytes": 10532,
+      "sha256": "3dc8558a08fa1d0f5e713f86e69bb55909717e4165ada4b30be5eeb006ca2107"
+    },
+    {
+      "path": "validation/work/Gate-C/outputs/agy__gemini-3.8-flash-tiered/partial_source_dbms/run-02/run-metrics.json",
+      "bytes": 1781,
+      "sha256": "08a86740b80c72572158cd3c7c451b1889e2c96928cc2a372d81bee654c38133"
+    },
+    {
+      "path": "validation/work/Gate-C/outputs/agy__gemini-3.8-flash-tiered/partial_source_dbms__teacher_script/run-01/request.json",
+      "bytes": 3892,
+      "sha256": "c72e6deb31d506dddc4dcd71ac65238aab10e8944fc9c6f35db7dfd380b1a44f"
+    },
+    {
+      "path": "validation/work/Gate-C/outputs/agy__gemini-3.8-flash-tiered/partial_source_dbms__teacher_script/run-01/response.raw.txt",
+      "bytes": 8696,
+      "sha256": "8350ae937a59857375db34dfc3eab42c0eeb8911c082f45eae002d51c896674f"
+    },
+    {
+      "path": "validation/work/Gate-C/outputs/agy__gemini-3.8-flash-tiered/partial_source_dbms__teacher_script/run-01/run-metrics.json",
+      "bytes": 1794,
+      "sha256": "ddcd4fc186d78f919de69d1de8067b67217548823eda495a861767afde15b264"
+    },
+    {
+      "path": "validation/work/Gate-C/outputs/agy__gemini-3.8-flash-tiered/partial_source_dbms__teacher_script/run-02/request.json",
+      "bytes": 3892,
+      "sha256": "c72e6deb31d506dddc4dcd71ac65238aab10e8944fc9c6f35db7dfd380b1a44f"
+    },
+    {
+      "path": "validation/work/Gate-C/outputs/agy__gemini-3.8-flash-tiered/partial_source_dbms__teacher_script/run-02/response.raw.txt",
+      "bytes": 9411,
+      "sha256": "fc1562c81d3b7a34d564e2fab5f9ce8e802cfa262e6996cb21abce8de7313b57"
+    },
+    {
+      "path": "validation/work/Gate-C/outputs/agy__gemini-3.8-flash-tiered/partial_source_dbms__teacher_script/run-02/run-metrics.json",
+      "bytes": 1793,
+      "sha256": "c9304245096889b758e1cec8653186155505ea1e4ab311390d1f69f45c722298"
+    },
+    {
+      "path": "validation/work/Gate-C/outputs/agy__gemini-3.8-flash-tiered/schema_probe/run-01/parsed-output.json",
+      "bytes": 51,
+      "sha256": "234ac47793e576518c44993e30bf6c5068d7f76cc71d0b320336ee562604f211"
+    },
+    {
+      "path": "validation/work/Gate-C/outputs/agy__gemini-3.8-flash-tiered/schema_probe/run-01/request.json",
+      "bytes": 985,
+      "sha256": "58f37c4308d74f0bf4db241c3e2531d446f7ff3bf122b62f181e6e8092ba23ec"
+    },
+    {
+      "path": "validation/work/Gate-C/outputs/agy__gemini-3.8-flash-tiered/schema_probe/run-01/response.raw.txt",
+      "bytes": 41,
+      "sha256": "5d82de178e2b7861baff8b4f333db0697916659b54827c2b28d609f99aa6a2fc"
+    },
+    {
+      "path": "validation/work/Gate-C/outputs/agy__gemini-3.8-flash-tiered/schema_probe/run-01/run-metrics.json",
+      "bytes": 1671,
+      "sha256": "8fd333d5f0fd1687c36fcf5a7024364880505cc0a453e5d0a9f6a97ec426d608"
+    },
+    {
+      "path": "validation/work/Gate-C/outputs/mistral__mistral-medium-3-5/dbms_sql/run-01/pairwise-distinctness.json",
+      "bytes": 237,
+      "sha256": "d24d539cd189ae7b5bc1981188c839f903aee2b1c9266adee610c24b2fab7ab3"
+    },
+    {
+      "path": "validation/work/Gate-C/outputs/mistral__mistral-medium-3-5/dbms_sql/run-01/request.json",
+      "bytes": 7170,
+      "sha256": "26b3750e9fa8df768e757f85f3c7f5c3bc35c9cbea79d989fd5b96a348758a9d"
+    },
+    {
+      "path": "validation/work/Gate-C/outputs/mistral__mistral-medium-3-5/dbms_sql/run-01/response.raw.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "validation/work/Gate-C/outputs/mistral__mistral-medium-3-5/dbms_sql/run-01/run-metrics.json",
+      "bytes": 1650,
+      "sha256": "b3130d99de3a343dd5f924664cfc4fc62bb6e615c017db01b608ca0673098ec4"
+    },
+    {
+      "path": "validation/work/Gate-C/outputs/mistral__mistral-medium-3-5/dbms_sql/run-02/pairwise-distinctness.json",
+      "bytes": 237,
+      "sha256": "84e9fd54ee2c6530f86c0e896de3ca1e2f5050ea7bccfc1ad397f12958fd90be"
+    },
+    {
+      "path": "validation/work/Gate-C/outputs/mistral__mistral-medium-3-5/dbms_sql/run-02/request.json",
+      "bytes": 7170,
+      "sha256": "26b3750e9fa8df768e757f85f3c7f5c3bc35c9cbea79d989fd5b96a348758a9d"
+    },
+    {
+      "path": "validation/work/Gate-C/outputs/mistral__mistral-medium-3-5/dbms_sql/run-02/response.raw.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "validation/work/Gate-C/outputs/mistral__mistral-medium-3-5/dbms_sql/run-02/run-metrics.json",
+      "bytes": 1650,
+      "sha256": "0d94885ca5c82760ce9d2285970ea50f131ab10810469478674045cd6f1b5ea7"
+    },
+    {
+      "path": "validation/work/Gate-C/outputs/mistral__mistral-medium-3-5/dbms_sql__teacher_script/run-01/request.json",
+      "bytes": 6279,
+      "sha256": "f86e34b38f4f154e330fac10ad9afb9896080d6f874c46ac0121c160113a2e8d"
+    },
+    {
+      "path": "validation/work/Gate-C/outputs/mistral__mistral-medium-3-5/dbms_sql__teacher_script/run-01/response.raw.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "validation/work/Gate-C/outputs/mistral__mistral-medium-3-5/dbms_sql__teacher_script/run-01/run-metrics.json",
+      "bytes": 1574,
+      "sha256": "5360287aeda765d2d68042e9ed0b2a19545c876be4303a4fb4fd44ce771396d7"
+    },
+    {
+      "path": "validation/work/Gate-C/outputs/mistral__mistral-medium-3-5/dbms_sql__teacher_script/run-02/request.json",
+      "bytes": 6279,
+      "sha256": "f86e34b38f4f154e330fac10ad9afb9896080d6f874c46ac0121c160113a2e8d"
+    },
+    {
+      "path": "validation/work/Gate-C/outputs/mistral__mistral-medium-3-5/dbms_sql__teacher_script/run-02/response.raw.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "validation/work/Gate-C/outputs/mistral__mistral-medium-3-5/dbms_sql__teacher_script/run-02/run-metrics.json",
+      "bytes": 1574,
+      "sha256": "4bf7569b2bd18f6bbcca569fb138811dc7625c3f3083e2a5d8b5bd1145a4ca1f"
+    },
+    {
+      "path": "validation/work/Gate-C/outputs/mistral__mistral-medium-3-5/schema_probe/run-01/request.json",
+      "bytes": 984,
+      "sha256": "902f04d1f6550d3790d5138701ee22df94f4da572412424fd12bb25aa47e6860"
+    },
+    {
+      "path": "validation/work/Gate-C/outputs/mistral__mistral-medium-3-5/schema_probe/run-01/response.raw.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "validation/work/Gate-C/outputs/mistral__mistral-medium-3-5/schema_probe/run-01/run-metrics.json",
+      "bytes": 1582,
+      "sha256": "31286b0a8e8d5408573d86cfa84f866e7922a192bfe19c052145aac6d3d87d11"
+    },
+    {
+      "path": "validation/work/Gate-C/scripts/refresh_catalog.py",
+      "bytes": 4624,
+      "sha256": "a00c9ec8855c199998aa92bb3f8a989734607e4a44aa5b1b9dd63f29c7f4a70d"
+    },
+    {
+      "path": "validation/work/Gate-C/scripts/run_gate_c.py",
+      "bytes": 55434,
+      "sha256": "43f91ed3638eb6fa8f18a4c27eb4dde8600eab8a7d4908725ae0e5c164c612dd"
+    },
+    {
+      "path": "validation/artifacts/Gate-C/catalog-snapshot.json",
+      "bytes": 34495,
+      "sha256": "86301d5749c1d2d199db3f83e966ea61f2f107efa70b277e9f71a9e431709fba"
+    },
+    {
+      "path": "validation/artifacts/Gate-C/model-scorecards.json",
+      "bytes": 18295,
+      "sha256": "0a180c61fd528ab5d43bba22c3139d0816b6b7420e2388397c3ee821d77c9563"
+    },
+    {
+      "path": "validation/artifacts/Gate-C/posthoc-policy-audit.json",
+      "bytes": 3973,
+      "sha256": "b2a45ba48b00f8918b0a1a1405b1f4e85d73c5ee35569993b2d20b0a6c97e79a"
+    },
+    {
+      "path": "validation/artifacts/Gate-C/profile-validation.json",
+      "bytes": 5000,
+      "sha256": "dd7b0779cc6c809fdd9f0484c54aeec85b91f9e044d1cc450c4a2ccd36ceb0ce"
+    },
+    {
+      "path": "validation/artifacts/Gate-C/runtime-metrics.json",
+      "bytes": 41775,
+      "sha256": "16a74a30068ca0e5982363cffef7700dc0cea47ea5791ddf8ece83ce9000055c"
+    },
+    {
+      "path": "validation/results/Gate-C-remote-models-report.md",
+      "bytes": 19103,
+      "sha256": "9a34a6e4166ce8dbb681d71c08b42ba00af800971ee074e0df54ac18b4d55b50"
+    }
+  ],
+  "manifest_self_hash": "excluded_by_design"
+}

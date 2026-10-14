@@ -1,0 +1,1249 @@
+{
+  "schema_version": 1,
+  "benchmark": "Gate-C",
+  "metric_capture": "Provider/tool metrics copied from persisted run-metrics.json; visible word/character counts computed by the runner. No new network calls or secret reads were made.",
+  "captured_date": "2026-09-30",
+  "records": [
+    {
+      "model_id_requested": "agy/gemini-3.8-flash-tiered",
+      "model_id_returned": "gemini-3.8-flash-tiered",
+      "task_id": "assessment_blueprint_dbms",
+      "run_id": 1,
+      "kind": "reasoning_blueprint",
+      "http_status": 200,
+      "technical_success": true,
+      "identity_verified": true,
+      "identity_resolution": "unique_catalog_alias_match",
+      "finish_reason": "stop",
+      "total_latency_seconds": 30.522,
+      "ttft_seconds": 29.386,
+      "tokens_per_second_after_ttft": 9647.305,
+      "input_tokens": 1664,
+      "output_tokens": 10957,
+      "output_words_whitespace": 196,
+      "output_characters": 2125,
+      "provider_usage": {
+        "prompt_tokens": 1664,
+        "completion_tokens": 10957,
+        "total_tokens": 12621,
+        "completion_tokens_details": {
+          "reasoning_tokens": 10449
+        }
+      },
+      "cost": null,
+      "cost_source": "unknown",
+      "retry_events": 0,
+      "retry_reason": null,
+      "fallback_events": 0,
+      "response_format_mode": "json_schema",
+      "json_validation": {
+        "applicable": true,
+        "json_parse_valid": true,
+        "schema_valid": true,
+        "enum_valid": true,
+        "required_fields_valid": true,
+        "semantic_valid": true,
+        "errors": []
+      },
+      "longform_min_words_met": null,
+      "source_set": [
+        {
+          "provided_file": "dbms_student_lesson.md",
+          "sha256": "d0088409d21d6537e3b96e1581466966fc254fc17695b44c23b6e7dfa77c9035",
+          "bytes": 3623
+        }
+      ],
+      "started_at_local": "2026-09-30T12:54:36.741604+02:00",
+      "error": null,
+      "metrics_file": "validation/work/Gate-C/outputs/agy__gemini-3.8-flash-tiered/assessment_blueprint_dbms/run-01/run-metrics.json"
+    },
+    {
+      "model_id_requested": "agy/gemini-3.8-flash-tiered",
+      "model_id_returned": "gemini-3.8-flash-tiered",
+      "task_id": "assessment_consistency_dbms",
+      "run_id": 1,
+      "kind": "reasoning_consistency",
+      "http_status": 200,
+      "technical_success": true,
+      "identity_verified": true,
+      "identity_resolution": "unique_catalog_alias_match",
+      "finish_reason": "stop",
+      "total_latency_seconds": 14.509,
+      "ttft_seconds": 12.191,
+      "tokens_per_second_after_ttft": 2052.478,
+      "input_tokens": 2094,
+      "output_tokens": 4758,
+      "output_words_whitespace": 362,
+      "output_characters": 2915,
+      "provider_usage": {
+        "prompt_tokens": 2094,
+        "completion_tokens": 4758,
+        "total_tokens": 6852,
+        "completion_tokens_details": {
+          "reasoning_tokens": 3986
+        }
+      },
+      "cost": null,
+      "cost_source": "unknown",
+      "retry_events": 0,
+      "retry_reason": null,
+      "fallback_events": 0,
+      "response_format_mode": "json_schema",
+      "json_validation": {
+        "applicable": true,
+        "json_parse_valid": true,
+        "schema_valid": true,
+        "enum_valid": true,
+        "required_fields_valid": true,
+        "semantic_valid": true,
+        "errors": []
+      },
+      "longform_min_words_met": null,
+      "source_set": [
+        {
+          "provided_file": "dbms_student_lesson.md",
+          "sha256": "d0088409d21d6537e3b96e1581466966fc254fc17695b44c23b6e7dfa77c9035",
+          "bytes": 3623
+        }
+      ],
+      "started_at_local": "2026-09-30T12:55:07.265718+02:00",
+      "error": null,
+      "metrics_file": "validation/work/Gate-C/outputs/agy__gemini-3.8-flash-tiered/assessment_consistency_dbms/run-01/run-metrics.json"
+    },
+    {
+      "model_id_requested": "agy/gemini-3.8-flash-tiered",
+      "model_id_returned": "gemini-3.8-flash-tiered",
+      "task_id": "curriculum_constraint_partial_dbms",
+      "run_id": 1,
+      "kind": "reasoning_curriculum",
+      "http_status": 200,
+      "technical_success": true,
+      "identity_verified": true,
+      "identity_resolution": "unique_catalog_alias_match",
+      "finish_reason": "stop",
+      "total_latency_seconds": 8.804,
+      "ttft_seconds": 7.633,
+      "tokens_per_second_after_ttft": 2327.598,
+      "input_tokens": 922,
+      "output_tokens": 2724,
+      "output_words_whitespace": 176,
+      "output_characters": 1640,
+      "provider_usage": {
+        "prompt_tokens": 922,
+        "completion_tokens": 2724,
+        "total_tokens": 3646,
+        "completion_tokens_details": {
+          "reasoning_tokens": 2374
+        }
+      },
+      "cost": null,
+      "cost_source": "unknown",
+      "retry_events": 0,
+      "retry_reason": null,
+      "fallback_events": 0,
+      "response_format_mode": "json_schema",
+      "json_validation": {
+        "applicable": true,
+        "json_parse_valid": true,
+        "schema_valid": true,
+        "enum_valid": true,
+        "required_fields_valid": true,
+        "semantic_valid": true,
+        "errors": []
+      },
+      "longform_min_words_met": null,
+      "source_set": [
+        {
+          "provided_file": "dbms_partial_excerpt.md",
+          "sha256": "c8992a2c9d1b5476f64b905c268c0553e96287b51b6d23d0a9a0b675a6d6ce56",
+          "bytes": 1162
+        }
+      ],
+      "started_at_local": "2026-09-30T12:55:21.777787+02:00",
+      "error": null,
+      "metrics_file": "validation/work/Gate-C/outputs/agy__gemini-3.8-flash-tiered/curriculum_constraint_partial_dbms/run-01/run-metrics.json"
+    },
+    {
+      "model_id_requested": "agy/gemini-3.8-flash-tiered",
+      "model_id_returned": "gemini-3.8-flash-tiered",
+      "task_id": "dbms_sql",
+      "run_id": 1,
+      "kind": "generation",
+      "http_status": 200,
+      "technical_success": true,
+      "identity_verified": true,
+      "identity_resolution": "unique_catalog_alias_match",
+      "finish_reason": "stop",
+      "total_latency_seconds": 46.735,
+      "ttft_seconds": 31.942,
+      "tokens_per_second_after_ttft": 909.696,
+      "input_tokens": 1904,
+      "output_tokens": 13457,
+      "output_words_whitespace": 2312,
+      "output_characters": 17946,
+      "provider_usage": {
+        "prompt_tokens": 1904,
+        "completion_tokens": 13457,
+        "total_tokens": 15361,
+        "completion_tokens_details": {
+          "reasoning_tokens": 8187
+        }
+      },
+      "cost": null,
+      "cost_source": "unknown",
+      "retry_events": 0,
+      "fallback_events": 0,
+      "response_format_mode": "json_schema",
+      "json_validation": {
+        "applicable": true,
+        "json_parse_valid": true,
+        "schema_valid": true,
+        "enum_valid": true,
+        "required_fields_valid": true,
+        "semantic_valid": true,
+        "errors": []
+      },
+      "longform_min_words_met": null,
+      "source_set": [
+        {
+          "provided_file": "dbms_student_lesson.md",
+          "sha256": "d0088409d21d6537e3b96e1581466966fc254fc17695b44c23b6e7dfa77c9035",
+          "bytes": 3623
+        }
+      ],
+      "started_at_local": "2026-09-30T12:39:08.800696+02:00",
+      "error": null,
+      "metrics_file": "validation/work/Gate-C/outputs/agy__gemini-3.8-flash-tiered/dbms_sql/run-01/run-metrics.json"
+    },
+    {
+      "model_id_requested": "agy/gemini-3.8-flash-tiered",
+      "model_id_returned": "gemini-3.8-flash-tiered",
+      "task_id": "dbms_sql",
+      "run_id": 2,
+      "kind": "generation",
+      "http_status": 200,
+      "technical_success": true,
+      "identity_verified": true,
+      "identity_resolution": "unique_catalog_alias_match",
+      "finish_reason": "stop",
+      "total_latency_seconds": 32.765,
+      "ttft_seconds": 14.7,
+      "tokens_per_second_after_ttft": 556.816,
+      "input_tokens": 1904,
+      "output_tokens": 10059,
+      "output_words_whitespace": 2535,
+      "output_characters": 19499,
+      "provider_usage": {
+        "prompt_tokens": 1904,
+        "completion_tokens": 10059,
+        "total_tokens": 11963,
+        "completion_tokens_details": {
+          "reasoning_tokens": 4325
+        }
+      },
+      "cost": null,
+      "cost_source": "unknown",
+      "retry_events": 1,
+      "retry_reason": "resume_after_incomplete_prior_attempt",
+      "fallback_events": 0,
+      "response_format_mode": "json_schema",
+      "json_validation": {
+        "applicable": true,
+        "json_parse_valid": true,
+        "schema_valid": true,
+        "enum_valid": true,
+        "required_fields_valid": true,
+        "semantic_valid": true,
+        "errors": []
+      },
+      "longform_min_words_met": null,
+      "source_set": [
+        {
+          "provided_file": "dbms_student_lesson.md",
+          "sha256": "d0088409d21d6537e3b96e1581466966fc254fc17695b44c23b6e7dfa77c9035",
+          "bytes": 3623
+        }
+      ],
+      "started_at_local": "2026-09-30T12:47:54.841977+02:00",
+      "error": null,
+      "metrics_file": "validation/work/Gate-C/outputs/agy__gemini-3.8-flash-tiered/dbms_sql/run-02/run-metrics.json"
+    },
+    {
+      "model_id_requested": "agy/gemini-3.8-flash-tiered",
+      "model_id_returned": "gemini-3.8-flash-tiered",
+      "task_id": "dbms_sql__teacher_script",
+      "run_id": 1,
+      "kind": "longform",
+      "http_status": 200,
+      "technical_success": true,
+      "identity_verified": true,
+      "identity_resolution": "unique_catalog_alias_match",
+      "finish_reason": "stop",
+      "total_latency_seconds": 52.82,
+      "ttft_seconds": 17.358,
+      "tokens_per_second_after_ttft": 439.261,
+      "input_tokens": 1696,
+      "output_tokens": 15577,
+      "output_words_whitespace": 5711,
+      "output_characters": 37632,
+      "provider_usage": {
+        "prompt_tokens": 1696,
+        "completion_tokens": 15577,
+        "total_tokens": 17273,
+        "completion_tokens_details": {
+          "reasoning_tokens": 5744
+        }
+      },
+      "cost": null,
+      "cost_source": "unknown",
+      "retry_events": 0,
+      "fallback_events": 0,
+      "response_format_mode": "plain_text",
+      "json_validation": {
+        "applicable": false,
+        "json_parse_valid": null,
+        "schema_valid": null,
+        "enum_valid": null,
+        "required_fields_valid": null,
+        "semantic_valid": null,
+        "errors": []
+      },
+      "longform_min_words_met": true,
+      "source_set": [
+        {
+          "provided_file": "dbms_student_lesson.md",
+          "sha256": "d0088409d21d6537e3b96e1581466966fc254fc17695b44c23b6e7dfa77c9035",
+          "bytes": 3623
+        }
+      ],
+      "started_at_local": "2026-09-30T12:39:55.539969+02:00",
+      "error": null,
+      "metrics_file": "validation/work/Gate-C/outputs/agy__gemini-3.8-flash-tiered/dbms_sql__teacher_script/run-01/run-metrics.json"
+    },
+    {
+      "model_id_requested": "agy/gemini-3.8-flash-tiered",
+      "model_id_returned": "gemini-3.8-flash-tiered",
+      "task_id": "dbms_sql__teacher_script",
+      "run_id": 2,
+      "kind": "longform",
+      "http_status": 200,
+      "technical_success": true,
+      "identity_verified": true,
+      "identity_resolution": "unique_catalog_alias_match",
+      "finish_reason": "stop",
+      "total_latency_seconds": 51.575,
+      "ttft_seconds": 17.147,
+      "tokens_per_second_after_ttft": 442.829,
+      "input_tokens": 1696,
+      "output_tokens": 15246,
+      "output_words_whitespace": 5008,
+      "output_characters": 34361,
+      "provider_usage": {
+        "prompt_tokens": 1696,
+        "completion_tokens": 15246,
+        "total_tokens": 16942,
+        "completion_tokens_details": {
+          "reasoning_tokens": 5435
+        }
+      },
+      "cost": null,
+      "cost_source": "unknown",
+      "retry_events": 0,
+      "retry_reason": null,
+      "fallback_events": 0,
+      "response_format_mode": "plain_text",
+      "json_validation": {
+        "applicable": false,
+        "json_parse_valid": null,
+        "schema_valid": null,
+        "enum_valid": null,
+        "required_fields_valid": null,
+        "semantic_valid": null,
+        "errors": []
+      },
+      "longform_min_words_met": true,
+      "source_set": [
+        {
+          "provided_file": "dbms_student_lesson.md",
+          "sha256": "d0088409d21d6537e3b96e1581466966fc254fc17695b44c23b6e7dfa77c9035",
+          "bytes": 3623
+        }
+      ],
+      "started_at_local": "2026-09-30T12:48:27.608349+02:00",
+      "error": null,
+      "metrics_file": "validation/work/Gate-C/outputs/agy__gemini-3.8-flash-tiered/dbms_sql__teacher_script/run-02/run-metrics.json"
+    },
+    {
+      "model_id_requested": "agy/gemini-3.8-flash-tiered",
+      "model_id_returned": "gemini-3.8-flash-tiered",
+      "task_id": "excel",
+      "run_id": 1,
+      "kind": "generation",
+      "http_status": 200,
+      "technical_success": false,
+      "identity_verified": true,
+      "identity_resolution": "unique_catalog_alias_match",
+      "finish_reason": "length",
+      "total_latency_seconds": 54.427,
+      "ttft_seconds": 39.407,
+      "tokens_per_second_after_ttft": 1089.873,
+      "input_tokens": 5365,
+      "output_tokens": 16370,
+      "output_words_whitespace": 2059,
+      "output_characters": 15114,
+      "provider_usage": {
+        "prompt_tokens": 5365,
+        "completion_tokens": 16370,
+        "total_tokens": 21735,
+        "completion_tokens_details": {
+          "reasoning_tokens": 11677
+        }
+      },
+      "cost": null,
+      "cost_source": "unknown",
+      "retry_events": 0,
+      "retry_reason": null,
+      "fallback_events": 0,
+      "response_format_mode": "json_schema",
+      "json_validation": {
+        "applicable": true,
+        "json_parse_valid": false,
+        "schema_valid": false,
+        "enum_valid": false,
+        "required_fields_valid": false,
+        "semantic_valid": false,
+        "errors": [
+          "json_parse:JSONDecodeError:Unterminated string starting at: line 1 column 10616 (char 10615)"
+        ]
+      },
+      "longform_min_words_met": null,
+      "source_set": [
+        {
+          "provided_file": "excel_demo_no_cellrefs.md",
+          "sha256": "ec0151a94b9ce9ed6ae4d505cbe0f300f7c33c7a11cbc071042954aeda5d960d",
+          "bytes": 10299
+        }
+      ],
+      "started_at_local": "2026-09-30T12:49:19.194506+02:00",
+      "error": null,
+      "metrics_file": "validation/work/Gate-C/outputs/agy__gemini-3.8-flash-tiered/excel/run-01/run-metrics.json"
+    },
+    {
+      "model_id_requested": "agy/gemini-3.8-flash-tiered",
+      "model_id_returned": "gemini-3.8-flash-tiered",
+      "task_id": "excel",
+      "run_id": 2,
+      "kind": "generation",
+      "http_status": 200,
+      "technical_success": true,
+      "identity_verified": true,
+      "identity_resolution": "unique_catalog_alias_match",
+      "finish_reason": "stop",
+      "total_latency_seconds": 42.462,
+      "ttft_seconds": 16.254,
+      "tokens_per_second_after_ttft": 488.782,
+      "input_tokens": 5365,
+      "output_tokens": 12810,
+      "output_words_whitespace": 3263,
+      "output_characters": 25854,
+      "provider_usage": {
+        "prompt_tokens": 5365,
+        "completion_tokens": 12810,
+        "total_tokens": 18175,
+        "completion_tokens_details": {
+          "reasoning_tokens": 5141
+        }
+      },
+      "cost": null,
+      "cost_source": "unknown",
+      "retry_events": 0,
+      "retry_reason": null,
+      "fallback_events": 0,
+      "response_format_mode": "json_schema",
+      "json_validation": {
+        "applicable": true,
+        "json_parse_valid": true,
+        "schema_valid": true,
+        "enum_valid": true,
+        "required_fields_valid": true,
+        "semantic_valid": true,
+        "errors": []
+      },
+      "longform_min_words_met": null,
+      "source_set": [
+        {
+          "provided_file": "excel_demo_no_cellrefs.md",
+          "sha256": "ec0151a94b9ce9ed6ae4d505cbe0f300f7c33c7a11cbc071042954aeda5d960d",
+          "bytes": 10299
+        }
+      ],
+      "started_at_local": "2026-09-30T12:51:18.155928+02:00",
+      "error": null,
+      "metrics_file": "validation/work/Gate-C/outputs/agy__gemini-3.8-flash-tiered/excel/run-02/run-metrics.json"
+    },
+    {
+      "model_id_requested": "agy/gemini-3.8-flash-tiered",
+      "model_id_returned": "gemini-3.8-flash-tiered",
+      "task_id": "excel__teacher_script",
+      "run_id": 1,
+      "kind": "longform",
+      "http_status": 200,
+      "technical_success": false,
+      "identity_verified": true,
+      "identity_resolution": "unique_catalog_alias_match",
+      "finish_reason": "length",
+      "total_latency_seconds": 64.529,
+      "ttft_seconds": 27.445,
+      "tokens_per_second_after_ttft": 436.247,
+      "input_tokens": 5153,
+      "output_tokens": 16178,
+      "output_words_whitespace": 5099,
+      "output_characters": 35395,
+      "provider_usage": {
+        "prompt_tokens": 5153,
+        "completion_tokens": 16178,
+        "total_tokens": 21331,
+        "completion_tokens_details": {
+          "reasoning_tokens": 7053
+        }
+      },
+      "cost": null,
+      "cost_source": "unknown",
+      "retry_events": 0,
+      "retry_reason": null,
+      "fallback_events": 0,
+      "response_format_mode": "plain_text",
+      "json_validation": {
+        "applicable": false,
+        "json_parse_valid": null,
+        "schema_valid": null,
+        "enum_valid": null,
+        "required_fields_valid": null,
+        "semantic_valid": null,
+        "errors": []
+      },
+      "longform_min_words_met": true,
+      "source_set": [
+        {
+          "provided_file": "excel_demo_no_cellrefs.md",
+          "sha256": "ec0151a94b9ce9ed6ae4d505cbe0f300f7c33c7a11cbc071042954aeda5d960d",
+          "bytes": 10299
+        }
+      ],
+      "started_at_local": "2026-09-30T12:50:13.624948+02:00",
+      "error": null,
+      "metrics_file": "validation/work/Gate-C/outputs/agy__gemini-3.8-flash-tiered/excel__teacher_script/run-01/run-metrics.json"
+    },
+    {
+      "model_id_requested": "agy/gemini-3.8-flash-tiered",
+      "model_id_returned": "gemini-3.8-flash-tiered",
+      "task_id": "excel__teacher_script",
+      "run_id": 2,
+      "kind": "longform",
+      "http_status": 200,
+      "technical_success": false,
+      "identity_verified": true,
+      "identity_resolution": "unique_catalog_alias_match",
+      "finish_reason": "length",
+      "total_latency_seconds": 55.14,
+      "ttft_seconds": 23.801,
+      "tokens_per_second_after_ttft": 514.636,
+      "input_tokens": 5153,
+      "output_tokens": 16128,
+      "output_words_whitespace": 4945,
+      "output_characters": 33149,
+      "provider_usage": {
+        "prompt_tokens": 5153,
+        "completion_tokens": 16128,
+        "total_tokens": 21281,
+        "completion_tokens_details": {
+          "reasoning_tokens": 7852
+        }
+      },
+      "cost": null,
+      "cost_source": "unknown",
+      "retry_events": 0,
+      "retry_reason": null,
+      "fallback_events": 0,
+      "response_format_mode": "plain_text",
+      "json_validation": {
+        "applicable": false,
+        "json_parse_valid": null,
+        "schema_valid": null,
+        "enum_valid": null,
+        "required_fields_valid": null,
+        "semantic_valid": null,
+        "errors": []
+      },
+      "longform_min_words_met": true,
+      "source_set": [
+        {
+          "provided_file": "excel_demo_no_cellrefs.md",
+          "sha256": "ec0151a94b9ce9ed6ae4d505cbe0f300f7c33c7a11cbc071042954aeda5d960d",
+          "bytes": 10299
+        }
+      ],
+      "started_at_local": "2026-09-30T12:52:00.621782+02:00",
+      "error": null,
+      "metrics_file": "validation/work/Gate-C/outputs/agy__gemini-3.8-flash-tiered/excel__teacher_script/run-02/run-metrics.json"
+    },
+    {
+      "model_id_requested": "agy/gemini-3.8-flash-tiered",
+      "model_id_returned": "gemini-3.8-flash-tiered",
+      "task_id": "partial_source_dbms",
+      "run_id": 1,
+      "kind": "generation",
+      "http_status": 200,
+      "technical_success": true,
+      "identity_verified": true,
+      "identity_resolution": "unique_catalog_alias_match",
+      "finish_reason": "stop",
+      "total_latency_seconds": 43.725,
+      "ttft_seconds": 33.518,
+      "tokens_per_second_after_ttft": 1327.748,
+      "input_tokens": 1198,
+      "output_tokens": 13552,
+      "output_words_whitespace": 1430,
+      "output_characters": 11873,
+      "provider_usage": {
+        "prompt_tokens": 1198,
+        "completion_tokens": 13552,
+        "total_tokens": 14750,
+        "completion_tokens_details": {
+          "reasoning_tokens": 10387
+        }
+      },
+      "cost": null,
+      "cost_source": "unknown",
+      "retry_events": 0,
+      "retry_reason": null,
+      "fallback_events": 0,
+      "response_format_mode": "json_schema",
+      "json_validation": {
+        "applicable": true,
+        "json_parse_valid": true,
+        "schema_valid": true,
+        "enum_valid": true,
+        "required_fields_valid": true,
+        "semantic_valid": true,
+        "errors": []
+      },
+      "longform_min_words_met": null,
+      "source_set": [
+        {
+          "provided_file": "dbms_partial_excerpt.md",
+          "sha256": "c8992a2c9d1b5476f64b905c268c0553e96287b51b6d23d0a9a0b675a6d6ce56",
+          "bytes": 1162
+        }
+      ],
+      "started_at_local": "2026-09-30T12:52:55.770990+02:00",
+      "error": null,
+      "metrics_file": "validation/work/Gate-C/outputs/agy__gemini-3.8-flash-tiered/partial_source_dbms/run-01/run-metrics.json"
+    },
+    {
+      "model_id_requested": "agy/gemini-3.8-flash-tiered",
+      "model_id_returned": "gemini-3.8-flash-tiered",
+      "task_id": "partial_source_dbms",
+      "run_id": 2,
+      "kind": "generation",
+      "http_status": 200,
+      "technical_success": true,
+      "identity_verified": true,
+      "identity_resolution": "unique_catalog_alias_match",
+      "finish_reason": "stop",
+      "total_latency_seconds": 19.654,
+      "ttft_seconds": 9.997,
+      "tokens_per_second_after_ttft": 591.174,
+      "input_tokens": 1198,
+      "output_tokens": 5709,
+      "output_words_whitespace": 1289,
+      "output_characters": 10518,
+      "provider_usage": {
+        "prompt_tokens": 1198,
+        "completion_tokens": 5709,
+        "total_tokens": 6907,
+        "completion_tokens_details": {
+          "reasoning_tokens": 2837
+        }
+      },
+      "cost": null,
+      "cost_source": "unknown",
+      "retry_events": 0,
+      "retry_reason": null,
+      "fallback_events": 0,
+      "response_format_mode": "json_schema",
+      "json_validation": {
+        "applicable": true,
+        "json_parse_valid": true,
+        "schema_valid": true,
+        "enum_valid": true,
+        "required_fields_valid": true,
+        "semantic_valid": true,
+        "errors": []
+      },
+      "longform_min_words_met": null,
+      "source_set": [
+        {
+          "provided_file": "dbms_partial_excerpt.md",
+          "sha256": "c8992a2c9d1b5476f64b905c268c0553e96287b51b6d23d0a9a0b675a6d6ce56",
+          "bytes": 1162
+        }
+      ],
+      "started_at_local": "2026-09-30T12:53:58.589658+02:00",
+      "error": null,
+      "metrics_file": "validation/work/Gate-C/outputs/agy__gemini-3.8-flash-tiered/partial_source_dbms/run-02/run-metrics.json"
+    },
+    {
+      "model_id_requested": "agy/gemini-3.8-flash-tiered",
+      "model_id_returned": "gemini-3.8-flash-tiered",
+      "task_id": "partial_source_dbms__teacher_script",
+      "run_id": 1,
+      "kind": "longform",
+      "http_status": 200,
+      "technical_success": true,
+      "identity_verified": true,
+      "identity_resolution": "unique_catalog_alias_match",
+      "finish_reason": "stop",
+      "total_latency_seconds": 19.087,
+      "ttft_seconds": 10.755,
+      "tokens_per_second_after_ttft": 542.612,
+      "input_tokens": 952,
+      "output_tokens": 4521,
+      "output_words_whitespace": 1254,
+      "output_characters": 8660,
+      "provider_usage": {
+        "prompt_tokens": 952,
+        "completion_tokens": 4521,
+        "total_tokens": 5473,
+        "completion_tokens_details": {
+          "reasoning_tokens": 2343
+        }
+      },
+      "cost": null,
+      "cost_source": "unknown",
+      "retry_events": 0,
+      "retry_reason": null,
+      "fallback_events": 0,
+      "response_format_mode": "plain_text",
+      "json_validation": {
+        "applicable": false,
+        "json_parse_valid": null,
+        "schema_valid": null,
+        "enum_valid": null,
+        "required_fields_valid": null,
+        "semantic_valid": null,
+        "errors": []
+      },
+      "longform_min_words_met": null,
+      "source_set": [
+        {
+          "provided_file": "dbms_partial_excerpt.md",
+          "sha256": "c8992a2c9d1b5476f64b905c268c0553e96287b51b6d23d0a9a0b675a6d6ce56",
+          "bytes": 1162
+        }
+      ],
+      "started_at_local": "2026-09-30T12:53:39.498685+02:00",
+      "error": null,
+      "metrics_file": "validation/work/Gate-C/outputs/agy__gemini-3.8-flash-tiered/partial_source_dbms__teacher_script/run-01/run-metrics.json"
+    },
+    {
+      "model_id_requested": "agy/gemini-3.8-flash-tiered",
+      "model_id_returned": "gemini-3.8-flash-tiered",
+      "task_id": "partial_source_dbms__teacher_script",
+      "run_id": 2,
+      "kind": "longform",
+      "http_status": 200,
+      "technical_success": true,
+      "identity_verified": true,
+      "identity_resolution": "unique_catalog_alias_match",
+      "finish_reason": "stop",
+      "total_latency_seconds": 18.491,
+      "ttft_seconds": 8.679,
+      "tokens_per_second_after_ttft": 491.981,
+      "input_tokens": 952,
+      "output_tokens": 4827,
+      "output_words_whitespace": 1290,
+      "output_characters": 9331,
+      "provider_usage": {
+        "prompt_tokens": 952,
+        "completion_tokens": 4827,
+        "total_tokens": 5779,
+        "completion_tokens_details": {
+          "reasoning_tokens": 2263
+        }
+      },
+      "cost": null,
+      "cost_source": "unknown",
+      "retry_events": 0,
+      "retry_reason": null,
+      "fallback_events": 0,
+      "response_format_mode": "plain_text",
+      "json_validation": {
+        "applicable": false,
+        "json_parse_valid": null,
+        "schema_valid": null,
+        "enum_valid": null,
+        "required_fields_valid": null,
+        "semantic_valid": null,
+        "errors": []
+      },
+      "longform_min_words_met": null,
+      "source_set": [
+        {
+          "provided_file": "dbms_partial_excerpt.md",
+          "sha256": "c8992a2c9d1b5476f64b905c268c0553e96287b51b6d23d0a9a0b675a6d6ce56",
+          "bytes": 1162
+        }
+      ],
+      "started_at_local": "2026-09-30T12:54:18.246792+02:00",
+      "error": null,
+      "metrics_file": "validation/work/Gate-C/outputs/agy__gemini-3.8-flash-tiered/partial_source_dbms__teacher_script/run-02/run-metrics.json"
+    },
+    {
+      "model_id_requested": "agy/gemini-3.8-flash-tiered",
+      "model_id_returned": "gemini-3.8-flash-tiered",
+      "task_id": "schema_probe",
+      "run_id": 1,
+      "kind": "probe",
+      "http_status": 200,
+      "technical_success": true,
+      "identity_verified": true,
+      "identity_resolution": "unique_catalog_alias_match",
+      "finish_reason": "stop",
+      "total_latency_seconds": 6.196,
+      "ttft_seconds": 6.171,
+      "tokens_per_second_after_ttft": 15910.746,
+      "input_tokens": 104,
+      "output_tokens": 386,
+      "output_words_whitespace": 1,
+      "output_characters": 41,
+      "provider_usage": {
+        "prompt_tokens": 104,
+        "completion_tokens": 386,
+        "total_tokens": 490,
+        "completion_tokens_details": {
+          "reasoning_tokens": 375
+        }
+      },
+      "cost": null,
+      "cost_source": "unknown",
+      "retry_events": 0,
+      "fallback_events": 0,
+      "response_format_mode": "json_schema",
+      "json_validation": {
+        "applicable": true,
+        "json_parse_valid": true,
+        "schema_valid": true,
+        "enum_valid": true,
+        "required_fields_valid": true,
+        "semantic_valid": true,
+        "errors": []
+      },
+      "longform_min_words_met": null,
+      "source_set": [
+        {
+          "provided_file": "synthetic_non_corpus_probe",
+          "sha256": null,
+          "bytes": 0
+        }
+      ],
+      "started_at_local": "2026-09-30T12:38:34.678289+02:00",
+      "error": null,
+      "metrics_file": "validation/work/Gate-C/outputs/agy__gemini-3.8-flash-tiered/schema_probe/run-01/run-metrics.json"
+    },
+    {
+      "model_id_requested": "mistral/mistral-medium-3-5",
+      "model_id_returned": "keepalive",
+      "task_id": "dbms_sql",
+      "run_id": 1,
+      "kind": "generation",
+      "http_status": 200,
+      "technical_success": false,
+      "identity_verified": false,
+      "identity_resolution": "response_model_mismatch_or_ambiguous",
+      "finish_reason": null,
+      "total_latency_seconds": 27.903,
+      "ttft_seconds": null,
+      "tokens_per_second_after_ttft": null,
+      "input_tokens": null,
+      "output_tokens": null,
+      "output_words_whitespace": 0,
+      "output_characters": 0,
+      "provider_usage": null,
+      "cost": null,
+      "cost_source": "unknown",
+      "retry_events": 0,
+      "fallback_events": 0,
+      "response_format_mode": "prompt_only_json",
+      "json_validation": {
+        "applicable": true,
+        "json_parse_valid": false,
+        "schema_valid": false,
+        "enum_valid": false,
+        "required_fields_valid": false,
+        "semantic_valid": false,
+        "errors": [
+          "json_parse:JSONDecodeError:Expecting value: line 1 column 1 (char 0)"
+        ]
+      },
+      "longform_min_words_met": null,
+      "source_set": [
+        {
+          "provided_file": "dbms_student_lesson.md",
+          "sha256": "d0088409d21d6537e3b96e1581466966fc254fc17695b44c23b6e7dfa77c9035",
+          "bytes": 3623
+        }
+      ],
+      "started_at_local": "2026-09-30T12:40:48.371281+02:00",
+      "error": null,
+      "metrics_file": "validation/work/Gate-C/outputs/mistral__mistral-medium-3-5/dbms_sql/run-01/run-metrics.json"
+    },
+    {
+      "model_id_requested": "mistral/mistral-medium-3-5",
+      "model_id_returned": "keepalive",
+      "task_id": "dbms_sql",
+      "run_id": 2,
+      "kind": "generation",
+      "http_status": 200,
+      "technical_success": false,
+      "identity_verified": false,
+      "identity_resolution": "response_model_mismatch_or_ambiguous",
+      "finish_reason": null,
+      "total_latency_seconds": 23.393,
+      "ttft_seconds": null,
+      "tokens_per_second_after_ttft": null,
+      "input_tokens": null,
+      "output_tokens": null,
+      "output_words_whitespace": 0,
+      "output_characters": 0,
+      "provider_usage": null,
+      "cost": null,
+      "cost_source": "unknown",
+      "retry_events": 0,
+      "fallback_events": 0,
+      "response_format_mode": "prompt_only_json",
+      "json_validation": {
+        "applicable": true,
+        "json_parse_valid": false,
+        "schema_valid": false,
+        "enum_valid": false,
+        "required_fields_valid": false,
+        "semantic_valid": false,
+        "errors": [
+          "json_parse:JSONDecodeError:Expecting value: line 1 column 1 (char 0)"
+        ]
+      },
+      "longform_min_words_met": null,
+      "source_set": [
+        {
+          "provided_file": "dbms_student_lesson.md",
+          "sha256": "d0088409d21d6537e3b96e1581466966fc254fc17695b44c23b6e7dfa77c9035",
+          "bytes": 3623
+        }
+      ],
+      "started_at_local": "2026-09-30T12:41:39.723226+02:00",
+      "error": null,
+      "metrics_file": "validation/work/Gate-C/outputs/mistral__mistral-medium-3-5/dbms_sql/run-02/run-metrics.json"
+    },
+    {
+      "model_id_requested": "mistral/mistral-medium-3-5",
+      "model_id_returned": "keepalive",
+      "task_id": "dbms_sql__teacher_script",
+      "run_id": 1,
+      "kind": "longform",
+      "http_status": 200,
+      "technical_success": false,
+      "identity_verified": false,
+      "identity_resolution": "response_model_mismatch_or_ambiguous",
+      "finish_reason": null,
+      "total_latency_seconds": 23.442,
+      "ttft_seconds": null,
+      "tokens_per_second_after_ttft": null,
+      "input_tokens": null,
+      "output_tokens": null,
+      "output_words_whitespace": 0,
+      "output_characters": 0,
+      "provider_usage": null,
+      "cost": null,
+      "cost_source": "unknown",
+      "retry_events": 0,
+      "fallback_events": 0,
+      "response_format_mode": "plain_text",
+      "json_validation": {
+        "applicable": false,
+        "json_parse_valid": null,
+        "schema_valid": null,
+        "enum_valid": null,
+        "required_fields_valid": null,
+        "semantic_valid": null,
+        "errors": []
+      },
+      "longform_min_words_met": false,
+      "source_set": [
+        {
+          "provided_file": "dbms_student_lesson.md",
+          "sha256": "d0088409d21d6537e3b96e1581466966fc254fc17695b44c23b6e7dfa77c9035",
+          "bytes": 3623
+        }
+      ],
+      "started_at_local": "2026-09-30T12:41:16.277271+02:00",
+      "error": null,
+      "metrics_file": "validation/work/Gate-C/outputs/mistral__mistral-medium-3-5/dbms_sql__teacher_script/run-01/run-metrics.json"
+    },
+    {
+      "model_id_requested": "mistral/mistral-medium-3-5",
+      "model_id_returned": "keepalive",
+      "task_id": "dbms_sql__teacher_script",
+      "run_id": 2,
+      "kind": "longform",
+      "http_status": 200,
+      "technical_success": false,
+      "identity_verified": false,
+      "identity_resolution": "response_model_mismatch_or_ambiguous",
+      "finish_reason": null,
+      "total_latency_seconds": 23.286,
+      "ttft_seconds": null,
+      "tokens_per_second_after_ttft": null,
+      "input_tokens": null,
+      "output_tokens": null,
+      "output_words_whitespace": 0,
+      "output_characters": 0,
+      "provider_usage": null,
+      "cost": null,
+      "cost_source": "unknown",
+      "retry_events": 0,
+      "fallback_events": 0,
+      "response_format_mode": "plain_text",
+      "json_validation": {
+        "applicable": false,
+        "json_parse_valid": null,
+        "schema_valid": null,
+        "enum_valid": null,
+        "required_fields_valid": null,
+        "semantic_valid": null,
+        "errors": []
+      },
+      "longform_min_words_met": false,
+      "source_set": [
+        {
+          "provided_file": "dbms_student_lesson.md",
+          "sha256": "d0088409d21d6537e3b96e1581466966fc254fc17695b44c23b6e7dfa77c9035",
+          "bytes": 3623
+        }
+      ],
+      "started_at_local": "2026-09-30T12:42:03.119480+02:00",
+      "error": null,
+      "metrics_file": "validation/work/Gate-C/outputs/mistral__mistral-medium-3-5/dbms_sql__teacher_script/run-02/run-metrics.json"
+    },
+    {
+      "model_id_requested": "mistral/mistral-medium-3-5",
+      "model_id_returned": "keepalive",
+      "task_id": "schema_probe",
+      "run_id": 1,
+      "kind": "probe",
+      "http_status": 200,
+      "technical_success": false,
+      "identity_verified": false,
+      "identity_resolution": "response_model_mismatch_or_ambiguous",
+      "finish_reason": null,
+      "total_latency_seconds": 27.918,
+      "ttft_seconds": null,
+      "tokens_per_second_after_ttft": null,
+      "input_tokens": null,
+      "output_tokens": null,
+      "output_words_whitespace": 0,
+      "output_characters": 0,
+      "provider_usage": null,
+      "cost": null,
+      "cost_source": "unknown",
+      "retry_events": 0,
+      "fallback_events": 0,
+      "response_format_mode": "json_schema",
+      "json_validation": {
+        "applicable": true,
+        "json_parse_valid": false,
+        "schema_valid": false,
+        "enum_valid": false,
+        "required_fields_valid": false,
+        "semantic_valid": false,
+        "errors": [
+          "json_parse:JSONDecodeError:Expecting value: line 1 column 1 (char 0)"
+        ]
+      },
+      "longform_min_words_met": null,
+      "source_set": [
+        {
+          "provided_file": "synthetic_non_corpus_probe",
+          "sha256": null,
+          "bytes": 0
+        }
+      ],
+      "started_at_local": "2026-09-30T12:38:40.877923+02:00",
+      "error": null,
+      "metrics_file": "validation/work/Gate-C/outputs/mistral__mistral-medium-3-5/schema_probe/run-01/run-metrics.json"
+    }
+  ],
+  "summary_by_model_and_kind": {
+    "agy/gemini-3.8-flash-tiered": {
+      "reasoning_blueprint": {
+        "calls": 1,
+        "technical_successes": 1,
+        "failures": 0,
+        "finish_reasons": {
+          "stop": 1
+        },
+        "total_latency_seconds_median": 30.522,
+        "ttft_seconds_median": 29.386,
+        "tokens_per_second_after_ttft_median": 9647.305,
+        "output_words_whitespace_median": 196,
+        "input_tokens_median": 1664,
+        "output_tokens_median": 10957
+      },
+      "reasoning_consistency": {
+        "calls": 1,
+        "technical_successes": 1,
+        "failures": 0,
+        "finish_reasons": {
+          "stop": 1
+        },
+        "total_latency_seconds_median": 14.509,
+        "ttft_seconds_median": 12.191,
+        "tokens_per_second_after_ttft_median": 2052.478,
+        "output_words_whitespace_median": 362,
+        "input_tokens_median": 2094,
+        "output_tokens_median": 4758
+      },
+      "reasoning_curriculum": {
+        "calls": 1,
+        "technical_successes": 1,
+        "failures": 0,
+        "finish_reasons": {
+          "stop": 1
+        },
+        "total_latency_seconds_median": 8.804,
+        "ttft_seconds_median": 7.633,
+        "tokens_per_second_after_ttft_median": 2327.598,
+        "output_words_whitespace_median": 176,
+        "input_tokens_median": 922,
+        "output_tokens_median": 2724
+      },
+      "generation": {
+        "calls": 6,
+        "technical_successes": 5,
+        "failures": 1,
+        "finish_reasons": {
+          "stop": 5,
+          "length": 1
+        },
+        "total_latency_seconds_median": 43.094,
+        "ttft_seconds_median": 24.098,
+        "tokens_per_second_after_ttft_median": 750.435,
+        "output_words_whitespace_median": 2185.5,
+        "input_tokens_median": 1904.0,
+        "output_tokens_median": 13133.5
+      },
+      "longform": {
+        "calls": 6,
+        "technical_successes": 4,
+        "failures": 2,
+        "finish_reasons": {
+          "stop": 4,
+          "length": 2
+        },
+        "total_latency_seconds_median": 52.198,
+        "ttft_seconds_median": 17.252,
+        "tokens_per_second_after_ttft_median": 467.405,
+        "output_words_whitespace_median": 4976.5,
+        "input_tokens_median": 1696.0,
+        "output_tokens_median": 15411.5
+      },
+      "probe": {
+        "calls": 1,
+        "technical_successes": 1,
+        "failures": 0,
+        "finish_reasons": {
+          "stop": 1
+        },
+        "total_latency_seconds_median": 6.196,
+        "ttft_seconds_median": 6.171,
+        "tokens_per_second_after_ttft_median": 15910.746,
+        "output_words_whitespace_median": 1,
+        "input_tokens_median": 104,
+        "output_tokens_median": 386
+      }
+    },
+    "mistral/mistral-medium-3-5": {
+      "generation": {
+        "calls": 2,
+        "technical_successes": 0,
+        "failures": 2,
+        "finish_reasons": {
+          "null": 2
+        },
+        "total_latency_seconds_median": 25.648,
+        "output_words_whitespace_median": 0.0
+      },
+      "longform": {
+        "calls": 2,
+        "technical_successes": 0,
+        "failures": 2,
+        "finish_reasons": {
+          "null": 2
+        },
+        "total_latency_seconds_median": 23.364,
+        "output_words_whitespace_median": 0.0
+      },
+      "probe": {
+        "calls": 1,
+        "technical_successes": 0,
+        "failures": 1,
+        "finish_reasons": {
+          "null": 1
+        },
+        "total_latency_seconds_median": 27.918,
+        "output_words_whitespace_median": 0
+      }
+    }
+  },
+  "non_metriced_events": [
+    {
+      "event_id": "operator-interrupt-2026-09-30T1243-local",
+      "observed_at_local": "2026-09-30T12:47:38.655230+02:00",
+      "event_type": "operator_interruption",
+      "model_id_requested": "agy/gemini-3.8-flash-tiered",
+      "task_id": "dbms_sql",
+      "run_id": 2,
+      "phase": "generation",
+      "outcome": "aborted_before_metrics_persisted",
+      "reason": "Benchmark process was interrupted after repeated Mistral route-identity mismatch; this Gemini request had started but no complete response/metrics were persisted. It will receive one explicit resume attempt to preserve the planned two-run comparison.",
+      "response_capture": "no complete raw response available; request.json preserves the original request",
+      "retry_authorized_by_protocol": "explicit single resume, counted in retry_events; no model substitution or fallback"
+    }
+  ],
+  "candidate_execution_summary": {
+    "agy/gemini-3.8-flash-tiered": {
+      "persisted_responses": 16,
+      "identity_verified": true,
+      "finish_reason_length": 3,
+      "of_which_generation": 1,
+      "of_which_longform": 2,
+      "operator_interruption_attempts": 1,
+      "successful_explicit_resumes": 1,
+      "fallback_events": 0
+    },
+    "mistral/mistral-medium-3-5": {
+      "persisted_responses": 5,
+      "identity_verified": false,
+      "returned_model_id": "keepalive",
+      "visible_output_words": 0,
+      "fallback_events": 0,
+      "assessment": "execution/identity failure; quality not evaluated"
+    }
+  },
+  "resource_and_cost": {
+    "remote_peak_ram": "not exposed",
+    "monetary_cost": "unknown; no reliable per-request price reported",
+    "tokens_per_second_caveat": "Reported values derive from provider completion_tokens, which sometimes include reasoning_tokens and can exceed requested max_tokens. They are not a reliable measure of visible prose throughput and should not be compared across providers."
+  },
+  "latency_interpretation": "TTFT and total latency are observed end-to-end values through OmniRoute/provider, not isolated model inference benchmarks."
+}

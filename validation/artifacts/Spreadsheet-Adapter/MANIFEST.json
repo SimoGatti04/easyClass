@@ -1,0 +1,28 @@
+{
+  "schema_version": 1,
+  "component": "CellAwareSpreadsheetAdapter",
+  "date": "2026-09-30",
+  "workspace_root": "~/Workspace/teacher-service-design",
+  "artifacts": [
+    {
+      "artifact": "validation/artifacts/Spreadsheet-Adapter/workbook-ast.json",
+      "sha256": "08672d4c4e4b6cb8046185024b4df9f35f372b0170bcb45dd7026ba13c065423",
+      "description": "Deterministic JSON-serialized AST of excel_demo.xlsx preserving sheets, coordinates, values, headers, and formulas."
+    },
+    {
+      "artifact": "validation/artifacts/Spreadsheet-Adapter/validation-summary.json",
+      "sha256": "bdc3f3b77825677d53a03d1fa4f0d02c933a833bf9f7ba7d1acbc8f96ad8308d",
+      "description": "Validation summary including independent OOXML spot-check results, semantic query outcomes, and native table tests."
+    }
+  ],
+  "invariants": {
+    "coordinate_preservation": "PASS",
+    "sheet_names_preservation": "PASS",
+    "raw_values_preservation": "PASS",
+    "formula_distinction": "PASS",
+    "native_vs_detected_separation": "PASS",
+    "independent_ooxml_check": "PASS",
+    "native_table_fixture": "PASS",
+    "zero_ai_used": true
+  }
+}

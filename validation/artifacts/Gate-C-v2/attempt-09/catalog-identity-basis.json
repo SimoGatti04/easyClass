@@ -1,0 +1,17 @@
+{
+  "catalog_identity_basis": "FROZEN_ATTEMPT07_CATALOG_AFTER_TRANSIENT_REFRESH_FAILURE",
+  "catalog_refresh_status": "CATALOG_REFRESH_UNAVAILABLE_USING_FROZEN_IDENTITY_BASIS",
+  "catalog_refresh_classification": "TRANSPORT_FAILURE",
+  "fallback_used": true,
+  "identity_reference": {
+    "path": "validation/artifacts/Gate-C-v2/catalog-snapshot-attempt-07.json",
+    "sha256": "82b73ac7e1dd96bfbc38a3bb96e9c3d99e6f898ec49c06def5e304f9e60151e9",
+    "purpose": "requested/returned identity resolution only; no discovery, selection, ranking, availability or route fallback"
+  },
+  "live_catalog_reference": null,
+  "identity_only": true,
+  "discovery_used": false,
+  "selection_used": false,
+  "ranking_used": false,
+  "current_availability_source": "DIRECT_ONE_SHOT_ROUTE_GUARDS"
+}

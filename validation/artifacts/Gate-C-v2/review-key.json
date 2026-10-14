@@ -1,0 +1,16 @@
+{
+  "schema_version": 1,
+  "benchmark": "Gate-C-v2",
+  "attempt": "attempt-05",
+  "confidentiality": "Do not include this file in the blinded human-review packet.",
+  "model_to_code": {
+    "agy/gemini-3.8-flash-tiered": "CANDIDATE-A",
+    "groq/qwen/qwen3.8-27b": "CANDIDATE-B",
+    "openrouter/dots-studio/dots-3-note-preview:free": "CANDIDATE-C"
+  },
+  "code_to_model": {
+    "CANDIDATE-A": "agy/gemini-3.8-flash-tiered",
+    "CANDIDATE-B": "groq/qwen/qwen3.8-27b",
+    "CANDIDATE-C": "openrouter/dots-studio/dots-3-note-preview:free"
+  }
+}

@@ -1,0 +1,37 @@
+{
+  "schema_version": 1,
+  "artifact": "Gate B human annotation pack",
+  "status": "READY_FOR_HUMAN_ANNOTATION",
+  "created_date": "2026-09-30",
+  "annotator": "Simone",
+  "counts": {
+    "source_grounding": 52,
+    "source_grounding_real": 44,
+    "source_grounding_controlled_perturbation": 8,
+    "artifact_semantic_check": 30,
+    "short_semantic_tagging": "NOT_NEEDED"
+  },
+  "files": [
+    {
+      "path": "validation/corpus/gold/gate-b/HUMAN_ANNOTATION.md",
+      "sha256": "cb950c6e7bae709a0e065ea16a76e109458c35e784bf1d0c08c17a77fecf6266",
+      "bytes": 57610
+    },
+    {
+      "path": "validation/corpus/gold/gate-b/human-annotation-template.jsonl",
+      "sha256": "a899584bf27bcb77f18998e6f1c032fee85f6981aaa57ff8c8870ed5fbab94d3",
+      "bytes": 70052
+    },
+    {
+      "path": "validation/results/Gate-B-annotation-pack-report.md",
+      "sha256": "31240e0d4b3c97a01ef15aa15c7cde0dc26d919fd8eb32e796ae41d19cd9b3ea",
+      "bytes": 4141
+    },
+    {
+      "path": "validation/work/Gate-B/annotation-pack/annotation-pack-audit.json",
+      "sha256": "12ebe26e81c82af85ec006322c0869c88707e6a553aafe612f5fb46d74aebfbc",
+      "bytes": 2009
+    }
+  ],
+  "method": "Manual, label-free case curation; no model calls, inference, or benchmark runs."
+}

@@ -1,0 +1,110 @@
+{
+  "schema_version": 1,
+  "benchmark": "Gate-C-v2",
+  "attempt": "attempt-09",
+  "status": "CANDIDATE_UNAVAILABLE",
+  "catalog_identity_basis": "FROZEN_ATTEMPT07_CATALOG_AFTER_TRANSIENT_REFRESH_FAILURE",
+  "catalog_refresh_status": "CATALOG_REFRESH_UNAVAILABLE_USING_FROZEN_IDENTITY_BASIS",
+  "catalog_refresh_classification": "TRANSPORT_FAILURE",
+  "catalog_fallback_used": true,
+  "catalog_identity_reference": {
+    "path": "validation/artifacts/Gate-C-v2/catalog-snapshot-attempt-07.json",
+    "sha256": "82b73ac7e1dd96bfbc38a3bb96e9c3d99e6f898ec49c06def5e304f9e60151e9",
+    "purpose": "requested/returned identity resolution only; no discovery, selection, ranking, availability or route fallback"
+  },
+  "catalog_captured_at_utc": "2026-10-01T16:29:05.472153+00:00",
+  "catalog_check": {
+    "attempt_number": 3,
+    "stage": "attempt-09_initial_live_catalog_check",
+    "candidate_model_id": null,
+    "timestamp_utc": "2026-10-01T16:29:05.472153+00:00",
+    "http_status": null,
+    "classification": "TRANSPORT_FAILURE",
+    "request_id": null,
+    "response_headers_sanitized": {},
+    "response_body_sanitized": "",
+    "error": "URLError: bounded /v1/models request failed",
+    "latency_seconds": 0.001,
+    "attempts": [
+      {
+        "attempt_number": 1,
+        "stage": "attempt-09_initial_live_catalog_check",
+        "candidate_model_id": null,
+        "timestamp_utc": "2026-10-01T16:28:58.445981+00:00",
+        "http_status": null,
+        "classification": "TRANSPORT_FAILURE",
+        "request_id": null,
+        "response_headers_sanitized": {},
+        "response_body_sanitized": "",
+        "error": "URLError: bounded /v1/models request failed",
+        "latency_seconds": 0.015
+      },
+      {
+        "attempt_number": 2,
+        "stage": "attempt-09_initial_live_catalog_check",
+        "candidate_model_id": null,
+        "timestamp_utc": "2026-10-01T16:29:00.466521+00:00",
+        "http_status": null,
+        "classification": "TRANSPORT_FAILURE",
+        "request_id": null,
+        "response_headers_sanitized": {},
+        "response_body_sanitized": "",
+        "error": "URLError: bounded /v1/models request failed",
+        "latency_seconds": 0.001
+      },
+      {
+        "attempt_number": 3,
+        "stage": "attempt-09_initial_live_catalog_check",
+        "candidate_model_id": null,
+        "timestamp_utc": "2026-10-01T16:29:05.472153+00:00",
+        "http_status": null,
+        "classification": "TRANSPORT_FAILURE",
+        "request_id": null,
+        "response_headers_sanitized": {},
+        "response_body_sanitized": "",
+        "error": "URLError: bounded /v1/models request failed",
+        "latency_seconds": 0.001
+      }
+    ],
+    "attempt_count": 3,
+    "final_classification": "TRANSPORT_FAILURE"
+  },
+  "cohort_freeze_path": "validation/work/Gate-C-v2/inputs/cohort-v2.json",
+  "cohort_model_ids": [
+    "agy/gemini-3.8-flash-tiered",
+    "groq/qwen/qwen3.8-27b",
+    "openrouter/dots-studio/dots-3-note-preview:free"
+  ],
+  "selected_phase2_model_ids": [
+    "agy/gemini-3.8-flash-tiered",
+    "groq/qwen/qwen3.8-27b"
+  ],
+  "route_results": {
+    "agy/gemini-3.8-flash-tiered": {
+      "status": "CANDIDATE_UNAVAILABLE",
+      "guard": {
+        "candidate_model_id": "agy/gemini-3.8-flash-tiered",
+        "guard_classification": "CANDIDATE_UNAVAILABLE",
+        "failure_reason": "transport_failure_or_non_200",
+        "metrics_path": "validation/work/Gate-C-v2/outputs/attempt-09/by-model/agy__gemini-3.8-flash-tiered/availability-guard/run-01/run-metrics.json"
+      },
+      "frozen_root": "gemini-3.8-flash-tiered"
+    },
+    "groq/qwen/qwen3.8-27b": {
+      "status": "CANDIDATE_UNAVAILABLE",
+      "guard": {
+        "candidate_model_id": "groq/qwen/qwen3.8-27b",
+        "guard_classification": "CANDIDATE_UNAVAILABLE",
+        "failure_reason": "transport_failure_or_non_200",
+        "metrics_path": "validation/work/Gate-C-v2/outputs/attempt-09/by-model/groq__qwen__qwen3.8-27b/availability-guard/run-01/run-metrics.json"
+      },
+      "frozen_root": "qwen/qwen3.8-27b"
+    }
+  },
+  "phase1_source_attempt": "attempt-07",
+  "phase2_source_attempt": "attempt-09",
+  "phase1_remote_scheduling": "PROHIBITED",
+  "candidate_discovery": "NOT_RUN_FROZEN_TOP2_ONLY",
+  "replacement_or_reserve_used": false,
+  "corpus_sent": false
+}

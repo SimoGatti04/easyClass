@@ -1,0 +1,82 @@
+{
+  "artifact": "Gate B Gold v2 local capability revalidation",
+  "created_local_date": "2026-09-30",
+  "gold_path": "validation/corpus/gold/gate-b/gold-v2.jsonl",
+  "gold_sha256": "89f89faf8e718e33a049b36a5279893edce667de5c29844f6b81e9b65292e9c3",
+  "gold_records": 81,
+  "task_counts": {
+    "source_grounding": 51,
+    "artifact_semantic_check": 30
+  },
+  "label_counts": {
+    "source_grounding::SUPPORTED": 33,
+    "source_grounding::UNSUPPORTED": 18,
+    "artifact_semantic_check::SATISFIED": 18,
+    "artifact_semantic_check::VIOLATED": 9,
+    "artifact_semantic_check::PARTIAL": 2,
+    "artifact_semantic_check::UNKNOWN": 1
+  },
+  "gold_origin_counts": {
+    "real": 73,
+    "controlled_perturbation": 8
+  },
+  "gold_modified": false,
+  "gold_identity_and_labels_verified_against_canonical_counts": true,
+  "model_profile": "local.semantic_small",
+  "model_id": "MiniCPM5-2B-MLX",
+  "runtime": "oMLX loopback only",
+  "no_remote_models": true,
+  "no_remote_fallback": true,
+  "no_model_download_or_finetuning": true,
+  "prompt_allowlist": {
+    "source_grounding": [
+      "claim",
+      "source_excerpt"
+    ],
+    "artifact_semantic_check": [
+      "requirement",
+      "artifact_excerpt",
+      "source context only if present in that case input"
+    ]
+  },
+  "prompt_excluded_fields": [
+    "final_label",
+    "original_label",
+    "human_note_v1",
+    "notes",
+    "provenance",
+    "audit_action",
+    "source_kind",
+    "primary_epistemic_role",
+    "supporting_roles"
+  ],
+  "output_contract": "strict per-task JSON Schema; label enum, evidence_span, short_reason; no chain of thought",
+  "embedding_role": "Qwen3 cosine is diagnostic-only, not entailment/truth and not a classifier",
+  "profile_status": {
+    "grounding": "REJECTED_FOR_PROFILE",
+    "artifact_semantic_check": "REJECTED_FOR_PROFILE",
+    "local.semantic_small": "REJECTED_FOR_PROFILE for the two tested Gate B checker capabilities"
+  },
+  "artifacts": {
+    "predictions.jsonl": {
+      "sha256": "5f992ea38d9e8ec1f0f36987156842d5d43a0c3d13c442c163a5c6f037482678",
+      "bytes": 69341
+    },
+    "metrics.json": {
+      "sha256": "b335217b18691699ed38525f62bcdc50ec33f927dcadd9a18423c7b2cb2098fc",
+      "bytes": 7516
+    },
+    "confusion-matrices.json": {
+      "sha256": "a611ef042454f3290dd592d97bdfae8619755e5e4e6f5be3d90ca6f4956ef2e3",
+      "bytes": 2893
+    },
+    "runtime-metrics.json": {
+      "sha256": "45e37ff81bb1d6b3dd0ca0b447eeb2a05658eb2038477386a12e06c27ea2307f",
+      "bytes": 2607
+    }
+  },
+  "runner_path": "validation/work/Gate-B-v2/run_revalidation.py",
+  "finalizer_path": "validation/work/Gate-B-v2/finalize_outputs.py",
+  "runner_sha256": "8b5c69cd7959c29f0b4408e0b50edac79ee5487f5903f4cb8f05088fe2a1d44a",
+  "finalizer_sha256": "001481fc37c3e0f510b2de96c213267a875d400daf049c82acfa490d51b4b97b"
+}

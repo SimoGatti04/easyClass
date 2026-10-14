@@ -1,0 +1,27 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "teacher-service",
+  "version": "0.1.0",
+  "description": "Teacher Service — AI-assisted curriculum planning, pedagogical materials management, and assessment generation.",
+  "author": {
+    "name": "Simone Gatti"
+  },
+  "extensions": {
+    "com.openai": {
+      "interface": {
+        "displayName": "Teacher Service",
+        "shortDescription": "Manage lessons, materials & assessments",
+        "longDescription": "Pedagogical materials management and generation service supporting academic classes, lessons, structured lesson plans, detailed teacher scripts, canonical student materials, exercises, and formal assessment drafts.",
+        "developerName": "Simone Gatti",
+        "category": "Education & Teaching",
+        "capabilities": ["Interactive"],
+        "defaultPrompt": [
+          "List my academic classes and planned lessons",
+          "Generate a Lesson Plan and Teacher Script for a new lesson",
+          "Search for materials on a specific topic",
+          "Prepare a formal assessment draft with teacher-only solutions"
+        ]
+      }
+    }
+  }
+}

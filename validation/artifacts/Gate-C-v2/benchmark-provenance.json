@@ -1,0 +1,88 @@
+{
+  "schema_version": 1,
+  "benchmark": "Gate-C-v2",
+  "current_attempt": "attempt-05",
+  "current_attempt_status": "TECHNICAL_PARTIAL",
+  "attempt_history": [
+    {
+      "attempt": "attempt-01",
+      "status": "INVALID_HISTORICAL_EVIDENCE"
+    },
+    {
+      "attempt": "attempt-02",
+      "status": "INVALIDATED_TRANSPORT_CLIENT_BUG"
+    },
+    {
+      "attempt": "attempt-03",
+      "status": "VALID_STAGE_A"
+    },
+    {
+      "attempt": "attempt-04",
+      "status": "VALID_STAGE_B"
+    },
+    {
+      "attempt": "attempt-05",
+      "status": "COMPOSITE_BENCHMARK"
+    }
+  ],
+  "frozen_cohort_path": "validation/work/Gate-C-v2/inputs/cohort-v2.json",
+  "cohort_model_ids": [
+    "agy/gemini-3.8-flash-tiered",
+    "groq/qwen/qwen3.8-27b",
+    "openrouter/dots-studio/dots-3-note-preview:free"
+  ],
+  "cohort_roots": {
+    "agy/gemini-3.8-flash-tiered": "gemini-3.8-flash-tiered",
+    "groq/qwen/qwen3.8-27b": "qwen/qwen3.8-27b",
+    "openrouter/dots-studio/dots-3-note-preview:free": "dots-studio/dots-3-note-preview:free"
+  },
+  "previous_aggregate_archive": "validation/artifacts/Gate-C-v2/history/pre-attempt-05",
+  "previous_aggregate_files_preserved": [
+    {
+      "path": "validation/artifacts/Gate-C-v2/MANIFEST.json",
+      "archive_path": "validation/artifacts/Gate-C-v2/history/pre-attempt-05/MANIFEST.json",
+      "sha256": "0f205ed98cd3e703e917e253f63a6d3f934587ff64e20ea09624ce4702998353",
+      "size_bytes": 14277
+    },
+    {
+      "path": "validation/artifacts/Gate-C-v2/catalog-snapshot.json",
+      "archive_path": "validation/artifacts/Gate-C-v2/history/pre-attempt-05/catalog-snapshot.json",
+      "sha256": "db20bebb5243ebf79fe110fd0698f608c683b572b2cd98b835c77a33bf1d26b6",
+      "size_bytes": 55464
+    },
+    {
+      "path": "validation/artifacts/Gate-C-v2/deterministic-checks.json",
+      "archive_path": "validation/artifacts/Gate-C-v2/history/pre-attempt-05/deterministic-checks.json",
+      "sha256": "be0fe214152a1abc1bd4b445043dc6210dc3a11375e69e4552a6e5cc9fcfcab6",
+      "size_bytes": 6514
+    },
+    {
+      "path": "validation/artifacts/Gate-C-v2/preflight-results.json",
+      "archive_path": "validation/artifacts/Gate-C-v2/history/pre-attempt-05/preflight-results.json",
+      "sha256": "e4d3c6ce58eba7b597cb74ecb8f30ff22bf827ade2963b6a467632b211adf6af",
+      "size_bytes": 13330
+    },
+    {
+      "path": "validation/artifacts/Gate-C-v2/profile-validation.json",
+      "archive_path": "validation/artifacts/Gate-C-v2/history/pre-attempt-05/profile-validation.json",
+      "sha256": "248e099228777825932ea78f1f9b4828f60a4036852eebeeafa169869d257fa0",
+      "size_bytes": 6981
+    },
+    {
+      "path": "validation/artifacts/Gate-C-v2/review-key.json",
+      "archive_path": "validation/artifacts/Gate-C-v2/history/pre-attempt-05/review-key.json",
+      "sha256": "f911282416846af0f7b6474d6a51245d45854e22c216753e48da80293afaf785",
+      "size_bytes": 225
+    },
+    {
+      "path": "validation/artifacts/Gate-C-v2/runtime-metrics.json",
+      "archive_path": "validation/artifacts/Gate-C-v2/history/pre-attempt-05/runtime-metrics.json",
+      "sha256": "c51f41177e59bafb2f1e8920c61b9288428cf86484624d328ca96d11f3224677",
+      "size_bytes": 16998
+    }
+  ],
+  "catalog_snapshot_reference": "validation/artifacts/Gate-C-v2/catalog-snapshot-attempt-05.json",
+  "candidate_rediscovery": "NOT_PERFORMED",
+  "silent_replacement": false,
+  "created_at_utc": "2026-10-01T01:03:04.736109+00:00"
+}

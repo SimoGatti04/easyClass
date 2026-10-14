@@ -1,0 +1,415 @@
+{
+  "benchmark": "B5-B6",
+  "protocol": "B3 evaluation protocol and validation/shared/SCORING.md reused; manual review of raw outputs; no LLM-as-a-judge",
+  "date": "2026-09-29",
+  "score_scale": {
+    "qualitative": "0–4; higher is better",
+    "editing_effort": {
+      "4": "usable_as_is",
+      "3": "minor_edits",
+      "2": "moderate_edits",
+      "1": "major_rewrite",
+      "0": "unusable"
+    }
+  },
+  "dimension_order": [
+    "source_fidelity",
+    "factual_correctness",
+    "completeness",
+    "pedagogical_usefulness",
+    "level_adherence",
+    "duration_adherence",
+    "structure",
+    "hallucinations",
+    "editing_effort"
+  ],
+  "generation_route": "local-only; MiniCPM5-2B-MLX via oMLX",
+  "scope_note": "Only the three B3 source-separation-valid scenarios were scored. Remote B5/B6 outputs were not generated; no remote score is inferred.",
+  "scores": [
+    {
+      "model": "MiniCPM5-2B-MLX",
+      "route": "local-only",
+      "scenario_id": "dbms_sql",
+      "artifact": "lesson_plan",
+      "scores": [
+        2,
+        2,
+        1,
+        1,
+        2,
+        1,
+        2,
+        2,
+        1
+      ],
+      "score_by_dimension": {
+        "source_fidelity": 2,
+        "factual_correctness": 2,
+        "completeness": 1,
+        "pedagogical_usefulness": 1,
+        "level_adherence": 2,
+        "duration_adherence": 1,
+        "structure": 2,
+        "hallucinations": 2,
+        "editing_effort": 1
+      },
+      "editing_class": "major_rewrite",
+      "evidence": "Usa concetti del Source Set, ma prerequisito SQL non fornito; il dettaglio delle attività copre 90/120 minuti e la sequenza è troppo compressa per l’uso in aula.",
+      "raw_output_path": "validation/work/B5-B6/outputs/generated/local/dbms_sql/lesson_plan/lesson-plan.md"
+    },
+    {
+      "model": "MiniCPM5-2B-MLX",
+      "route": "local-only",
+      "scenario_id": "dbms_sql",
+      "artifact": "teacher_script",
+      "scores": [
+        2,
+        2,
+        1,
+        1,
+        2,
+        1,
+        2,
+        2,
+        1
+      ],
+      "score_by_dimension": {
+        "source_fidelity": 2,
+        "factual_correctness": 2,
+        "completeness": 1,
+        "pedagogical_usefulness": 1,
+        "level_adherence": 2,
+        "duration_adherence": 1,
+        "structure": 2,
+        "hallucinations": 2,
+        "editing_effort": 1
+      },
+      "editing_class": "major_rewrite",
+      "evidence": "622 parole per una lezione da 120 minuti; fasi dichiarate per circa 65 minuti, spiegazioni ripetitive, errori linguistici e nessun copione sufficiente per la durata richiesta.",
+      "raw_output_path": "validation/work/B5-B6/outputs/generated/local/dbms_sql/teacher_script/teacher-script.md"
+    },
+    {
+      "model": "MiniCPM5-2B-MLX",
+      "route": "local-only",
+      "scenario_id": "dbms_sql",
+      "artifact": "student_material",
+      "scores": [
+        2,
+        2,
+        0,
+        0,
+        3,
+        0,
+        1,
+        2,
+        0
+      ],
+      "score_by_dimension": {
+        "source_fidelity": 2,
+        "factual_correctness": 2,
+        "completeness": 0,
+        "pedagogical_usefulness": 0,
+        "level_adherence": 3,
+        "duration_adherence": 0,
+        "structure": 1,
+        "hallucinations": 2,
+        "editing_effort": 0
+      },
+      "editing_class": "unusable",
+      "evidence": "4.889 parole, 47 esercizi ripetitivi e risposta interrotta a metà istruzione con finish_reason=length; non è un handout utilizzabile.",
+      "raw_output_path": "validation/work/B5-B6/outputs/generated/local/dbms_sql/student_material/student-material.md"
+    },
+    {
+      "model": "MiniCPM5-2B-MLX",
+      "route": "local-only",
+      "scenario_id": "dbms_sql",
+      "artifact": "metadata_json",
+      "scores": [
+        2,
+        2,
+        2,
+        2,
+        3,
+        3,
+        0,
+        2,
+        0
+      ],
+      "score_by_dimension": {
+        "source_fidelity": 2,
+        "factual_correctness": 2,
+        "completeness": 2,
+        "pedagogical_usefulness": 2,
+        "level_adherence": 3,
+        "duration_adherence": 3,
+        "structure": 0,
+        "hallucinations": 2,
+        "editing_effort": 0
+      },
+      "editing_class": "unusable",
+      "evidence": "Risposta racchiusa in fence Markdown: JSON non parseabile dal contratto. Anche rimossa la fence, source_ids non corrisponde all’identificatore ammesso; non viene scritto metadata.json.",
+      "raw_output_path": "validation/work/B5-B6/outputs/generated/local/dbms_sql/metadata_json/response.raw.txt"
+    },
+    {
+      "model": "MiniCPM5-2B-MLX",
+      "route": "local-only",
+      "scenario_id": "excel",
+      "artifact": "lesson_plan",
+      "scores": [
+        1,
+        2,
+        1,
+        1,
+        3,
+        1,
+        2,
+        1,
+        1
+      ],
+      "score_by_dimension": {
+        "source_fidelity": 1,
+        "factual_correctness": 2,
+        "completeness": 1,
+        "pedagogical_usefulness": 1,
+        "level_adherence": 3,
+        "duration_adherence": 1,
+        "structure": 2,
+        "hallucinations": 1,
+        "editing_effort": 1
+      },
+      "editing_class": "major_rewrite",
+      "evidence": "Afferma 120 minuti ma le attività esplicite sommano 90; inventa prerequisiti e compiti sui riferimenti a celle non validati, pur dichiarando poi il limite.",
+      "raw_output_path": "validation/work/B5-B6/outputs/generated/local/excel/lesson_plan/lesson-plan.md"
+    },
+    {
+      "model": "MiniCPM5-2B-MLX",
+      "route": "local-only",
+      "scenario_id": "excel",
+      "artifact": "teacher_script",
+      "scores": [
+        1,
+        1,
+        0,
+        0,
+        2,
+        0,
+        0,
+        1,
+        0
+      ],
+      "score_by_dimension": {
+        "source_fidelity": 1,
+        "factual_correctness": 1,
+        "completeness": 0,
+        "pedagogical_usefulness": 0,
+        "level_adherence": 2,
+        "duration_adherence": 0,
+        "structure": 0,
+        "hallucinations": 1,
+        "editing_effort": 0
+      },
+      "editing_class": "unusable",
+      "evidence": "3.826 parole e 46 attività quasi duplicate; finish_reason=length tronca l’ultima attività. Ripete riferimenti-cella omessi e non offre un copione coerente.",
+      "raw_output_path": "validation/work/B5-B6/outputs/generated/local/excel/teacher_script/teacher-script.md"
+    },
+    {
+      "model": "MiniCPM5-2B-MLX",
+      "route": "local-only",
+      "scenario_id": "excel",
+      "artifact": "student_material",
+      "scores": [
+        2,
+        2,
+        2,
+        2,
+        3,
+        4,
+        3,
+        2,
+        2
+      ],
+      "score_by_dimension": {
+        "source_fidelity": 2,
+        "factual_correctness": 2,
+        "completeness": 2,
+        "pedagogical_usefulness": 2,
+        "level_adherence": 3,
+        "duration_adherence": 4,
+        "structure": 3,
+        "hallucinations": 2,
+        "editing_effort": 2
+      },
+      "editing_class": "moderate_edits",
+      "evidence": "Handout breve e distinto, ma contiene istruzioni ambigue/non verificabili sui codici e sulle intestazioni e una sezione “Note per il docente” non destinata agli studenti.",
+      "raw_output_path": "validation/work/B5-B6/outputs/generated/local/excel/student_material/student-material.md"
+    },
+    {
+      "model": "MiniCPM5-2B-MLX",
+      "route": "local-only",
+      "scenario_id": "excel",
+      "artifact": "metadata_json",
+      "scores": [
+        1,
+        1,
+        1,
+        1,
+        3,
+        1,
+        0,
+        1,
+        0
+      ],
+      "score_by_dimension": {
+        "source_fidelity": 1,
+        "factual_correctness": 1,
+        "completeness": 1,
+        "pedagogical_usefulness": 1,
+        "level_adherence": 3,
+        "duration_adherence": 1,
+        "structure": 0,
+        "hallucinations": 1,
+        "editing_effort": 0
+      },
+      "editing_class": "unusable",
+      "evidence": "JSON racchiuso in fence, scenario_id=excel_demo non ammesso, flag di distinzione stringa invece di booleano, source_id errato e obiettivi basati su riferimenti di cella.",
+      "raw_output_path": "validation/work/B5-B6/outputs/generated/local/excel/metadata_json/response.raw.txt"
+    },
+    {
+      "model": "MiniCPM5-2B-MLX",
+      "route": "local-only",
+      "scenario_id": "partial_source_dbms",
+      "artifact": "lesson_plan",
+      "scores": [
+        1,
+        1,
+        1,
+        0,
+        3,
+        0,
+        2,
+        0,
+        1
+      ],
+      "score_by_dimension": {
+        "source_fidelity": 1,
+        "factual_correctness": 1,
+        "completeness": 1,
+        "pedagogical_usefulness": 0,
+        "level_adherence": 3,
+        "duration_adherence": 0,
+        "structure": 2,
+        "hallucinations": 0,
+        "editing_effort": 1
+      },
+      "editing_class": "major_rewrite",
+      "evidence": "Tratta 120 minuti come sostenibili benché gli slot scritti sommino 90; introduce strumenti/query/esercizi assenti dalla proiezione parziale e non delimita il segmento difendibile.",
+      "raw_output_path": "validation/work/B5-B6/outputs/generated/local/partial_source_dbms/lesson_plan/lesson-plan.md"
+    },
+    {
+      "model": "MiniCPM5-2B-MLX",
+      "route": "local-only",
+      "scenario_id": "partial_source_dbms",
+      "artifact": "teacher_script",
+      "scores": [
+        1,
+        1,
+        0,
+        0,
+        2,
+        0,
+        0,
+        0,
+        0
+      ],
+      "score_by_dimension": {
+        "source_fidelity": 1,
+        "factual_correctness": 1,
+        "completeness": 0,
+        "pedagogical_usefulness": 0,
+        "level_adherence": 2,
+        "duration_adherence": 0,
+        "structure": 0,
+        "hallucinations": 0,
+        "editing_effort": 0
+      },
+      "editing_class": "unusable",
+      "evidence": "4.845 parole, finish_reason=length, molte aggiunte oltre il Source Set e ripetizione massiva del filler “Ciao, ora ci sono due minuti per pensare”; non utilizzabile.",
+      "raw_output_path": "validation/work/B5-B6/outputs/generated/local/partial_source_dbms/teacher_script/teacher-script.md"
+    },
+    {
+      "model": "MiniCPM5-2B-MLX",
+      "route": "local-only",
+      "scenario_id": "partial_source_dbms",
+      "artifact": "student_material",
+      "scores": [
+        2,
+        2,
+        1,
+        1,
+        3,
+        3,
+        1,
+        2,
+        1
+      ],
+      "score_by_dimension": {
+        "source_fidelity": 2,
+        "factual_correctness": 2,
+        "completeness": 1,
+        "pedagogical_usefulness": 1,
+        "level_adherence": 3,
+        "duration_adherence": 3,
+        "structure": 1,
+        "hallucinations": 2,
+        "editing_effort": 1
+      },
+      "editing_class": "major_rewrite",
+      "evidence": "Rende visibili alcune lacune ma incorpora istruzioni del prompt, obiettivi del lesson pack completo e una sezione “Teacher Script” non adatta a un foglio studenti.",
+      "raw_output_path": "validation/work/B5-B6/outputs/generated/local/partial_source_dbms/student_material/student-material.md"
+    },
+    {
+      "model": "MiniCPM5-2B-MLX",
+      "route": "local-only",
+      "scenario_id": "partial_source_dbms",
+      "artifact": "metadata_json",
+      "scores": [
+        2,
+        1,
+        1,
+        1,
+        3,
+        1,
+        0,
+        1,
+        0
+      ],
+      "score_by_dimension": {
+        "source_fidelity": 2,
+        "factual_correctness": 1,
+        "completeness": 1,
+        "pedagogical_usefulness": 1,
+        "level_adherence": 3,
+        "duration_adherence": 1,
+        "structure": 0,
+        "hallucinations": 1,
+        "editing_effort": 0
+      },
+      "editing_class": "unusable",
+      "evidence": "JSON racchiuso in fence; dopo rimozione delle fence fallisce source_id e chunk_id, e dichiara obiettivi/query del corpus completo invece del solo estratto.",
+      "raw_output_path": "validation/work/B5-B6/outputs/generated/local/partial_source_dbms/metadata_json/response.raw.txt"
+    }
+  ],
+  "not_scored": [
+    {
+      "route": "OmniRoute reference",
+      "model": "agy/gemini-3.8-flash-tiered",
+      "scenario_ids": [
+        "dbms_sql",
+        "excel",
+        "partial_source_dbms"
+      ],
+      "status": "NOT_RUN",
+      "reason": "No destination- and payload-specific approval was available to send the selected source sets/prompts to the remote endpoint; no corpus content was transmitted."
+    }
+  ]
+}

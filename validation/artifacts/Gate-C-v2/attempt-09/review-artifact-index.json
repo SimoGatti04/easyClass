@@ -1,0 +1,66 @@
+[
+  {
+    "candidate_code": "CANDIDATE-A",
+    "scenario_id": "dbms_sql",
+    "files": [
+      "validation/work/Gate-C-v2/outputs/attempt-09/blinded/CANDIDATE-A/dbms_sql/phase1-attempt-07-run-01/teacher-script.md",
+      "validation/work/Gate-C-v2/outputs/attempt-09/blinded/CANDIDATE-A/dbms_sql/phase1-attempt-07-run-01/deterministic-review-summary.json",
+      "validation/work/Gate-C-v2/outputs/attempt-09/blinded/CANDIDATE-A/dbms_sql/phase2-attempt-09-run-02/deterministic-review-summary.json"
+    ],
+    "excluded_identity_leaking_files": [],
+    "review_status": "PENDING_HUMAN_REVIEW"
+  },
+  {
+    "candidate_code": "CANDIDATE-A",
+    "scenario_id": "excel",
+    "files": [
+      "validation/work/Gate-C-v2/outputs/attempt-09/blinded/CANDIDATE-A/excel/phase1-attempt-07-run-01/teacher-script.md",
+      "validation/work/Gate-C-v2/outputs/attempt-09/blinded/CANDIDATE-A/excel/phase1-attempt-07-run-01/deterministic-review-summary.json",
+      "validation/work/Gate-C-v2/outputs/attempt-09/blinded/CANDIDATE-A/excel/phase2-attempt-09-run-02/deterministic-review-summary.json"
+    ],
+    "excluded_identity_leaking_files": [],
+    "review_status": "PENDING_HUMAN_REVIEW"
+  },
+  {
+    "candidate_code": "CANDIDATE-B",
+    "scenario_id": "dbms_sql",
+    "files": [
+      "validation/work/Gate-C-v2/outputs/attempt-09/blinded/CANDIDATE-B/dbms_sql/phase1-attempt-07-run-01/generation-output.json",
+      "validation/work/Gate-C-v2/outputs/attempt-09/blinded/CANDIDATE-B/dbms_sql/phase1-attempt-07-run-01/deterministic-review-summary.json",
+      "validation/work/Gate-C-v2/outputs/attempt-09/blinded/CANDIDATE-B/dbms_sql/phase2-attempt-09-run-02/deterministic-review-summary.json"
+    ],
+    "excluded_identity_leaking_files": [],
+    "review_status": "PENDING_HUMAN_REVIEW"
+  },
+  {
+    "candidate_code": "CANDIDATE-B",
+    "scenario_id": "excel",
+    "files": [
+      "validation/work/Gate-C-v2/outputs/attempt-09/blinded/CANDIDATE-B/excel/phase1-attempt-07-run-01/deterministic-review-summary.json",
+      "validation/work/Gate-C-v2/outputs/attempt-09/blinded/CANDIDATE-B/excel/phase2-attempt-09-run-02/deterministic-review-summary.json"
+    ],
+    "excluded_identity_leaking_files": [],
+    "review_status": "PENDING_HUMAN_REVIEW"
+  },
+  {
+    "candidate_code": "CANDIDATE-C",
+    "scenario_id": "dbms_sql",
+    "files": [
+      "validation/work/Gate-C-v2/outputs/attempt-09/blinded/CANDIDATE-C/dbms_sql/phase1-attempt-07-run-01/generation-output.json",
+      "validation/work/Gate-C-v2/outputs/attempt-09/blinded/CANDIDATE-C/dbms_sql/phase1-attempt-07-run-01/deterministic-review-summary.json",
+      "validation/work/Gate-C-v2/outputs/attempt-09/blinded/CANDIDATE-C/dbms_sql/phase2-attempt-09-run-02/deterministic-review-summary.json"
+    ],
+    "excluded_identity_leaking_files": [],
+    "review_status": "PENDING_HUMAN_REVIEW"
+  },
+  {
+    "candidate_code": "CANDIDATE-C",
+    "scenario_id": "excel",
+    "files": [
+      "validation/work/Gate-C-v2/outputs/attempt-09/blinded/CANDIDATE-C/excel/phase1-attempt-07-run-01/deterministic-review-summary.json",
+      "validation/work/Gate-C-v2/outputs/attempt-09/blinded/CANDIDATE-C/excel/phase2-attempt-09-run-02/deterministic-review-summary.json"
+    ],
+    "excluded_identity_leaking_files": [],
+    "review_status": "PENDING_HUMAN_REVIEW"
+  }
+]

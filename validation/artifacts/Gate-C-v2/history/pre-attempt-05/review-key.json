@@ -1,0 +1,8 @@
+{
+  "schema_version": 1,
+  "benchmark": "Gate-C-v2",
+  "status": "NO_COHORT_FOR_BLINDING",
+  "confidentiality": "No model-to-blind-code mapping is available; do not infer one.",
+  "model_to_code": {},
+  "code_to_model": {}
+}

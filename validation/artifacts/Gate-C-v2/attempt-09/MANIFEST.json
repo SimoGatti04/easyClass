@@ -1,0 +1,1206 @@
+{
+  "schema_version": 1,
+  "benchmark": "Gate-C-v2",
+  "current_attempt": "attempt-09",
+  "composition": {
+    "PHASE_1_SOURCE": "attempt-07",
+    "PHASE_2_SOURCE": "attempt-09"
+  },
+  "attempt_history": [
+    {
+      "attempt": "attempt-01",
+      "status": "INVALID_HISTORICAL_EVIDENCE"
+    },
+    {
+      "attempt": "attempt-02",
+      "status": "INVALIDATED_TRANSPORT_CLIENT_BUG"
+    },
+    {
+      "attempt": "attempt-03",
+      "status": "VALID_STAGE_A"
+    },
+    {
+      "attempt": "attempt-04",
+      "status": "VALID_STAGE_B"
+    },
+    {
+      "attempt": "attempt-05",
+      "status": "TECHNICAL_PARTIAL_RUNNER_FAILURE"
+    },
+    {
+      "attempt": "attempt-06",
+      "status": "ABORTED_PREBENCHMARK_CATALOG_TRANSPORT_FAILURE"
+    },
+    {
+      "attempt": "attempt-07",
+      "status": "RUNNER_FAILURE_PHASE1_VALID"
+    },
+    {
+      "attempt": "attempt-08",
+      "status": "RUNNER_FAILURE_BEFORE_PHASE2"
+    },
+    {
+      "attempt": "attempt-09",
+      "status": "NEXT_PHASE2_CONTINUATION"
+    }
+  ],
+  "attempt-07": "RUNNER_FAILURE; Phase 1 valid/complete/checkpointed; ranking not produced; Phase 2 not run; not decision-grade",
+  "attempt-08": "RUNNER_FAILURE_BEFORE_PHASE2; no route guard/inference/corpus/deliverables; no model evidence",
+  "attempt-09": "Phase-2-only continuation; human review required",
+  "provenance": {
+    "path": "validation/artifacts/Gate-C-v2/attempt-09/benchmark-provenance.json",
+    "sha256": "20403d60e4a08aea4eaee6c93418fc5c47cfe583926622a8272a0ea52610f3b0"
+  },
+  "phase1_freeze": {
+    "path": "validation/artifacts/Gate-C-v2/attempt-09/phase1-freeze.json",
+    "sha256": "08ef288c373c2a6228171d7151cbc0e40983231dd3567ff206b37e6be3f32859"
+  },
+  "phase1_matrix": {
+    "path": "validation/work/Gate-C-v2/metrics/attempt-07/phase1-matrix.json",
+    "sha256": "e105eb6a8c3b2b7bb3ab7c17df38abb3ce073760742feb706e9954020aa182ce"
+  },
+  "phase1_checkpoint": {
+    "path": "validation/work/Gate-C-v2/metrics/attempt-07/result-checkpoints.jsonl",
+    "sha256": "1af106246372a2990b73ba2d2db72028816e4f16d0ef5b6f9c55cf3b84d42751"
+  },
+  "raw_phase1_artifact_inventory": [
+    {
+      "path": "validation/work/Gate-C-v2/outputs/attempt-07/by-model/agy__gemini-3.8-flash-tiered/availability-guard/run-01/request.json",
+      "sha256": "070fe87c5ca5d69a2b6e27750a4bc38f354282c8ad55b7b1689b56bf5e5206cc",
+      "size_bytes": 363
+    },
+    {
+      "path": "validation/work/Gate-C-v2/outputs/attempt-07/by-model/agy__gemini-3.8-flash-tiered/availability-guard/run-01/response.raw.txt",
+      "sha256": "4ecd130021f8223951cdb5d79ac7ac147951550f0aecaaae309a50ebfede3183",
+      "size_bytes": 16
+    },
+    {
+      "path": "validation/work/Gate-C-v2/outputs/attempt-07/by-model/agy__gemini-3.8-flash-tiered/availability-guard/run-01/response.sse.txt",
+      "sha256": "05eb3e5bb6807f80c3d2678e5f358970f59529cfacd6f352e0d6a9bfd63bce3c",
+      "size_bytes": 923
+    },
+    {
+      "path": "validation/work/Gate-C-v2/outputs/attempt-07/by-model/agy__gemini-3.8-flash-tiered/availability-guard/run-01/run-metrics.json",
+      "sha256": "3fe70042004f0bfba68ab0cd7defabaac74752a55d22c6f4ca715dc4bc0bb5e9",
+      "size_bytes": 2289
+    },
+    {
+      "path": "validation/work/Gate-C-v2/outputs/attempt-07/by-model/agy__gemini-3.8-flash-tiered/dbms_sql/generation/run-01/deterministic-checks.json",
+      "sha256": "f296f03fb34858c04d56bf6648ad123421936583d9bfbcda049243bc82af21c5",
+      "size_bytes": 1211
+    },
+    {
+      "path": "validation/work/Gate-C-v2/outputs/attempt-07/by-model/agy__gemini-3.8-flash-tiered/dbms_sql/generation/run-01/request.json",
+      "sha256": "b61c1eaf9e65fdb2d164ffdc90abaf5d478134daaac7e4f8d475f58b5b20c60a",
+      "size_bytes": 12177
+    },
+    {
+      "path": "validation/work/Gate-C-v2/outputs/attempt-07/by-model/agy__gemini-3.8-flash-tiered/dbms_sql/generation/run-01/response.raw.txt",
+      "sha256": "96bc5aab6bf4e55fc3febd5a96e685db8d6e25579b9d0fbd9e320a2711d3d1a1",
+      "size_bytes": 23928
+    },
+    {
+      "path": "validation/work/Gate-C-v2/outputs/attempt-07/by-model/agy__gemini-3.8-flash-tiered/dbms_sql/generation/run-01/response.sse.txt",
+      "sha256": "ab76eb57f982debcbfade9b11d769f52145afa51e03e8e191c03c33b92f50ea3",
+      "size_bytes": 94899
+    },
+    {
+      "path": "validation/work/Gate-C-v2/outputs/attempt-07/by-model/agy__gemini-3.8-flash-tiered/dbms_sql/generation/run-01/run-metrics.json",
+      "sha256": "7dceb9b77a5daff2ccf5f12d5e83a048057bd2ed6ae444b7989871bee51d8c16",
+      "size_bytes": 2357
+    },
+    {
+      "path": "validation/work/Gate-C-v2/outputs/attempt-07/by-model/agy__gemini-3.8-flash-tiered/dbms_sql/longform/plan/run-01/parsed-plan.json",
+      "sha256": "0f2c6946bfddfff68a7317c24d34f7948163de3bbf6a848f2dd4bd37dfc3a1aa",
+      "size_bytes": 15487
+    },
+    {
+      "path": "validation/work/Gate-C-v2/outputs/attempt-07/by-model/agy__gemini-3.8-flash-tiered/dbms_sql/longform/plan/run-01/request.json",
+      "sha256": "f58b2c8fbfa320846ff7c894ace03973bade8ce93b4a357e7a741377bb38fe28",
+      "size_bytes": 9062
+    },
+    {
+      "path": "validation/work/Gate-C-v2/outputs/attempt-07/by-model/agy__gemini-3.8-flash-tiered/dbms_sql/longform/plan/run-01/response.raw.txt",
+      "sha256": "4295b17503f16dbe919eee5f98e00111253c54a1b3163009be3faea840fe3fb8",
+      "size_bytes": 15486
+    },
+    {
+      "path": "validation/work/Gate-C-v2/outputs/attempt-07/by-model/agy__gemini-3.8-flash-tiered/dbms_sql/longform/plan/run-01/response.sse.txt",
+      "sha256": "52d530289ba59d39087f7ce3ff481d0125488a437343ee6f60c48d8a99b83024",
+      "size_bytes": 58083
+    },
+    {
+      "path": "validation/work/Gate-C-v2/outputs/attempt-07/by-model/agy__gemini-3.8-flash-tiered/dbms_sql/longform/plan/run-01/run-metrics.json",
+      "sha256": "8294b3b90e38549245bf0e6f18c1e49e9fed1572c1024fd0ddcd2a713df4a198",
+      "size_bytes": 2356
+    },
+    {
+      "path": "validation/work/Gate-C-v2/outputs/attempt-07/by-model/agy__gemini-3.8-flash-tiered/dbms_sql/longform/run-01/deterministic-checks.json",
+      "sha256": "671708413ffa97f7002dbf4e99796c43b4c9e7bd408308e7bea299b2e27eb8df",
+      "size_bytes": 26963
+    },
+    {
+      "path": "validation/work/Gate-C-v2/outputs/attempt-07/by-model/agy__gemini-3.8-flash-tiered/dbms_sql/longform/run-01/teacher-script-assembled.md",
+      "sha256": "98bb82048e0b94b9ddee85d2eb12f17f70ceebed519d621ae67060dcbbce9e20",
+      "size_bytes": 27717
+    },
+    {
+      "path": "validation/work/Gate-C-v2/outputs/attempt-07/by-model/agy__gemini-3.8-flash-tiered/dbms_sql/longform/section-01/run-01/request.json",
+      "sha256": "da4388435b886454eeed3fb5d6489130de8e94daebdccb458115cfafa4756ca8",
+      "size_bytes": 24435
+    },
+    {
+      "path": "validation/work/Gate-C-v2/outputs/attempt-07/by-model/agy__gemini-3.8-flash-tiered/dbms_sql/longform/section-01/run-01/response.raw.txt",
+      "sha256": "559cc2ff5fa0e31ee79b6830efeacfe616995476e5884b2ddceac2cfb39f962a",
+      "size_bytes": 7317
+    },
+    {
+      "path": "validation/work/Gate-C-v2/outputs/attempt-07/by-model/agy__gemini-3.8-flash-tiered/dbms_sql/longform/section-01/run-01/response.sse.txt",
+      "sha256": "abbee0d43ee5317c7bfa0523ef3db6b2cfd8db7a63e3343f551326d00e535069",
+      "size_bytes": 28208
+    },
+    {
+      "path": "validation/work/Gate-C-v2/outputs/attempt-07/by-model/agy__gemini-3.8-flash-tiered/dbms_sql/longform/section-01/run-01/run-metrics.json",
+      "sha256": "220b9716364828f7bb81fb73c9cc6d176e74bb0f733b11c44db1b420614be3b6",
+      "size_bytes": 2372
+    },
+    {
+      "path": "validation/work/Gate-C-v2/outputs/attempt-07/by-model/agy__gemini-3.8-flash-tiered/dbms_sql/longform/section-01/run-01/section-initial.txt",
+      "sha256": "559cc2ff5fa0e31ee79b6830efeacfe616995476e5884b2ddceac2cfb39f962a",
+      "size_bytes": 7317
+    },
+    {
+      "path": "validation/work/Gate-C-v2/outputs/attempt-07/by-model/agy__gemini-3.8-flash-tiered/dbms_sql/longform/section-01-repair/run-01/request.json",
+      "sha256": "1a734e33832ead41bcc54ccb18e4ae237064199cf47b4070ed7669d58aa71ec3",
+      "size_bytes": 32075
+    },
+    {
+      "path": "validation/work/Gate-C-v2/outputs/attempt-07/by-model/agy__gemini-3.8-flash-tiered/dbms_sql/longform/section-01-repair/run-01/response.raw.txt",
+      "sha256": "e169da53105a92960eb9e4c6af0191c81fac226ba2c336f1b446e40e23fd08ba",
+      "size_bytes": 5786
+    },
+    {
+      "path": "validation/work/Gate-C-v2/outputs/attempt-07/by-model/agy__gemini-3.8-flash-tiered/dbms_sql/longform/section-01-repair/run-01/response.sse.txt",
+      "sha256": "a99267880ba9ebe327f55eac00ce12c90be4c0b651b82c871c9d850e6c0e25ac",
+      "size_bytes": 24444
+    },
+    {
+      "path": "validation/work/Gate-C-v2/outputs/attempt-07/by-model/agy__gemini-3.8-flash-tiered/dbms_sql/longform/section-01-repair/run-01/run-metrics.json",
+      "sha256": "f4ecea461934885173bdbd64e1b4905e7afee948249cbf44558007c283e10d14",
+      "size_bytes": 2391
+    },
+    {
+      "path": "validation/work/Gate-C-v2/outputs/attempt-07/by-model/agy__gemini-3.8-flash-tiered/dbms_sql/longform/section-01-repair/run-01/section-final.txt",
+      "sha256": "e169da53105a92960eb9e4c6af0191c81fac226ba2c336f1b446e40e23fd08ba",
+      "size_bytes": 5786
+    },
+    {
+      "path": "validation/work/Gate-C-v2/outputs/attempt-07/by-model/agy__gemini-3.8-flash-tiered/dbms_sql/longform/section-02/run-01/request.json",
+      "sha256": "3cf51bbc3df9af7fe51b4fa5cdf26e312b33c542300757a8a0ad125badafabc9",
+      "size_bytes": 24350
+    },
+    {
+      "path": "validation/work/Gate-C-v2/outputs/attempt-07/by-model/agy__gemini-3.8-flash-tiered/dbms_sql/longform/section-02/run-01/response.raw.txt",
+      "sha256": "0f940a8175b950646ace67a3b2fd48974fc429c2a46d0b4ed554cd5a58f2db8d",
+      "size_bytes": 4669
+    },
+    {
+      "path": "validation/work/Gate-C-v2/outputs/attempt-07/by-model/agy__gemini-3.8-flash-tiered/dbms_sql/longform/section-02/run-01/response.sse.txt",
+      "sha256": "c17609741c0bacf6bfffd07180b2cc0916fd5dbabb233e5a1959ec652db73ab0",
+      "size_bytes": 19133
+    },
+    {
+      "path": "validation/work/Gate-C-v2/outputs/attempt-07/by-model/agy__gemini-3.8-flash-tiered/dbms_sql/longform/section-02/run-01/run-metrics.json",
+      "sha256": "ba561af2f1e77e94d09a69a3e121d321839da8bd6296fef5c3967fdb7e0cf071",
+      "size_bytes": 2370
+    },
+    {
+      "path": "validation/work/Gate-C-v2/outputs/attempt-07/by-model/agy__gemini-3.8-flash-tiered/dbms_sql/longform/section-02/run-01/section-final.txt",
+      "sha256": "0f940a8175b950646ace67a3b2fd48974fc429c2a46d0b4ed554cd5a58f2db8d",
+      "size_bytes": 4669
+    },
+    {
+      "path": "validation/work/Gate-C-v2/outputs/attempt-07/by-model/agy__gemini-3.8-flash-tiered/dbms_sql/longform/section-02/run-01/section-initial.txt",
+      "sha256": "0f940a8175b950646ace67a3b2fd48974fc429c2a46d0b4ed554cd5a58f2db8d",
+      "size_bytes": 4669
+    },
+    {
+      "path": "validation/work/Gate-C-v2/outputs/attempt-07/by-model/agy__gemini-3.8-flash-tiered/dbms_sql/longform/section-03/run-01/request.json",
+      "sha256": "a7a89db6edd9fb0053cf98b3dd02db9a54e95b00b77621567e3407690e9dee53",
+      "size_bytes": 24554
+    },
+    {
+      "path": "validation/work/Gate-C-v2/outputs/attempt-07/by-model/agy__gemini-3.8-flash-tiered/dbms_sql/longform/section-03/run-01/response.raw.txt",
+      "sha256": "cda1be6c8fc1c37f0f7f6f2f870c96655abb71de2812b979dc4b5de5299d4280",
+      "size_bytes": 7489
+    },
+    {
+      "path": "validation/work/Gate-C-v2/outputs/attempt-07/by-model/agy__gemini-3.8-flash-tiered/dbms_sql/longform/section-03/run-01/response.sse.txt",
+      "sha256": "6f58ccd16276d815d6fef977703b7cbdd94e53361ba5668a598c5d47bad12741",
+      "size_bytes": 32845
+    },
+    {
+      "path": "validation/work/Gate-C-v2/outputs/attempt-07/by-model/agy__gemini-3.8-flash-tiered/dbms_sql/longform/section-03/run-01/run-metrics.json",
+      "sha256": "2ac7cea461f0967ff44501731e426978a629c3ccd4989a66740f24033874808a",
+      "size_bytes": 2372
+    },
+    {
+      "path": "validation/work/Gate-C-v2/outputs/attempt-07/by-model/agy__gemini-3.8-flash-tiered/dbms_sql/longform/section-03/run-01/section-initial.txt",
+      "sha256": "cda1be6c8fc1c37f0f7f6f2f870c96655abb71de2812b979dc4b5de5299d4280",
+      "size_bytes": 7489
+    },
+    {
+      "path": "validation/work/Gate-C-v2/outputs/attempt-07/by-model/agy__gemini-3.8-flash-tiered/dbms_sql/longform/section-03-repair/run-01/request.json",
+      "sha256": "6aad9adc4327669c56429c62f46d1417620321a2980a7541e1ec302d1a3532f6",
+      "size_bytes": 32389
+    },
+    {
+      "path": "validation/work/Gate-C-v2/outputs/attempt-07/by-model/agy__gemini-3.8-flash-tiered/dbms_sql/longform/section-03-repair/run-01/response.raw.txt",
+      "sha256": "53e523572f01466722d696e89b3e894af919970332b99cad3a079787d149b099",
+      "size_bytes": 6325
+    },
+    {
+      "path": "validation/work/Gate-C-v2/outputs/attempt-07/by-model/agy__gemini-3.8-flash-tiered/dbms_sql/longform/section-03-repair/run-01/response.sse.txt",
+      "sha256": "57ec1f3ceb98e69a1aa9dea9259c15d5689381bc2a2c099cb423314551e423a6",
+      "size_bytes": 35167
+    },
+    {
+      "path": "validation/work/Gate-C-v2/outputs/attempt-07/by-model/agy__gemini-3.8-flash-tiered/dbms_sql/longform/section-03-repair/run-01/run-metrics.json",
+      "sha256": "f93a6acd13959a7d03c0db1903274ecae4b2dc66c57ae385c5288b0e87f6b4af",
+      "size_bytes": 2390
+    },
+    {
+      "path": "validation/work/Gate-C-v2/outputs/attempt-07/by-model/agy__gemini-3.8-flash-tiered/dbms_sql/longform/section-03-repair/run-01/section-final.txt",
+      "sha256": "53e523572f01466722d696e89b3e894af919970332b99cad3a079787d149b099",
+      "size_bytes": 6325
+    },
+    {
+      "path": "validation/work/Gate-C-v2/outputs/attempt-07/by-model/agy__gemini-3.8-flash-tiered/dbms_sql/longform/section-04/run-01/request.json",
+      "sha256": "46750d2982f37ef74a7cac24e5dfe15c5737810ed62cc4ef71dc58df825cd635",
+      "size_bytes": 24643
+    },
+    {
+      "path": "validation/work/Gate-C-v2/outputs/attempt-07/by-model/agy__gemini-3.8-flash-tiered/dbms_sql/longform/section-04/run-01/response.raw.txt",
+      "sha256": "8133ba659fceb4c2e29707fc1929665ddde044ed34743ddd165654eb796cf21e",
+      "size_bytes": 5505
+    },
+    {
+      "path": "validation/work/Gate-C-v2/outputs/attempt-07/by-model/agy__gemini-3.8-flash-tiered/dbms_sql/longform/section-04/run-01/response.sse.txt",
+      "sha256": "66e98acee8024f1324b32a7d3e201eedac1ccc203191c02f1a3b3f812a3e14ba",
+      "size_bytes": 18566
+    },
+    {
+      "path": "validation/work/Gate-C-v2/outputs/attempt-07/by-model/agy__gemini-3.8-flash-tiered/dbms_sql/longform/section-04/run-01/run-metrics.json",
+      "sha256": "8372a3a877352b7a5fee43e0b9f3710ac757ce71b7002cb49199d6dc99b2b101",
+      "size_bytes": 2371
+    },
+    {
+      "path": "validation/work/Gate-C-v2/outputs/attempt-07/by-model/agy__gemini-3.8-flash-tiered/dbms_sql/longform/section-04/run-01/section-final.txt",
+      "sha256": "8133ba659fceb4c2e29707fc1929665ddde044ed34743ddd165654eb796cf21e",
+      "size_bytes": 5505
+    },
+    {
+      "path": "validation/work/Gate-C-v2/outputs/attempt-07/by-model/agy__gemini-3.8-flash-tiered/dbms_sql/longform/section-04/run-01/section-initial.txt",
+      "sha256": "8133ba659fceb4c2e29707fc1929665ddde044ed34743ddd165654eb796cf21e",
+      "size_bytes": 5505
+    },
+    {
+      "path": "validation/work/Gate-C-v2/outputs/attempt-07/by-model/agy__gemini-3.8-flash-tiered/dbms_sql/longform/section-05/run-01/request.json",
+      "sha256": "8979c3a83179e4e4275e9189ba8689ca265e8d5b96f0e5e7f836d097201a5489",
+      "size_bytes": 24533
+    },
+    {
+      "path": "validation/work/Gate-C-v2/outputs/attempt-07/by-model/agy__gemini-3.8-flash-tiered/dbms_sql/longform/section-05/run-01/response.raw.txt",
+      "sha256": "341bb773926c784a720ca0ce725c27254343819ae846a99007e68978d98755de",
+      "size_bytes": 4950
+    },
+    {
+      "path": "validation/work/Gate-C-v2/outputs/attempt-07/by-model/agy__gemini-3.8-flash-tiered/dbms_sql/longform/section-05/run-01/response.sse.txt",
+      "sha256": "8f37293d059ff86d81d9cfaaa164f7fdfe91044f681d6c62e1b731e59b2af15c",
+      "size_bytes": 20068
+    },
+    {
+      "path": "validation/work/Gate-C-v2/outputs/attempt-07/by-model/agy__gemini-3.8-flash-tiered/dbms_sql/longform/section-05/run-01/run-metrics.json",
+      "sha256": "420bd47a8b731ff3830066e185c67550d6360e7e71798cd065b13bfa57649ce2",
+      "size_bytes": 2370
+    },
+    {
+      "path": "validation/work/Gate-C-v2/outputs/attempt-07/by-model/agy__gemini-3.8-flash-tiered/dbms_sql/longform/section-05/run-01/section-final.txt",
+      "sha256": "341bb773926c784a720ca0ce725c27254343819ae846a99007e68978d98755de",
+      "size_bytes": 4950
+    },
+    {
+      "path": "validation/work/Gate-C-v2/outputs/attempt-07/by-model/agy__gemini-3.8-flash-tiered/dbms_sql/longform/section-05/run-01/section-initial.txt",
+      "sha256": "341bb773926c784a720ca0ce725c27254343819ae846a99007e68978d98755de",
+      "size_bytes": 4950
+    },
+    {
+      "path": "validation/work/Gate-C-v2/outputs/attempt-07/by-model/agy__gemini-3.8-flash-tiered/excel/generation/run-01/deterministic-checks.json",
+      "sha256": "64305c8404cda0c84ff4e6c200fbe6b892aa8dfa677335e94fd18b5d4d91f69c",
+      "size_bytes": 44015
+    },
+    {
+      "path": "validation/work/Gate-C-v2/outputs/attempt-07/by-model/agy__gemini-3.8-flash-tiered/excel/generation/run-01/request.json",
+      "sha256": "c8ab1d6ba1b6fc81575df2d04a0048205364335b0c4ffd1f49c04c29b41a9cb0",
+      "size_bytes": 186138
+    },
+    {
+      "path": "validation/work/Gate-C-v2/outputs/attempt-07/by-model/agy__gemini-3.8-flash-tiered/excel/generation/run-01/response.raw.txt",
+      "sha256": "ec6f95981243ef51b7ecb0c2f22079b18bca72e8f34538aaf84db1cb66dd7246",
+      "size_bytes": 20667
+    },
+    {
+      "path": "validation/work/Gate-C-v2/outputs/attempt-07/by-model/agy__gemini-3.8-flash-tiered/excel/generation/run-01/response.sse.txt",
+      "sha256": "ad75d4d724bfe6624e04ab37923b8e51c8b8d6002e0e6722ba2ba15822e2daa2",
+      "size_bytes": 89049
+    },
+    {
+      "path": "validation/work/Gate-C-v2/outputs/attempt-07/by-model/agy__gemini-3.8-flash-tiered/excel/generation/run-01/run-metrics.json",
+      "sha256": "fa1fed43ae56523d627b8258b1df38a59b1cc64a39cfc5a5cc4f0d454109d693",
+      "size_bytes": 2524
+    },
+    {
+      "path": "validation/work/Gate-C-v2/outputs/attempt-07/by-model/agy__gemini-3.8-flash-tiered/excel/longform/plan/run-01/parsed-plan.json",
+      "sha256": "72b55ca68d33443dd0efb7c837d42a88aaf5661b1b42caac9218b914f39fae66",
+      "size_bytes": 13967
+    },
+    {
+      "path": "validation/work/Gate-C-v2/outputs/attempt-07/by-model/agy__gemini-3.8-flash-tiered/excel/longform/plan/run-01/request.json",
+      "sha256": "bb69218a31fa08a56c04da9ee0b9dc2ad3d5ed2c537083004aacd479e4a7d9d7",
+      "size_bytes": 182974
+    },
+    {
+      "path": "validation/work/Gate-C-v2/outputs/attempt-07/by-model/agy__gemini-3.8-flash-tiered/excel/longform/plan/run-01/response.raw.txt",
+      "sha256": "a8f48a8ed258cc47ad832d7e53c7a3ad9889c6117d5c00f86329c7138b06a3b2",
+      "size_bytes": 13966
+    },
+    {
+      "path": "validation/work/Gate-C-v2/outputs/attempt-07/by-model/agy__gemini-3.8-flash-tiered/excel/longform/plan/run-01/response.sse.txt",
+      "sha256": "6dfa60651f990668bda1d3f65f7083dae5fb67c028b6f08e15ce35f9918cedad",
+      "size_bytes": 50780
+    },
+    {
+      "path": "validation/work/Gate-C-v2/outputs/attempt-07/by-model/agy__gemini-3.8-flash-tiered/excel/longform/plan/run-01/run-metrics.json",
+      "sha256": "3fbf5827f275e8128f1c264564e5f19a9d43ceed61a66934d9fe61fd7e985eec",
+      "size_bytes": 2523
+    },
+    {
+      "path": "validation/work/Gate-C-v2/outputs/attempt-07/by-model/agy__gemini-3.8-flash-tiered/excel/longform/run-01/deterministic-checks.json",
+      "sha256": "d592ea4ffd33843cca05aac6a48a81b85ffd340466505d0b2dc1b568d4c5efa6",
+      "size_bytes": 166497
+    },
+    {
+      "path": "validation/work/Gate-C-v2/outputs/attempt-07/by-model/agy__gemini-3.8-flash-tiered/excel/longform/run-01/teacher-script-assembled.md",
+      "sha256": "1eeb40040e6cea4a25a267df94e6e3403006ba1456d0fdbb7d1230d15f1bb7f3",
+      "size_bytes": 29977
+    },
+    {
+      "path": "validation/work/Gate-C-v2/outputs/attempt-07/by-model/agy__gemini-3.8-flash-tiered/excel/longform/section-01/run-01/request.json",
+      "sha256": "5de3a5ef4b2fc4db51b2caf2a49006a01cac3e05bce6c8187d8af2c28e0efc99",
+      "size_bytes": 196907
+    },
+    {
+      "path": "validation/work/Gate-C-v2/outputs/attempt-07/by-model/agy__gemini-3.8-flash-tiered/excel/longform/section-01/run-01/response.raw.txt",
+      "sha256": "5c33167684faff4bb0333b2393f584b9deb91a9e205296535eeb8ed6eae05df6",
+      "size_bytes": 8807
+    },
+    {
+      "path": "validation/work/Gate-C-v2/outputs/attempt-07/by-model/agy__gemini-3.8-flash-tiered/excel/longform/section-01/run-01/response.sse.txt",
+      "sha256": "98f68bfef14d2d6983230e11f16c2d77f9d540787c23c667f8fe9444330a6158",
+      "size_bytes": 37223
+    },
+    {
+      "path": "validation/work/Gate-C-v2/outputs/attempt-07/by-model/agy__gemini-3.8-flash-tiered/excel/longform/section-01/run-01/run-metrics.json",
+      "sha256": "c14caf97121561ee36b3360182317369f62dbe06868c24d88559b091e08150f0",
+      "size_bytes": 2542
+    },
+    {
+      "path": "validation/work/Gate-C-v2/outputs/attempt-07/by-model/agy__gemini-3.8-flash-tiered/excel/longform/section-01/run-01/section-final.txt",
+      "sha256": "5c33167684faff4bb0333b2393f584b9deb91a9e205296535eeb8ed6eae05df6",
+      "size_bytes": 8807
+    },
+    {
+      "path": "validation/work/Gate-C-v2/outputs/attempt-07/by-model/agy__gemini-3.8-flash-tiered/excel/longform/section-01/run-01/section-initial.txt",
+      "sha256": "5c33167684faff4bb0333b2393f584b9deb91a9e205296535eeb8ed6eae05df6",
+      "size_bytes": 8807
+    },
+    {
+      "path": "validation/work/Gate-C-v2/outputs/attempt-07/by-model/agy__gemini-3.8-flash-tiered/excel/longform/section-01-repair/run-01/request.json",
+      "sha256": "79c8ebfb713fc610f7144b26acb875180b64423ecb7276f003ad294f62f05dfe",
+      "size_bytes": 208744
+    },
+    {
+      "path": "validation/work/Gate-C-v2/outputs/attempt-07/by-model/agy__gemini-3.8-flash-tiered/excel/longform/section-01-repair/run-01/response.raw.txt",
+      "sha256": "f4b0fa88ffa39f1703556f5916e8f66debc20855ffb0024fce124caa57caef98",
+      "size_bytes": 2429
+    },
+    {
+      "path": "validation/work/Gate-C-v2/outputs/attempt-07/by-model/agy__gemini-3.8-flash-tiered/excel/longform/section-01-repair/run-01/response.sse.txt",
+      "sha256": "d67cc06760c487f5d12f41bcc25d46c47790495ae32f2c7627b88437d71c003d",
+      "size_bytes": 31508
+    },
+    {
+      "path": "validation/work/Gate-C-v2/outputs/attempt-07/by-model/agy__gemini-3.8-flash-tiered/excel/longform/section-01-repair/run-01/run-metrics.json",
+      "sha256": "27531b6015a3b953d3158e3494ce21f78e1212056861c2245431030c2498a0ff",
+      "size_bytes": 2563
+    },
+    {
+      "path": "validation/work/Gate-C-v2/outputs/attempt-07/by-model/agy__gemini-3.8-flash-tiered/excel/longform/section-02/run-01/request.json",
+      "sha256": "fe00223896b5f61914d3aab1db5df413e34ac742b08163cc07073c16b627b2f4",
+      "size_bytes": 196826
+    },
+    {
+      "path": "validation/work/Gate-C-v2/outputs/attempt-07/by-model/agy__gemini-3.8-flash-tiered/excel/longform/section-02/run-01/response.raw.txt",
+      "sha256": "edf9132a364db94f47d0ce95d7e01a02096deeef0da7ddee6348e24482fc5135",
+      "size_bytes": 5993
+    },
+    {
+      "path": "validation/work/Gate-C-v2/outputs/attempt-07/by-model/agy__gemini-3.8-flash-tiered/excel/longform/section-02/run-01/response.sse.txt",
+      "sha256": "cc0a653f281e2336ca8ff212826c4d613068128f695e82dc851f2a8071862915",
+      "size_bytes": 25853
+    },
+    {
+      "path": "validation/work/Gate-C-v2/outputs/attempt-07/by-model/agy__gemini-3.8-flash-tiered/excel/longform/section-02/run-01/run-metrics.json",
+      "sha256": "1396faf2357c5b07cf19e13420447aa99cd9b0130b44a0bad8fed27d87f64d4b",
+      "size_bytes": 2539
+    },
+    {
+      "path": "validation/work/Gate-C-v2/outputs/attempt-07/by-model/agy__gemini-3.8-flash-tiered/excel/longform/section-02/run-01/section-initial.txt",
+      "sha256": "edf9132a364db94f47d0ce95d7e01a02096deeef0da7ddee6348e24482fc5135",
+      "size_bytes": 5993
+    },
+    {
+      "path": "validation/work/Gate-C-v2/outputs/attempt-07/by-model/agy__gemini-3.8-flash-tiered/excel/longform/section-02-repair/run-01/request.json",
+      "sha256": "8309a0b83c077f0444ae0ac981398f459b895f1eedb3d43cdf4b84c5c1052a14",
+      "size_bytes": 203410
+    },
+    {
+      "path": "validation/work/Gate-C-v2/outputs/attempt-07/by-model/agy__gemini-3.8-flash-tiered/excel/longform/section-02-repair/run-01/response.raw.txt",
+      "sha256": "a7a0dcf117336cce8f5b6425e79994ab7e60a18e06b99c02183483dcee60022e",
+      "size_bytes": 6207
+    },
+    {
+      "path": "validation/work/Gate-C-v2/outputs/attempt-07/by-model/agy__gemini-3.8-flash-tiered/excel/longform/section-02-repair/run-01/response.sse.txt",
+      "sha256": "0b8db98a16f67a5f3a89ca1d929c385a330993116e10c303db559d3c33d8afeb",
+      "size_bytes": 30354
+    },
+    {
+      "path": "validation/work/Gate-C-v2/outputs/attempt-07/by-model/agy__gemini-3.8-flash-tiered/excel/longform/section-02-repair/run-01/run-metrics.json",
+      "sha256": "9ffa65683562b3aa9c246acec38f4f4088024d7c9230161cf772f20b02843b75",
+      "size_bytes": 2558
+    },
+    {
+      "path": "validation/work/Gate-C-v2/outputs/attempt-07/by-model/agy__gemini-3.8-flash-tiered/excel/longform/section-02-repair/run-01/section-final.txt",
+      "sha256": "a7a0dcf117336cce8f5b6425e79994ab7e60a18e06b99c02183483dcee60022e",
+      "size_bytes": 6207
+    },
+    {
+      "path": "validation/work/Gate-C-v2/outputs/attempt-07/by-model/agy__gemini-3.8-flash-tiered/excel/longform/section-03/run-01/request.json",
+      "sha256": "d3d72a481a71cec5b9d4de8e12449e822d75449e9970053741d16bf26451b69e",
+      "size_bytes": 196734
+    },
+    {
+      "path": "validation/work/Gate-C-v2/outputs/attempt-07/by-model/agy__gemini-3.8-flash-tiered/excel/longform/section-03/run-01/response.raw.txt",
+      "sha256": "660815082b789335d008ee5869b8cc39473ccd949fcc1548ecdd8731e755da13",
+      "size_bytes": 6178
+    },
+    {
+      "path": "validation/work/Gate-C-v2/outputs/attempt-07/by-model/agy__gemini-3.8-flash-tiered/excel/longform/section-03/run-01/response.sse.txt",
+      "sha256": "37ccb64ae74deb5315fe9ed7a07f100b6968c6ae9aa9c1003cb5a5832775ad9f",
+      "size_bytes": 24932
+    },
+    {
+      "path": "validation/work/Gate-C-v2/outputs/attempt-07/by-model/agy__gemini-3.8-flash-tiered/excel/longform/section-03/run-01/run-metrics.json",
+      "sha256": "2a64b3d440fe0bf7e6b0af3f3055bb32230e3e155e0378b452ed40e005b4fb8e",
+      "size_bytes": 2538
+    },
+    {
+      "path": "validation/work/Gate-C-v2/outputs/attempt-07/by-model/agy__gemini-3.8-flash-tiered/excel/longform/section-03/run-01/section-final.txt",
+      "sha256": "660815082b789335d008ee5869b8cc39473ccd949fcc1548ecdd8731e755da13",
+      "size_bytes": 6178
+    },
+    {
+      "path": "validation/work/Gate-C-v2/outputs/attempt-07/by-model/agy__gemini-3.8-flash-tiered/excel/longform/section-03/run-01/section-initial.txt",
+      "sha256": "660815082b789335d008ee5869b8cc39473ccd949fcc1548ecdd8731e755da13",
+      "size_bytes": 6178
+    },
+    {
+      "path": "validation/work/Gate-C-v2/outputs/attempt-07/by-model/agy__gemini-3.8-flash-tiered/excel/longform/section-03-repair/run-01/request.json",
+      "sha256": "bc3330ef94a2bed5dc0dadd9c7cab80441b22ae58ac270c73e9831274f4e5e25",
+      "size_bytes": 203596
+    },
+    {
+      "path": "validation/work/Gate-C-v2/outputs/attempt-07/by-model/agy__gemini-3.8-flash-tiered/excel/longform/section-03-repair/run-01/response.raw.txt",
+      "sha256": "d6148bea44c5241def5cc7a274bba3f35fd7f00acd7a02bcb8dca05f78959c81",
+      "size_bytes": 2331
+    },
+    {
+      "path": "validation/work/Gate-C-v2/outputs/attempt-07/by-model/agy__gemini-3.8-flash-tiered/excel/longform/section-03-repair/run-01/response.sse.txt",
+      "sha256": "372ba18a8913ffdba001f6c1184e98f1afbc0534921b7bc576d8ae8880d72624",
+      "size_bytes": 30912
+    },
+    {
+      "path": "validation/work/Gate-C-v2/outputs/attempt-07/by-model/agy__gemini-3.8-flash-tiered/excel/longform/section-03-repair/run-01/run-metrics.json",
+      "sha256": "ed3a9e74ad849a48ea854db0eb4f74dc28b1e0ea39c903f1352e02f84fa0f618",
+      "size_bytes": 2563
+    },
+    {
+      "path": "validation/work/Gate-C-v2/outputs/attempt-07/by-model/agy__gemini-3.8-flash-tiered/excel/longform/section-04/run-01/request.json",
+      "sha256": "a2e925be2533fd72040a9298c89ce4c91e87fb9c31b4758790fbb46cdaf8ecd4",
+      "size_bytes": 197094
+    },
+    {
+      "path": "validation/work/Gate-C-v2/outputs/attempt-07/by-model/agy__gemini-3.8-flash-tiered/excel/longform/section-04/run-01/response.raw.txt",
+      "sha256": "4239b160820b739e7530847f8c4734ea33e25757c6d89c7489af7e3d55570dcc",
+      "size_bytes": 5979
+    },
+    {
+      "path": "validation/work/Gate-C-v2/outputs/attempt-07/by-model/agy__gemini-3.8-flash-tiered/excel/longform/section-04/run-01/response.sse.txt",
+      "sha256": "bd535664a2b49ff65cded589eee60211b03e35d31839dfca3c2bd577c8eccbe2",
+      "size_bytes": 24814
+    },
+    {
+      "path": "validation/work/Gate-C-v2/outputs/attempt-07/by-model/agy__gemini-3.8-flash-tiered/excel/longform/section-04/run-01/run-metrics.json",
+      "sha256": "d5fa715f5e76920e16fef103b709b9af1551cee8f2d9ae811dd214256ec72d03",
+      "size_bytes": 2539
+    },
+    {
+      "path": "validation/work/Gate-C-v2/outputs/attempt-07/by-model/agy__gemini-3.8-flash-tiered/excel/longform/section-04/run-01/section-final.txt",
+      "sha256": "4239b160820b739e7530847f8c4734ea33e25757c6d89c7489af7e3d55570dcc",
+      "size_bytes": 5979
+    },
+    {
+      "path": "validation/work/Gate-C-v2/outputs/attempt-07/by-model/agy__gemini-3.8-flash-tiered/excel/longform/section-04/run-01/section-initial.txt",
+      "sha256": "4239b160820b739e7530847f8c4734ea33e25757c6d89c7489af7e3d55570dcc",
+      "size_bytes": 5979
+    },
+    {
+      "path": "validation/work/Gate-C-v2/outputs/attempt-07/by-model/agy__gemini-3.8-flash-tiered/excel/longform/section-04-repair/run-01/request.json",
+      "sha256": "f0fae70389d404e5353a00a0238617af82d3f7c920984129fca1a2acbdf56d8c",
+      "size_bytes": 203994
+    },
+    {
+      "path": "validation/work/Gate-C-v2/outputs/attempt-07/by-model/agy__gemini-3.8-flash-tiered/excel/longform/section-04-repair/run-01/response.raw.txt",
+      "sha256": "98a3860a6920f7a3092600db065666ad256de8faf5da4ce41ba770a44e4293dc",
+      "size_bytes": 7376
+    },
+    {
+      "path": "validation/work/Gate-C-v2/outputs/attempt-07/by-model/agy__gemini-3.8-flash-tiered/excel/longform/section-04-repair/run-01/response.sse.txt",
+      "sha256": "ed9e8a250845176a8b6e7e71b50e4eefe60a9989cba696ca6565b74855115e0c",
+      "size_bytes": 42320
+    },
+    {
+      "path": "validation/work/Gate-C-v2/outputs/attempt-07/by-model/agy__gemini-3.8-flash-tiered/excel/longform/section-04-repair/run-01/run-metrics.json",
+      "sha256": "11f5cd5a178ce312d56cd64b01d5296d4325d04d3fe607e094236cf3f6ba9d59",
+      "size_bytes": 2562
+    },
+    {
+      "path": "validation/work/Gate-C-v2/outputs/attempt-07/by-model/agy__gemini-3.8-flash-tiered/excel/longform/section-05/run-01/request.json",
+      "sha256": "4d738e75eb835ef809db97985dd2be352176568da2984d7a9a7b7e6d5c28240c",
+      "size_bytes": 195879
+    },
+    {
+      "path": "validation/work/Gate-C-v2/outputs/attempt-07/by-model/agy__gemini-3.8-flash-tiered/excel/longform/section-05/run-01/response.raw.txt",
+      "sha256": "65b2020b14a29d9ce8ad89ae7d4aa1caacb405c677312bc030b2eba244ecaa5a",
+      "size_bytes": 2998
+    },
+    {
+      "path": "validation/work/Gate-C-v2/outputs/attempt-07/by-model/agy__gemini-3.8-flash-tiered/excel/longform/section-05/run-01/response.sse.txt",
+      "sha256": "7f0e81fbf69ffc0461a29f5709f7b02bc21b03b34a71626e7ac5e1b9ddbc40e6",
+      "size_bytes": 15242
+    },
+    {
+      "path": "validation/work/Gate-C-v2/outputs/attempt-07/by-model/agy__gemini-3.8-flash-tiered/excel/longform/section-05/run-01/run-metrics.json",
+      "sha256": "9e2cafe17490950538bf4a1c9aafcd54eb0a3bc17693e29fac6d0f5d384d13bf",
+      "size_bytes": 2537
+    },
+    {
+      "path": "validation/work/Gate-C-v2/outputs/attempt-07/by-model/agy__gemini-3.8-flash-tiered/excel/longform/section-05/run-01/section-initial.txt",
+      "sha256": "65b2020b14a29d9ce8ad89ae7d4aa1caacb405c677312bc030b2eba244ecaa5a",
+      "size_bytes": 2998
+    },
+    {
+      "path": "validation/work/Gate-C-v2/outputs/attempt-07/by-model/agy__gemini-3.8-flash-tiered/excel/longform/section-05-repair/run-01/request.json",
+      "sha256": "c82c53116293f8a931a8a16d09ba6bbf5667cbb4003d810ef79a85742898a1f1",
+      "size_bytes": 199697
+    },
+    {
+      "path": "validation/work/Gate-C-v2/outputs/attempt-07/by-model/agy__gemini-3.8-flash-tiered/excel/longform/section-05-repair/run-01/response.raw.txt",
+      "sha256": "ad680b1c252790bd724b656d3b31e3ccae2a97dd1b8f6a5f4d7e9659e8d56aad",
+      "size_bytes": 2408
+    },
+    {
+      "path": "validation/work/Gate-C-v2/outputs/attempt-07/by-model/agy__gemini-3.8-flash-tiered/excel/longform/section-05-repair/run-01/response.sse.txt",
+      "sha256": "d287d48eceda05dfc1e72582967a0c1e3535c9961312f893cdabd2edc78a2d29",
+      "size_bytes": 33380
+    },
+    {
+      "path": "validation/work/Gate-C-v2/outputs/attempt-07/by-model/agy__gemini-3.8-flash-tiered/excel/longform/section-05-repair/run-01/run-metrics.json",
+      "sha256": "ed455799590b587457e997c5fa40539d663d8dc07e5714dfbf59fac790f92b4e",
+      "size_bytes": 2560
+    },
+    {
+      "path": "validation/work/Gate-C-v2/outputs/attempt-07/by-model/agy__gemini-3.8-flash-tiered/excel/longform/section-05-repair/run-01/section-final.txt",
+      "sha256": "ad680b1c252790bd724b656d3b31e3ccae2a97dd1b8f6a5f4d7e9659e8d56aad",
+      "size_bytes": 2408
+    },
+    {
+      "path": "validation/work/Gate-C-v2/outputs/attempt-07/by-model/groq__qwen__qwen3.8-27b/availability-guard/run-01/request.json",
+      "sha256": "bc5fa07cc44367132e475a05ad8331dc3feca627a2a14369cdc40701272440c0",
+      "size_bytes": 357
+    },
+    {
+      "path": "validation/work/Gate-C-v2/outputs/attempt-07/by-model/groq__qwen__qwen3.8-27b/availability-guard/run-01/response.raw.txt",
+      "sha256": "4ecd130021f8223951cdb5d79ac7ac147951550f0aecaaae309a50ebfede3183",
+      "size_bytes": 16
+    },
+    {
+      "path": "validation/work/Gate-C-v2/outputs/attempt-07/by-model/groq__qwen__qwen3.8-27b/availability-guard/run-01/response.sse.txt",
+      "sha256": "7a6c62441df6d03f7abb1fd093e63ed9b2770014a3a7f882e2f4d9a83e99bc8c",
+      "size_bytes": 1890
+    },
+    {
+      "path": "validation/work/Gate-C-v2/outputs/attempt-07/by-model/groq__qwen__qwen3.8-27b/availability-guard/run-01/run-metrics.json",
+      "sha256": "545ce1748dc27ba9488b0cc3a5ecdfd55e87b7fd85b1b46f22c37c035fbe3078",
+      "size_bytes": 2551
+    },
+    {
+      "path": "validation/work/Gate-C-v2/outputs/attempt-07/by-model/groq__qwen__qwen3.8-27b/dbms_sql/generation/run-01/deterministic-checks.json",
+      "sha256": "383e08eeecf81ec790d34100297e55711d9473b3cf8c1cd7f4f5705c90c0f4f3",
+      "size_bytes": 1048
+    },
+    {
+      "path": "validation/work/Gate-C-v2/outputs/attempt-07/by-model/groq__qwen__qwen3.8-27b/dbms_sql/generation/run-01/parsed-output.json",
+      "sha256": "ffbacbd3b3fc9f43e42e0fdc007a14bd2eadf98aa5dd3534e92bff4e1c606e95",
+      "size_bytes": 13173
+    },
+    {
+      "path": "validation/work/Gate-C-v2/outputs/attempt-07/by-model/groq__qwen__qwen3.8-27b/dbms_sql/generation/run-01/request.json",
+      "sha256": "9b744eb29f1a278bd2d177107a0444e5125bbc983508340123d454693a268ffe",
+      "size_bytes": 12171
+    },
+    {
+      "path": "validation/work/Gate-C-v2/outputs/attempt-07/by-model/groq__qwen__qwen3.8-27b/dbms_sql/generation/run-01/response.raw.txt",
+      "sha256": "20b3b936950750b785d9fe71e2d9d0f7c0a9f6bd5ed06592636e4573f743b35d",
+      "size_bytes": 12214
+    },
+    {
+      "path": "validation/work/Gate-C-v2/outputs/attempt-07/by-model/groq__qwen__qwen3.8-27b/dbms_sql/generation/run-01/response.sse.txt",
+      "sha256": "5fd5d27206c3796328911c6fe120ed9fc0f4fbd713592885db130e33c89c8b0c",
+      "size_bytes": 14044
+    },
+    {
+      "path": "validation/work/Gate-C-v2/outputs/attempt-07/by-model/groq__qwen__qwen3.8-27b/dbms_sql/generation/run-01/run-metrics.json",
+      "sha256": "ed60c0ae60d24f3508c403916975d9d49c2d2ece4c06f2daf747d911eeaa3b47",
+      "size_bytes": 2616
+    },
+    {
+      "path": "validation/work/Gate-C-v2/outputs/attempt-07/by-model/groq__qwen__qwen3.8-27b/dbms_sql/longform/plan/run-01/longform-incomplete.json",
+      "sha256": "3da1c531a90190f99ad3f2fff86d838bab7b005e2f5cbb9406375152c9b563dc",
+      "size_bytes": 9031
+    },
+    {
+      "path": "validation/work/Gate-C-v2/outputs/attempt-07/by-model/groq__qwen__qwen3.8-27b/dbms_sql/longform/plan/run-01/parsed-plan.json",
+      "sha256": "abfc69ce3c5e3b863f7684b002335bf48ea0845c8169c606bfb20bfd94fdce1c",
+      "size_bytes": 7519
+    },
+    {
+      "path": "validation/work/Gate-C-v2/outputs/attempt-07/by-model/groq__qwen__qwen3.8-27b/dbms_sql/longform/plan/run-01/request.json",
+      "sha256": "0d93bd9c4938eeb77b8663f6e8492a432e6d7b41234e7c100cc9324a0c06a4fb",
+      "size_bytes": 9056
+    },
+    {
+      "path": "validation/work/Gate-C-v2/outputs/attempt-07/by-model/groq__qwen__qwen3.8-27b/dbms_sql/longform/plan/run-01/response.raw.txt",
+      "sha256": "66baf1ad484ab66f28fe13205224c5cfc3cbaba9f5a92e123eab2f7194777385",
+      "size_bytes": 6666
+    },
+    {
+      "path": "validation/work/Gate-C-v2/outputs/attempt-07/by-model/groq__qwen__qwen3.8-27b/dbms_sql/longform/plan/run-01/response.sse.txt",
+      "sha256": "16df9b16faf27977a756a8ef9f84f2a3def7bddf8bac4275c7b3e56a9d03af36",
+      "size_bytes": 8451
+    },
+    {
+      "path": "validation/work/Gate-C-v2/outputs/attempt-07/by-model/groq__qwen__qwen3.8-27b/dbms_sql/longform/plan/run-01/run-metrics.json",
+      "sha256": "32cc7319b673b88aca5f221e399e3cfb56921cea4fa2a7969182f023ad5bf664",
+      "size_bytes": 2373
+    },
+    {
+      "path": "validation/work/Gate-C-v2/outputs/attempt-07/by-model/groq__qwen__qwen3.8-27b/dbms_sql/longform/section-01/run-01/request.json",
+      "sha256": "b80ac20fe69c4d5d948ca012c31fc228a0636aae08f971a15e8024190b60740d",
+      "size_bytes": 15402
+    },
+    {
+      "path": "validation/work/Gate-C-v2/outputs/attempt-07/by-model/groq__qwen__qwen3.8-27b/dbms_sql/longform/section-01/run-01/response.raw.txt",
+      "sha256": "18035bba9121e583b3d516734a6e4c0db0f2cd5b9c3980418fc452d101074f57",
+      "size_bytes": 4461
+    },
+    {
+      "path": "validation/work/Gate-C-v2/outputs/attempt-07/by-model/groq__qwen__qwen3.8-27b/dbms_sql/longform/section-01/run-01/response.sse.txt",
+      "sha256": "05b6b62fac21af692fafe8f01c6ca450a9bb38f67201f4d1eefe898f7f4190d5",
+      "size_bytes": 302476
+    },
+    {
+      "path": "validation/work/Gate-C-v2/outputs/attempt-07/by-model/groq__qwen__qwen3.8-27b/dbms_sql/longform/section-01/run-01/run-metrics.json",
+      "sha256": "f6d9d244d980bf05aad8d5e0b353bc906096d8f337c94110ef4270a3e137106a",
+      "size_bytes": 2403
+    },
+    {
+      "path": "validation/work/Gate-C-v2/outputs/attempt-07/by-model/groq__qwen__qwen3.8-27b/dbms_sql/longform/section-01/run-01/section-final.txt",
+      "sha256": "18035bba9121e583b3d516734a6e4c0db0f2cd5b9c3980418fc452d101074f57",
+      "size_bytes": 4461
+    },
+    {
+      "path": "validation/work/Gate-C-v2/outputs/attempt-07/by-model/groq__qwen__qwen3.8-27b/dbms_sql/longform/section-01/run-01/section-initial.txt",
+      "sha256": "18035bba9121e583b3d516734a6e4c0db0f2cd5b9c3980418fc452d101074f57",
+      "size_bytes": 4461
+    },
+    {
+      "path": "validation/work/Gate-C-v2/outputs/attempt-07/by-model/groq__qwen__qwen3.8-27b/dbms_sql/longform/section-02/run-01/request.json",
+      "sha256": "7781c5199099c646a5fbbfc8ae2ef7866e7246f6516a48badbe2fe784710b7da",
+      "size_bytes": 15132
+    },
+    {
+      "path": "validation/work/Gate-C-v2/outputs/attempt-07/by-model/groq__qwen__qwen3.8-27b/dbms_sql/longform/section-02/run-01/response.raw.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "size_bytes": 0
+    },
+    {
+      "path": "validation/work/Gate-C-v2/outputs/attempt-07/by-model/groq__qwen__qwen3.8-27b/dbms_sql/longform/section-02/run-01/response.sse.txt",
+      "sha256": "e862f22bdedd7a66a93ac6145fe062f16b41843b6ee88309a9b55624ed723ff9",
+      "size_bytes": 2201
+    },
+    {
+      "path": "validation/work/Gate-C-v2/outputs/attempt-07/by-model/groq__qwen__qwen3.8-27b/dbms_sql/longform/section-02/run-01/run-metrics.json",
+      "sha256": "57305bb23df80de6dff4fe3b79f23ce6ce672d0f2f45f5f09e1f8bc8deeda178",
+      "size_bytes": 2081
+    },
+    {
+      "path": "validation/work/Gate-C-v2/outputs/attempt-07/by-model/groq__qwen__qwen3.8-27b/excel/generation/run-01/request.json",
+      "sha256": "6787dcc83fe939bd5f28c4403c6cd462ceb2e08a5e4ac067ff4eca407311c907",
+      "size_bytes": 186132
+    },
+    {
+      "path": "validation/work/Gate-C-v2/outputs/attempt-07/by-model/groq__qwen__qwen3.8-27b/excel/generation/run-01/response.raw.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "size_bytes": 0
+    },
+    {
+      "path": "validation/work/Gate-C-v2/outputs/attempt-07/by-model/groq__qwen__qwen3.8-27b/excel/generation/run-01/response.sse.txt",
+      "sha256": "dd717203824b55efc5a5f3c275df12dbe96824110215a6c1a890bc563b555972",
+      "size_bytes": 1024
+    },
+    {
+      "path": "validation/work/Gate-C-v2/outputs/attempt-07/by-model/groq__qwen__qwen3.8-27b/excel/generation/run-01/run-metrics.json",
+      "sha256": "854fe03b2ad809404768edf2d5fe3706512db0f68e897eecb8a568327289677d",
+      "size_bytes": 2221
+    },
+    {
+      "path": "validation/work/Gate-C-v2/outputs/attempt-07/by-model/groq__qwen__qwen3.8-27b/excel/longform/plan/run-01/longform-incomplete.json",
+      "sha256": "3d9b544b6937285825e0958131371c628b7a7142cebda23145893a5fe2a2a1c0",
+      "size_bytes": 675
+    },
+    {
+      "path": "validation/work/Gate-C-v2/outputs/attempt-07/by-model/groq__qwen__qwen3.8-27b/excel/longform/plan/run-01/request.json",
+      "sha256": "7795c3c9a431676560fdcf644f4be5ccd0043b9c70cedbc51eddc233c425c809",
+      "size_bytes": 182968
+    },
+    {
+      "path": "validation/work/Gate-C-v2/outputs/attempt-07/by-model/groq__qwen__qwen3.8-27b/excel/longform/plan/run-01/response.raw.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "size_bytes": 0
+    },
+    {
+      "path": "validation/work/Gate-C-v2/outputs/attempt-07/by-model/groq__qwen__qwen3.8-27b/excel/longform/plan/run-01/response.sse.txt",
+      "sha256": "a534f7ddbae9494ff5895734b691e6c1ad3d661a916909cd1c8c55dfaea09fe0",
+      "size_bytes": 1024
+    },
+    {
+      "path": "validation/work/Gate-C-v2/outputs/attempt-07/by-model/groq__qwen__qwen3.8-27b/excel/longform/plan/run-01/run-metrics.json",
+      "sha256": "bccfd6004e8394d872bbe9244b6319a4d834a078c4fcf0891594f9875bbb8c89",
+      "size_bytes": 2224
+    },
+    {
+      "path": "validation/work/Gate-C-v2/outputs/attempt-07/by-model/openrouter__dots-studio__dots-3-note-preview_free/availability-guard/run-01/request.json",
+      "sha256": "a9fc2fefc0969223281e3049b55989d8597b3add6a0d0e6761413ef804370434",
+      "size_bytes": 383
+    },
+    {
+      "path": "validation/work/Gate-C-v2/outputs/attempt-07/by-model/openrouter__dots-studio__dots-3-note-preview_free/availability-guard/run-01/response.raw.txt",
+      "sha256": "00072a8d94156b4450444bf897b8aee43d926db98daaca563ae0d5154bb8f417",
+      "size_bytes": 18
+    },
+    {
+      "path": "validation/work/Gate-C-v2/outputs/attempt-07/by-model/openrouter__dots-studio__dots-3-note-preview_free/availability-guard/run-01/response.sse.txt",
+      "sha256": "22761f3d4a8a111f06899c3ddf41b776281e87d0b2fdb339f41f0e484f526f63",
+      "size_bytes": 10920
+    },
+    {
+      "path": "validation/work/Gate-C-v2/outputs/attempt-07/by-model/openrouter__dots-studio__dots-3-note-preview_free/availability-guard/run-01/run-metrics.json",
+      "sha256": "cb06419b7d5d3479ddb884b2b170c08f96eefdaa08ea91b6454129d338375edf",
+      "size_bytes": 2483
+    },
+    {
+      "path": "validation/work/Gate-C-v2/outputs/attempt-07/by-model/openrouter__dots-studio__dots-3-note-preview_free/dbms_sql/generation/run-01/deterministic-checks.json",
+      "sha256": "0b5b191f883e68ab7628f3ef1b4298c041e7b555fb86b232ed8dcd59c8ccd596",
+      "size_bytes": 1123
+    },
+    {
+      "path": "validation/work/Gate-C-v2/outputs/attempt-07/by-model/openrouter__dots-studio__dots-3-note-preview_free/dbms_sql/generation/run-01/parsed-output.json",
+      "sha256": "6c25ae60d734f170b82467eb1adb212b57c7b993d68b8b0881c331aa62eff329",
+      "size_bytes": 5566
+    },
+    {
+      "path": "validation/work/Gate-C-v2/outputs/attempt-07/by-model/openrouter__dots-studio__dots-3-note-preview_free/dbms_sql/generation/run-01/request.json",
+      "sha256": "c86e23e0f072e75ea43916d12060dc005def451bdae96af1eabbd440dbcb76ab",
+      "size_bytes": 12197
+    },
+    {
+      "path": "validation/work/Gate-C-v2/outputs/attempt-07/by-model/openrouter__dots-studio__dots-3-note-preview_free/dbms_sql/generation/run-01/response.raw.txt",
+      "sha256": "e3f33534fa734e88973c771ecfe1fd2b5d007d6aaf772e7177518e3507d81647",
+      "size_bytes": 4625
+    },
+    {
+      "path": "validation/work/Gate-C-v2/outputs/attempt-07/by-model/openrouter__dots-studio__dots-3-note-preview_free/dbms_sql/generation/run-01/response.sse.txt",
+      "sha256": "d3c5ffb2b5171b4f311b2bd698da8eca297abc0f92ecdec251b837e3d84c35c6",
+      "size_bytes": 197494
+    },
+    {
+      "path": "validation/work/Gate-C-v2/outputs/attempt-07/by-model/openrouter__dots-studio__dots-3-note-preview_free/dbms_sql/generation/run-01/run-metrics.json",
+      "sha256": "4f52d385c4be52b5e71b1e994974a5231ab6a4fdc1bd943db49fa590e7d56479",
+      "size_bytes": 2560
+    },
+    {
+      "path": "validation/work/Gate-C-v2/outputs/attempt-07/by-model/openrouter__dots-studio__dots-3-note-preview_free/dbms_sql/longform/plan/run-01/longform-incomplete.json",
+      "sha256": "dfbae4217573cfeeef16d0fadc517e89c16f8e6ef47c74443252a7378d2af8fa",
+      "size_bytes": 733
+    },
+    {
+      "path": "validation/work/Gate-C-v2/outputs/attempt-07/by-model/openrouter__dots-studio__dots-3-note-preview_free/dbms_sql/longform/plan/run-01/request.json",
+      "sha256": "ba299531d62964a9d402850826c49c515adbb2f5713951ace8f6b2788cbf1afd",
+      "size_bytes": 9082
+    },
+    {
+      "path": "validation/work/Gate-C-v2/outputs/attempt-07/by-model/openrouter__dots-studio__dots-3-note-preview_free/dbms_sql/longform/plan/run-01/response.raw.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "size_bytes": 0
+    },
+    {
+      "path": "validation/work/Gate-C-v2/outputs/attempt-07/by-model/openrouter__dots-studio__dots-3-note-preview_free/dbms_sql/longform/plan/run-01/response.sse.txt",
+      "sha256": "d5a79e6ecafac06ca2715c1084bc5b29cbc199df46398560df4200ed2201b9a2",
+      "size_bytes": 405171
+    },
+    {
+      "path": "validation/work/Gate-C-v2/outputs/attempt-07/by-model/openrouter__dots-studio__dots-3-note-preview_free/dbms_sql/longform/plan/run-01/run-metrics.json",
+      "sha256": "b7075e4aadab9159d4915b9c9208998895e234289faedd4a0cc3caaedd8c5519",
+      "size_bytes": 2562
+    },
+    {
+      "path": "validation/work/Gate-C-v2/outputs/attempt-07/by-model/openrouter__dots-studio__dots-3-note-preview_free/excel/generation/run-01/deterministic-checks.json",
+      "sha256": "ad622d33f2f2b53909b11f044f72096261ffd949aa55705a93d83e445809841c",
+      "size_bytes": 1520
+    },
+    {
+      "path": "validation/work/Gate-C-v2/outputs/attempt-07/by-model/openrouter__dots-studio__dots-3-note-preview_free/excel/generation/run-01/request.json",
+      "sha256": "3b7b4040c19a635e063572bdc5c81d2907bac8b43beb8718e2dd13ec1f73baf8",
+      "size_bytes": 186158
+    },
+    {
+      "path": "validation/work/Gate-C-v2/outputs/attempt-07/by-model/openrouter__dots-studio__dots-3-note-preview_free/excel/generation/run-01/response.raw.txt",
+      "sha256": "2851b6f4d84ea59da5ed35185bce5233a43f09a3aae7eb6c68b3c3ea3a5b8433",
+      "size_bytes": 430
+    },
+    {
+      "path": "validation/work/Gate-C-v2/outputs/attempt-07/by-model/openrouter__dots-studio__dots-3-note-preview_free/excel/generation/run-01/response.sse.txt",
+      "sha256": "d6b9709239af0f89cf2c0278c9037ec0a90726ca046b32d47be686c05cb7489d",
+      "size_bytes": 1126763
+    },
+    {
+      "path": "validation/work/Gate-C-v2/outputs/attempt-07/by-model/openrouter__dots-studio__dots-3-note-preview_free/excel/generation/run-01/run-metrics.json",
+      "sha256": "fec37298136702d4f47ca5f37a90eb1e43fb306b10140938ac7328f2f7044df1",
+      "size_bytes": 2732
+    },
+    {
+      "path": "validation/work/Gate-C-v2/outputs/attempt-07/by-model/openrouter__dots-studio__dots-3-note-preview_free/excel/longform/plan/run-01/longform-incomplete.json",
+      "sha256": "202218542918534f72db0acc6382abee16909542e337b8fcbb475a7f925c0e59",
+      "size_bytes": 727
+    },
+    {
+      "path": "validation/work/Gate-C-v2/outputs/attempt-07/by-model/openrouter__dots-studio__dots-3-note-preview_free/excel/longform/plan/run-01/request.json",
+      "sha256": "8cdc551078d2b07b52ea48d80f46c44c82b8f8bedb3a600f8d69feca4aa4c6fe",
+      "size_bytes": 182994
+    },
+    {
+      "path": "validation/work/Gate-C-v2/outputs/attempt-07/by-model/openrouter__dots-studio__dots-3-note-preview_free/excel/longform/plan/run-01/response.raw.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "size_bytes": 0
+    },
+    {
+      "path": "validation/work/Gate-C-v2/outputs/attempt-07/by-model/openrouter__dots-studio__dots-3-note-preview_free/excel/longform/plan/run-01/response.sse.txt",
+      "sha256": "27b63cac6b46b14169ede3f91a712981d5b6fdfb49abfe6ca34cadef62a22115",
+      "size_bytes": 409209
+    },
+    {
+      "path": "validation/work/Gate-C-v2/outputs/attempt-07/by-model/openrouter__dots-studio__dots-3-note-preview_free/excel/longform/plan/run-01/run-metrics.json",
+      "sha256": "be4b851bfe11778ba5e341c44773f4bc0897229974178baf92dbe785c5cea3a5",
+      "size_bytes": 2717
+    }
+  ],
+  "frozen_ranking": {
+    "path": "validation/work/Gate-C-v2/metrics/attempt-08/frozen-phase1-ranking.json",
+    "sha256": "8f16a5eb7427742d9babb510ec98b410f5581cb82982e32168d4827c14795dec"
+  },
+  "catalog_identity_basis": "FROZEN_ATTEMPT07_CATALOG_AFTER_TRANSIENT_REFRESH_FAILURE",
+  "catalog_refresh_status": "CATALOG_REFRESH_UNAVAILABLE_USING_FROZEN_IDENTITY_BASIS",
+  "catalog_refresh_classification": "TRANSPORT_FAILURE",
+  "frozen_catalog_identity_reference": {
+    "path": "validation/artifacts/Gate-C-v2/catalog-snapshot-attempt-07.json",
+    "sha256": "82b73ac7e1dd96bfbc38a3bb96e9c3d99e6f898ec49c06def5e304f9e60151e9",
+    "purpose": "requested/returned identity resolution only; no discovery, selection, ranking, availability or route fallback"
+  },
+  "live_catalog_snapshot": null,
+  "phase2_checkpoint": {
+    "path": "validation/work/Gate-C-v2/metrics/attempt-09/result-checkpoints.jsonl",
+    "sha256": "773814389aaf77d82f2a7577aebdfaa4fd874e2e1d094cf1c6da8f84c44acf8e"
+  },
+  "raw_phase2_artifact_inventory": [
+    {
+      "path": "validation/work/Gate-C-v2/logs/attempt-09/request-index.jsonl",
+      "sha256": "a770d643a83e64e65b25957fcdd87a6b0eae670d9b21068bda7a075378d6692f",
+      "size_bytes": 804
+    },
+    {
+      "path": "validation/work/Gate-C-v2/metrics/attempt-09/catalog-check.json",
+      "sha256": "0294baf9beead9830d4dececfcb4490c0bab01827aaf778a3fd89c56219d2db3",
+      "size_bytes": 1864
+    },
+    {
+      "path": "validation/work/Gate-C-v2/metrics/attempt-09/execution-status.json",
+      "sha256": "65f08619963c39c250b08ff3fa235ff20b4023748a27ee7ee5a724b570d68156",
+      "size_bytes": 4031
+    },
+    {
+      "path": "validation/work/Gate-C-v2/metrics/attempt-09/phase2-matrix.json",
+      "sha256": "127e68efdc1e57ae65ec7e943d0f22a4820101caf7be34afa9c95dd49abc7e72",
+      "size_bytes": 1321
+    },
+    {
+      "path": "validation/work/Gate-C-v2/metrics/attempt-09/preflight-results.json",
+      "sha256": "a14f3ac932aec70ac1519231e0b1abe9cd6f0cb035fcbe4e5b05713a5bda8f20",
+      "size_bytes": 4308
+    },
+    {
+      "path": "validation/work/Gate-C-v2/metrics/attempt-09/result-checkpoints.jsonl",
+      "sha256": "773814389aaf77d82f2a7577aebdfaa4fd874e2e1d094cf1c6da8f84c44acf8e",
+      "size_bytes": 1464
+    },
+    {
+      "path": "validation/work/Gate-C-v2/outputs/attempt-09/by-model/agy__gemini-3.8-flash-tiered/availability-guard/run-01/request.json",
+      "sha256": "070fe87c5ca5d69a2b6e27750a4bc38f354282c8ad55b7b1689b56bf5e5206cc",
+      "size_bytes": 363
+    },
+    {
+      "path": "validation/work/Gate-C-v2/outputs/attempt-09/by-model/agy__gemini-3.8-flash-tiered/availability-guard/run-01/response.raw.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "size_bytes": 0
+    },
+    {
+      "path": "validation/work/Gate-C-v2/outputs/attempt-09/by-model/agy__gemini-3.8-flash-tiered/availability-guard/run-01/response.sse.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "size_bytes": 0
+    },
+    {
+      "path": "validation/work/Gate-C-v2/outputs/attempt-09/by-model/agy__gemini-3.8-flash-tiered/availability-guard/run-01/run-metrics.json",
+      "sha256": "49b4a037a9d623beccb9155fd71599d7ee18e0e6ea59b6380e9c3e057ce30139",
+      "size_bytes": 1943
+    },
+    {
+      "path": "validation/work/Gate-C-v2/outputs/attempt-09/by-model/groq__qwen__qwen3.8-27b/availability-guard/run-01/request.json",
+      "sha256": "bc5fa07cc44367132e475a05ad8331dc3feca627a2a14369cdc40701272440c0",
+      "size_bytes": 357
+    },
+    {
+      "path": "validation/work/Gate-C-v2/outputs/attempt-09/by-model/groq__qwen__qwen3.8-27b/availability-guard/run-01/response.raw.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "size_bytes": 0
+    },
+    {
+      "path": "validation/work/Gate-C-v2/outputs/attempt-09/by-model/groq__qwen__qwen3.8-27b/availability-guard/run-01/response.sse.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "size_bytes": 0
+    },
+    {
+      "path": "validation/work/Gate-C-v2/outputs/attempt-09/by-model/groq__qwen__qwen3.8-27b/availability-guard/run-01/run-metrics.json",
+      "sha256": "e069d5fdc2c55d4879970d4bd95f5c8921eb96338eab626851460887dd9a986b",
+      "size_bytes": 1914
+    }
+  ],
+  "blinded_outputs": [
+    {
+      "path": "validation/work/Gate-C-v2/outputs/attempt-09/blinded/CANDIDATE-A/dbms_sql/phase1-attempt-07-run-01/deterministic-review-summary.json",
+      "sha256": "0bc0efd09d009fa075bbcae1595fcf17b4945d20a4f569cd018358b66b64677c",
+      "size_bytes": 492
+    },
+    {
+      "path": "validation/work/Gate-C-v2/outputs/attempt-09/blinded/CANDIDATE-A/dbms_sql/phase1-attempt-07-run-01/teacher-script.md",
+      "sha256": "98bb82048e0b94b9ddee85d2eb12f17f70ceebed519d621ae67060dcbbce9e20",
+      "size_bytes": 27717
+    },
+    {
+      "path": "validation/work/Gate-C-v2/outputs/attempt-09/blinded/CANDIDATE-A/dbms_sql/phase2-attempt-09-run-02/deterministic-review-summary.json",
+      "sha256": "4d1a22a30776ac07c634580196f0ff96a031441dd034f0670851f5454ca60fec",
+      "size_bytes": 471
+    },
+    {
+      "path": "validation/work/Gate-C-v2/outputs/attempt-09/blinded/CANDIDATE-A/excel/phase1-attempt-07-run-01/deterministic-review-summary.json",
+      "sha256": "0fd4de39e4e96fe477ad8a441687f16168fe3f00bb32f328a404d01af604f7ca",
+      "size_bytes": 494
+    },
+    {
+      "path": "validation/work/Gate-C-v2/outputs/attempt-09/blinded/CANDIDATE-A/excel/phase1-attempt-07-run-01/teacher-script.md",
+      "sha256": "1eeb40040e6cea4a25a267df94e6e3403006ba1456d0fdbb7d1230d15f1bb7f3",
+      "size_bytes": 29977
+    },
+    {
+      "path": "validation/work/Gate-C-v2/outputs/attempt-09/blinded/CANDIDATE-A/excel/phase2-attempt-09-run-02/deterministic-review-summary.json",
+      "sha256": "702e4acd7a377e03492b3b46ebd8e75a7de16239c2adb8c58a150b140278eb62",
+      "size_bytes": 468
+    },
+    {
+      "path": "validation/work/Gate-C-v2/outputs/attempt-09/blinded/CANDIDATE-B/dbms_sql/phase1-attempt-07-run-01/deterministic-review-summary.json",
+      "sha256": "741d76c3290fa9c25213ea68b7d246bdfb5078292f2de31aa43f6288644f2384",
+      "size_bytes": 490
+    },
+    {
+      "path": "validation/work/Gate-C-v2/outputs/attempt-09/blinded/CANDIDATE-B/dbms_sql/phase1-attempt-07-run-01/generation-output.json",
+      "sha256": "ffbacbd3b3fc9f43e42e0fdc007a14bd2eadf98aa5dd3534e92bff4e1c606e95",
+      "size_bytes": 13173
+    },
+    {
+      "path": "validation/work/Gate-C-v2/outputs/attempt-09/blinded/CANDIDATE-B/dbms_sql/phase2-attempt-09-run-02/deterministic-review-summary.json",
+      "sha256": "dbfa4a18498604964b598e6d21cdc532ee1421901875ecef9dd64500cb076eca",
+      "size_bytes": 471
+    },
+    {
+      "path": "validation/work/Gate-C-v2/outputs/attempt-09/blinded/CANDIDATE-B/excel/phase1-attempt-07-run-01/deterministic-review-summary.json",
+      "sha256": "85f6a4257c2d801fecc61ac70327aa94f132a557a2545e5c1f13e40b90f2927e",
+      "size_bytes": 474
+    },
+    {
+      "path": "validation/work/Gate-C-v2/outputs/attempt-09/blinded/CANDIDATE-B/excel/phase2-attempt-09-run-02/deterministic-review-summary.json",
+      "sha256": "1328cea98c31cbf3a7fef1c5bd5ffd5f7b556338cc70a6e82c0cd2854313760c",
+      "size_bytes": 468
+    },
+    {
+      "path": "validation/work/Gate-C-v2/outputs/attempt-09/blinded/CANDIDATE-C/dbms_sql/phase1-attempt-07-run-01/deterministic-review-summary.json",
+      "sha256": "a2937e1e4fcd7a9c3f07d83485f91ac9d0234a21b713109c4ecd29431dc919ff",
+      "size_bytes": 490
+    },
+    {
+      "path": "validation/work/Gate-C-v2/outputs/attempt-09/blinded/CANDIDATE-C/dbms_sql/phase1-attempt-07-run-01/generation-output.json",
+      "sha256": "6c25ae60d734f170b82467eb1adb212b57c7b993d68b8b0881c331aa62eff329",
+      "size_bytes": 5566
+    },
+    {
+      "path": "validation/work/Gate-C-v2/outputs/attempt-09/blinded/CANDIDATE-C/dbms_sql/phase2-attempt-09-run-02/deterministic-review-summary.json",
+      "sha256": "4e840a0ab761e06fd7ffbea744e74d9b3fc15bb370848b1ea701d4b928a6e182",
+      "size_bytes": 471
+    },
+    {
+      "path": "validation/work/Gate-C-v2/outputs/attempt-09/blinded/CANDIDATE-C/excel/phase1-attempt-07-run-01/deterministic-review-summary.json",
+      "sha256": "b83d5666f50d6ef8beab69d6026adc2c7ca171ec1b6b1ccf0c601490855818c3",
+      "size_bytes": 477
+    },
+    {
+      "path": "validation/work/Gate-C-v2/outputs/attempt-09/blinded/CANDIDATE-C/excel/phase2-attempt-09-run-02/deterministic-review-summary.json",
+      "sha256": "172ba167502439283b083d47cdc818b860aeaff52a25af0762faeb00af5d4d3a",
+      "size_bytes": 468
+    }
+  ],
+  "aggregate_results": [
+    {
+      "path": "validation/artifacts/Gate-C-v2/attempt-09/attempt-09-preflight.json",
+      "sha256": "a14f3ac932aec70ac1519231e0b1abe9cd6f0cb035fcbe4e5b05713a5bda8f20",
+      "size_bytes": 4308
+    },
+    {
+      "path": "validation/artifacts/Gate-C-v2/attempt-09/catalog-identity-basis.json",
+      "sha256": "207cdb2fc63e6e69d2826a71939aacdb399c6787aa4d6af74b939f8b3fd9515b",
+      "size_bytes": 782
+    },
+    {
+      "path": "validation/artifacts/Gate-C-v2/attempt-09/combined-phase1-phase2-matrix.json",
+      "sha256": "92a2af568c66c7de40541ac332f5de5f6093a815978d923d257a427f92548235",
+      "size_bytes": 332602
+    },
+    {
+      "path": "validation/artifacts/Gate-C-v2/attempt-09/deterministic-checks.json",
+      "sha256": "0746862fd0f7cc7b7fd86ec927951ca3e103fdf7e61c170b4d43bbd41c37e215",
+      "size_bytes": 304037
+    },
+    {
+      "path": "validation/artifacts/Gate-C-v2/attempt-09/execution-status.json",
+      "sha256": "65f08619963c39c250b08ff3fa235ff20b4023748a27ee7ee5a724b570d68156",
+      "size_bytes": 4031
+    },
+    {
+      "path": "validation/artifacts/Gate-C-v2/attempt-09/phase1-freeze.json",
+      "sha256": "08ef288c373c2a6228171d7151cbc0e40983231dd3567ff206b37e6be3f32859",
+      "size_bytes": 52313
+    },
+    {
+      "path": "validation/artifacts/Gate-C-v2/attempt-09/phase2-selection.json",
+      "sha256": "b08bdb3527d0e36740223b1d790d0660ad35fb935ede8f1c2eb3a3196fb268d6",
+      "size_bytes": 1361
+    },
+    {
+      "path": "validation/artifacts/Gate-C-v2/attempt-09/profile-validation.json",
+      "sha256": "5fe2e34ccfbfde578cc4e7f78ef6af9ed7e88b0a0e458fed351106d3379c5af5",
+      "size_bytes": 682985
+    },
+    {
+      "path": "validation/artifacts/Gate-C-v2/attempt-09/review-artifact-index.json",
+      "sha256": "b08b27629d191dfd946461d2fdf2c0174120f03b653a4cb6d391dba5b41bda5f",
+      "size_bytes": 3301
+    },
+    {
+      "path": "validation/artifacts/Gate-C-v2/attempt-09/route-guard-evidence.json",
+      "sha256": "a61cb9de09c68cc0f7f0873144e58111a7cf6051f305500255bd29280d911ca5",
+      "size_bytes": 1250
+    },
+    {
+      "path": "validation/artifacts/Gate-C-v2/attempt-09/runtime-metrics.json",
+      "sha256": "b89738757fe6ea696b441b124b039becc8f5bfb8f048ae10d16b400ee38f2981",
+      "size_bytes": 4451
+    }
+  ],
+  "review_packet": {
+    "path": "validation/results/Gate-C-v2-human-review-packet-attempt-09.md",
+    "sha256": "cb89711ee31f2964bf7ea123bb2ce8dd1a923e04de2a85deefa03efb14963c5b",
+    "size_bytes": 2337
+  },
+  "route_guard_evidence": {
+    "path": "validation/artifacts/Gate-C-v2/attempt-09/route-guard-evidence.json",
+    "sha256": "a61cb9de09c68cc0f7f0873144e58111a7cf6051f305500255bd29280d911ca5"
+  },
+  "cohort": {
+    "path": "validation/work/Gate-C-v2/inputs/cohort-v2.json",
+    "sha256": "c2c6a644b4896dff1eeec5812dc867650e8b7e9a760b7d1d7ca31c004a8ef9ad"
+  },
+  "source_hashes": [
+    {
+      "path": "validation/work/Gate-C-v2/inputs/scenario_sources/dbms_student_lesson.md",
+      "sha256": "d0088409d21d6537e3b96e1581466966fc254fc17695b44c23b6e7dfa77c9035",
+      "size_bytes": 3623
+    },
+    {
+      "path": "validation/work/Gate-C-v2/inputs/scenario_sources/excel_demo_b1.md",
+      "sha256": "224091bf6e6867be20dbc59838e4b194e61a15f0ec60f73dda379593a80ce414",
+      "size_bytes": 9864
+    },
+    {
+      "path": "validation/work/Gate-C-v2/inputs/excel-workbook-ast-projection.json",
+      "sha256": "e3c0a67333178ab633fc416ac45a83c58310cafcc4d47cc9c2591528256d52ed",
+      "size_bytes": 148340
+    }
+  ]
+}

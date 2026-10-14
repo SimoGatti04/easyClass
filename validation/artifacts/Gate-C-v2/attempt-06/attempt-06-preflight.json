@@ -1,0 +1,27 @@
+{
+  "schema_version": 1,
+  "benchmark": "Gate-C-v2",
+  "attempt": "attempt-06",
+  "status": "CANDIDATE_UNAVAILABLE",
+  "candidate_model_ids": [
+    "agy/gemini-3.8-flash-tiered",
+    "groq/qwen/qwen3.8-27b",
+    "openrouter/dots-studio/dots-3-note-preview:free"
+  ],
+  "catalog_check": {
+    "stage": "attempt-06_initial_live_catalog_check",
+    "candidate_model_id": null,
+    "timestamp_utc": "2026-10-01T02:08:07.628505+00:00",
+    "http_status": null,
+    "request_id": null,
+    "response_headers_sanitized": {},
+    "response_body_sanitized": "",
+    "classification": "TRANSPORT_FAILURE",
+    "error": "URLError: bounded /v1/models request failed"
+  },
+  "candidate_results": [],
+  "corpus_sent": false,
+  "generation_started": false,
+  "longform_started": false,
+  "silent_replacement": false
+}

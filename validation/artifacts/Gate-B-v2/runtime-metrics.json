@@ -1,0 +1,82 @@
+{
+  "scope": "Local oMLX only; no remote/fallback. One Gold case per prompt. Gold labels, provenance, audit notes, source kinds, and epistemic-role metadata were excluded from model inputs.",
+  "runtime_base_url": "http://127.0.0.1:8000",
+  "health": {
+    "status": "healthy",
+    "default_model": "Qwen3-Embedding-0.6B",
+    "engine_pool": {
+      "model_count": 6,
+      "loaded_count": 2,
+      "final_ceiling": 14225635232,
+      "current_model_memory": 2738002712
+    },
+    "mcp": null
+  },
+  "expected_model_id": "MiniCPM5-2B-MLX",
+  "observed_model_id": "MiniCPM5-2B-MLX",
+  "model_profile": "local.semantic_small",
+  "scored_calls": 81,
+  "scored_calls_by_task": {
+    "source_grounding": 51,
+    "artifact_semantic_check": 30
+  },
+  "invalidated_harness_calls": 30,
+  "invalidated_harness_call_reason": "Initial artifact pass incorrectly used the Source Grounding JSON Schema enum; all 30 outputs were discarded and rerun with the correct Artifact Semantic Check enum.",
+  "synthetic_preflight": {
+    "ok": true,
+    "latency_ms": 1263.28,
+    "model_returned": "MiniCPM5-2B-MLX",
+    "finish_reason": "stop",
+    "schema_valid": true,
+    "synthetic_label": "SUPPORTED"
+  },
+  "structured_output": "json_schema; output keys label/evidence_span/short_reason; task-specific enum; max_tokens 256; temperature 0.0; stream false; no chain-of-thought requested or persisted.",
+  "local_model_latency_ms": {
+    "source_grounding": {
+      "count": 51,
+      "p50_ms": 1772.339,
+      "p95_ms": 3029.014,
+      "max_ms": 3892.904,
+      "scored_cases": 51,
+      "valid_structured_outputs": 51,
+      "request_failures": 0,
+      "schema_error_rate": 0.0
+    },
+    "artifact_semantic_check": {
+      "count": 30,
+      "p50_ms": 1869.083,
+      "p95_ms": 2749.469,
+      "max_ms": 2807.212,
+      "scored_cases": 30,
+      "valid_structured_outputs": 30,
+      "request_failures": 0,
+      "schema_error_rate": 0.0
+    }
+  },
+  "deterministic_baseline_latency_ms": {
+    "source_grounding": {
+      "count": 51,
+      "p50_ms": 0.028,
+      "p95_ms": 0.076,
+      "max_ms": 0.1
+    },
+    "artifact_semantic_check": {
+      "count": 30,
+      "p50_ms": 0.0,
+      "p95_ms": 0.0,
+      "max_ms": 0.0
+    }
+  },
+  "embedding_signal_only": {
+    "model_id": "Qwen3-Embedding-0.6B",
+    "scores_reused_from_this_run": 51,
+    "elapsed_ms": 13448.311,
+    "classified_as_truth": false
+  },
+  "calibration": {
+    "status": "NOT_PERFORMED",
+    "reason": "No confidence threshold based on model probabilities/scores was used."
+  },
+  "failures_final_scored_run": 0,
+  "schema_errors_final_scored_run": 0
+}

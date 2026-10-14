@@ -1,0 +1,52 @@
+{
+  "schema_version": 1,
+  "benchmark": "Gate A \u2014 Catalog Discovery Test",
+  "date": "2026-09-30",
+  "workspace_root": "~/Workspace/teacher-service-design",
+  "artifacts": [
+    {
+      "artifact": "validation/artifacts/Gate-A/model-registry.json",
+      "sha256": "c2fa0a509b21c67e450b07a52bf46964c549348e2ab876d3f7cd66fbb53215ec",
+      "description": "Normalized unified Model Registry containing local (oMLX) and remote (OmniRoute) models."
+    },
+    {
+      "artifact": "validation/artifacts/Gate-A/catalog-snapshot-summary.json",
+      "sha256": "2a4c58e31c9cd00334d2608f9ee96607805e010077750fa6d2c91118cab64407",
+      "description": "High-level summary of live catalog discovery endpoints, status, latency and model counts."
+    }
+  ],
+  "metrics": {
+    "timestamp": "2026-09-30T00:03:59.903662+00:00",
+    "number_remote_models": 8,
+    "number_local_models": 6,
+    "number_total_canonical_descriptors": 14,
+    "duplicates_collisions": 0,
+    "normalization_failures": 0,
+    "discovered_count": 0,
+    "compatible_count": 14,
+    "unavailable_history_count": 0,
+    "models_with_observed_evidence": 3,
+    "models_per_declared_profile_candidate": {
+      "local.embedding": 1,
+      "local.semantic_small": 3,
+      "local.reranker": 1,
+      "local.typed_decision": 4,
+      "remote.fast": 1,
+      "remote.generation": 8,
+      "remote.longform": 8,
+      "remote.reasoning": 8,
+      "remote.research": 7,
+      "remote.multimodal": 4
+    }
+  },
+  "tests": {
+    "TEST_1_OmniRoute_discovery": "PASS",
+    "TEST_2_oMLX_discovery": "PASS",
+    "TEST_3_normalization": "PASS",
+    "TEST_4_merge": "PASS",
+    "TEST_5_lifecycle": "PASS",
+    "TEST_6_disappearance_and_update_semantics": "PASS",
+    "TEST_7_declared_vs_observed": "PASS",
+    "TEST_8_profile_query": "PASS"
+  }
+}

@@ -1,0 +1,643 @@
+{
+  "benchmark": "B3",
+  "protocol": "artifact-v3; manual review of raw outputs; no LLM-as-a-judge",
+  "score_scale": {
+    "all_dimensions": "0-4; higher is better",
+    "editing_effort": {
+      "4": "usable_as_is",
+      "3": "minor_edits",
+      "2": "moderate_edits",
+      "1": "major_rewrite",
+      "0": "unusable"
+    },
+    "hallucinations": "4 means no unsupported additions detected; 0 means severe/pervasive unsupported content"
+  },
+  "dimensions": [
+    "source_fidelity",
+    "factual_correctness",
+    "completeness",
+    "pedagogical_usefulness",
+    "level_adherence",
+    "duration_adherence",
+    "structure",
+    "hallucinations",
+    "editing_effort"
+  ],
+  "scores": [
+    {
+      "model": "MiniCPM5-2B-MLX",
+      "scenario_id": "dbms_sql",
+      "artifact": "lesson_plan",
+      "scores": [
+        2,
+        2,
+        2,
+        2,
+        2,
+        3,
+        2,
+        2,
+        1
+      ],
+      "editing_class": "major_rewrite",
+      "evidence": "Timeline sums to 120 but invents prerequisites, compresses/doubles topics, uses GROUP BY where DISTINCT is the stated operation, and inaccurately says there are no source gaps."
+    },
+    {
+      "model": "MiniCPM5-2B-MLX",
+      "scenario_id": "dbms_sql",
+      "artifact": "teacher_script",
+      "scores": [
+        2,
+        1,
+        1,
+        1,
+        2,
+        1,
+        2,
+        1,
+        1
+      ],
+      "editing_class": "major_rewrite",
+      "evidence": "About 1,283 words for a 120-minute class; phase durations cover roughly 80 minutes, cues are repetitive/awkward, and the final net-revenue query is incorrect."
+    },
+    {
+      "model": "MiniCPM5-2B-MLX",
+      "scenario_id": "dbms_sql",
+      "artifact": "student_material",
+      "scores": [
+        3,
+        3,
+        3,
+        3,
+        3,
+        4,
+        3,
+        2,
+        3
+      ],
+      "editing_class": "minor_edits",
+      "evidence": "A compact, mostly faithful handout; repeats the source student sheet, but contains a misleading relationship notation and an inaccurate note claiming parts are unavailable."
+    },
+    {
+      "model": "MiniCPM5-2B-MLX",
+      "scenario_id": "dbms_sql",
+      "artifact": "metadata_json",
+      "scores": [
+        2,
+        2,
+        3,
+        2,
+        3,
+        3,
+        3,
+        2,
+        1
+      ],
+      "editing_class": "major_rewrite",
+      "evidence": "Valid JSON, but scenario_id is wrong, activities omit/reorder material, and student_material_distinct_from_teacher_script is false despite separate outputs."
+    },
+    {
+      "model": "MiniCPM5-2B-MLX",
+      "scenario_id": "excel",
+      "artifact": "lesson_plan",
+      "scores": [
+        2,
+        2,
+        2,
+        2,
+        3,
+        3,
+        2,
+        2,
+        2
+      ],
+      "editing_class": "moderate_edits",
+      "evidence": "Names allowed functions and states the missing-cell/formula limitation, but asserts unsupported prerequisites and compresses/mislabels the source sequence; limited operational detail."
+    },
+    {
+      "model": "MiniCPM5-2B-MLX",
+      "scenario_id": "excel",
+      "artifact": "teacher_script",
+      "scores": [
+        1,
+        1,
+        0,
+        0,
+        1,
+        0,
+        0,
+        0,
+        0
+      ],
+      "editing_class": "unusable",
+      "evidence": "English rather than Italian, repetitive filler, 7,906 words and finish_reason=length; not a coherent classroom script."
+    },
+    {
+      "model": "MiniCPM5-2B-MLX",
+      "scenario_id": "excel",
+      "artifact": "student_material",
+      "scores": [
+        1,
+        1,
+        0,
+        0,
+        1,
+        0,
+        1,
+        0,
+        0
+      ],
+      "editing_class": "unusable",
+      "evidence": "4,250 words of repeated text, finish_reason=length; not a usable handout."
+    },
+    {
+      "model": "MiniCPM5-2B-MLX",
+      "scenario_id": "excel",
+      "artifact": "metadata_json",
+      "scores": [
+        1,
+        1,
+        0,
+        0,
+        1,
+        0,
+        1,
+        0,
+        0
+      ],
+      "editing_class": "unusable",
+      "evidence": "3,174 words of repeated JSON-like material, invalid/truncated JSON at the 8,500-token cap."
+    },
+    {
+      "model": "MiniCPM5-2B-MLX",
+      "scenario_id": "partial_source_dbms",
+      "artifact": "lesson_plan",
+      "scores": [
+        1,
+        1,
+        1,
+        1,
+        2,
+        0,
+        2,
+        1,
+        1
+      ],
+      "editing_class": "major_rewrite",
+      "evidence": "Claims a 110-minute supported sequence although the source excerpt lacks query syntax/exercises; proposes unsupported SELECT/JOIN practice instead of restricting supported duration."
+    },
+    {
+      "model": "MiniCPM5-2B-MLX",
+      "scenario_id": "partial_source_dbms",
+      "artifact": "teacher_script",
+      "scores": [
+        1,
+        1,
+        0,
+        1,
+        2,
+        0,
+        1,
+        0,
+        0
+      ],
+      "editing_class": "unusable",
+      "evidence": "4,691 words, repetitive unsupported database/query prompts, and finish_reason=length; fails to confine the segment to defensible source content."
+    },
+    {
+      "model": "MiniCPM5-2B-MLX",
+      "scenario_id": "partial_source_dbms",
+      "artifact": "student_material",
+      "scores": [
+        2,
+        2,
+        2,
+        2,
+        3,
+        3,
+        3,
+        2,
+        2
+      ],
+      "editing_class": "moderate_edits",
+      "evidence": "A short usable conceptual sheet, but invents query exercises and conclusions not contained in the deliberately partial source."
+    },
+    {
+      "model": "MiniCPM5-2B-MLX",
+      "scenario_id": "partial_source_dbms",
+      "artifact": "metadata_json",
+      "scores": [
+        2,
+        1,
+        1,
+        1,
+        3,
+        1,
+        3,
+        1,
+        1
+      ],
+      "editing_class": "major_rewrite",
+      "evidence": "Valid JSON, but reports zero supported minutes while the other deliverables attempt unsupported content, leaves known_gaps empty, and lists full-source objectives as if supported."
+    },
+    {
+      "model": "agy/gemini-3.8-flash-tiered",
+      "scenario_id": "dbms_sql",
+      "artifact": "lesson_plan",
+      "scores": [
+        4,
+        3,
+        4,
+        3,
+        4,
+        4,
+        4,
+        2,
+        2
+      ],
+      "editing_class": "moderate_edits",
+      "evidence": "Well-structured 120-minute plan with source limits and usable checks, but overlong (~2,025 words) and promotes some unsupported SQL/discount details to operational guidance."
+    },
+    {
+      "model": "agy/gemini-3.8-flash-tiered",
+      "scenario_id": "dbms_sql",
+      "artifact": "teacher_script",
+      "scores": [
+        4,
+        2,
+        4,
+        4,
+        4,
+        3,
+        4,
+        2,
+        2
+      ],
+      "editing_class": "moderate_edits",
+      "evidence": "Rich phases, transitions, questions, exercises and answers; ~3,257 words, adds ROUND() and a specific discount formula absent from the source, and late phases compress practice/correction."
+    },
+    {
+      "model": "agy/gemini-3.8-flash-tiered",
+      "scenario_id": "dbms_sql",
+      "artifact": "student_material",
+      "scores": [
+        4,
+        3,
+        4,
+        4,
+        4,
+        4,
+        4,
+        3,
+        3
+      ],
+      "editing_class": "minor_edits",
+      "evidence": "Distinct, organized worksheet with exercises and response space; appropriately flags missing rows/formula details, but carries some additional gap claims to verify."
+    },
+    {
+      "model": "agy/gemini-3.8-flash-tiered",
+      "scenario_id": "dbms_sql",
+      "artifact": "metadata_json",
+      "scores": [
+        4,
+        3,
+        4,
+        3,
+        4,
+        4,
+        4,
+        3,
+        3
+      ],
+      "editing_class": "minor_edits",
+      "evidence": "Valid structured JSON with required fields and coherent 120-minute activity ranges; verbose and includes derived concepts/unsupported-claim annotations requiring review."
+    },
+    {
+      "model": "agy/gemini-3.8-flash-tiered",
+      "scenario_id": "excel",
+      "artifact": "lesson_plan",
+      "scores": [
+        4,
+        3,
+        4,
+        3,
+        3,
+        4,
+        4,
+        3,
+        2
+      ],
+      "editing_class": "moderate_edits",
+      "evidence": "Exact source time blocks and explicit no-cell/no-formula limits; very long (~1,854 words) and labels an inferred prerequisite as source-derived."
+    },
+    {
+      "model": "agy/gemini-3.8-flash-tiered",
+      "scenario_id": "excel",
+      "artifact": "teacher_script",
+      "scores": [
+        4,
+        3,
+        4,
+        4,
+        4,
+        4,
+        4,
+        3,
+        3
+      ],
+      "editing_class": "minor_edits",
+      "evidence": "Complete Italian phased script with transitions, teacher cues, student practice and common errors; avoids exact coordinates/formulas, but needs teacher validation against the live workbook and trims for length (~3,345 words)."
+    },
+    {
+      "model": "agy/gemini-3.8-flash-tiered",
+      "scenario_id": "excel",
+      "artifact": "student_material",
+      "scores": [
+        4,
+        3,
+        4,
+        3,
+        4,
+        4,
+        4,
+        3,
+        3
+      ],
+      "editing_class": "minor_edits",
+      "evidence": "Distinct worksheet aligned to parsed tables and function list, with response areas and an explicit missing-coordinate/formula caveat; verify workbook labels/values before handout."
+    },
+    {
+      "model": "agy/gemini-3.8-flash-tiered",
+      "scenario_id": "excel",
+      "artifact": "metadata_json",
+      "scores": [
+        4,
+        3,
+        4,
+        3,
+        4,
+        4,
+        4,
+        3,
+        3
+      ],
+      "editing_class": "minor_edits",
+      "evidence": "Valid JSON, required fields, exact time blocks and explicit known gaps; detailed assertions still require workbook/source verification."
+    },
+    {
+      "model": "agy/gemini-3.8-flash-tiered",
+      "scenario_id": "partial_source_dbms",
+      "artifact": "lesson_plan",
+      "scores": [
+        4,
+        4,
+        4,
+        3,
+        4,
+        4,
+        4,
+        4,
+        3
+      ],
+      "editing_class": "minor_edits",
+      "evidence": "Separates source-supported concepts from absent SQL/software material and limits the supported segment rather than padding to 120 minutes."
+    },
+    {
+      "model": "agy/gemini-3.8-flash-tiered",
+      "scenario_id": "partial_source_dbms",
+      "artifact": "teacher_script",
+      "scores": [
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        3
+      ],
+      "editing_class": "minor_edits",
+      "evidence": "A coherent partial script, explicitly ending when source support ends; useful cues and comprehension checks without adding SQL syntax."
+    },
+    {
+      "model": "agy/gemini-3.8-flash-tiered",
+      "scenario_id": "partial_source_dbms",
+      "artifact": "student_material",
+      "scores": [
+        4,
+        4,
+        4,
+        3,
+        4,
+        4,
+        4,
+        4,
+        3
+      ],
+      "editing_class": "minor_edits",
+      "evidence": "Student-facing definitions/schema sheet with clearly separated unavailable sections and no invented query syntax."
+    },
+    {
+      "model": "agy/gemini-3.8-flash-tiered",
+      "scenario_id": "partial_source_dbms",
+      "artifact": "metadata_json",
+      "scores": [
+        4,
+        4,
+        4,
+        3,
+        4,
+        4,
+        4,
+        3,
+        3
+      ],
+      "editing_class": "minor_edits",
+      "evidence": "Valid JSON with source gaps and support duration made explicit; one distinctness flag is inaccurate and needs correction."
+    },
+    {
+      "model": "Ornith-1.5-9B-MLX-4bit",
+      "scenario_id": "dbms_sql",
+      "artifact": "lesson_plan",
+      "scores": [
+        3,
+        3,
+        3,
+        2,
+        3,
+        1,
+        3,
+        2,
+        2
+      ],
+      "editing_class": "moderate_edits",
+      "evidence": "Clear 120-minute table and source-gap notes, but seven core blocks are crowded, practice/corrections are compressed, and it assumes an externally prepared database file."
+    },
+    {
+      "model": "Ornith-1.5-9B-MLX-4bit",
+      "scenario_id": "dbms_sql",
+      "artifact": "teacher_script",
+      "scores": [
+        2,
+        2,
+        1,
+        1,
+        3,
+        1,
+        1,
+        0,
+        1
+      ],
+      "editing_class": "major_rewrite",
+      "evidence": "finish_reason=length at 8,500 tokens; 4,190 words include extensive self-referential editorial commentary, then end mid-correction. Several additions exceed the source."
+    },
+    {
+      "model": "Ornith-1.5-9B-MLX-4bit",
+      "scenario_id": "dbms_sql",
+      "artifact": "student_material",
+      "scores": [
+        4,
+        4,
+        4,
+        3,
+        4,
+        4,
+        4,
+        4,
+        3
+      ],
+      "editing_class": "minor_edits",
+      "evidence": "Faithful, distinct worksheet with schema, definitions, exercises and answer spaces; minor awkward wording and notes about missing database data."
+    },
+    {
+      "model": "Ornith-1.5-9B-MLX-4bit",
+      "scenario_id": "dbms_sql",
+      "artifact": "metadata_json",
+      "scores": [
+        1,
+        1,
+        1,
+        1,
+        2,
+        0,
+        1,
+        0,
+        0
+      ],
+      "editing_class": "unusable",
+      "evidence": "8,500-token cap; ~4,109 words of self-referential output, invalid JSON and finish_reason=length."
+    },
+    {
+      "model": "Ornith-1.5-9B-MLX-4bit",
+      "scenario_id": "excel",
+      "artifact": "lesson_plan",
+      "scores": [
+        3,
+        3,
+        2,
+        2,
+        3,
+        2,
+        2,
+        3,
+        1
+      ],
+      "editing_class": "major_rewrite",
+      "evidence": "Observes the no-coordinate/formula boundary, but mislabels/moves the 83–108 source blocks and omits the 91–108 exercise from its timed sequence."
+    },
+    {
+      "model": "Ornith-1.5-9B-MLX-4bit",
+      "scenario_id": "excel",
+      "artifact": "teacher_script",
+      "scores": [
+        1,
+        1,
+        0,
+        0,
+        2,
+        0,
+        0,
+        0,
+        0
+      ],
+      "editing_class": "unusable",
+      "evidence": "8,500-token truncation; the raw output contains self-referential English drafting commentary, lacks a usable phase structure, and explicitly emits the unsupported cell coordinate $A$1 twice despite the no-cell-reference constraint; not a complete classroom script."
+    },
+    {
+      "model": "Ornith-1.5-9B-MLX-4bit",
+      "scenario_id": "excel",
+      "artifact": "student_material",
+      "scores": [
+        3,
+        3,
+        3,
+        3,
+        3,
+        3,
+        3,
+        3,
+        2
+      ],
+      "editing_class": "moderate_edits",
+      "evidence": "Readable handout with table values and response fields; contains malformed table formatting and duplicates the final summary/exit-ticket material."
+    },
+    {
+      "model": "Ornith-1.5-9B-MLX-4bit",
+      "scenario_id": "excel",
+      "artifact": "metadata_json",
+      "scores": [
+        3,
+        3,
+        4,
+        3,
+        3,
+        4,
+        3,
+        3,
+        3
+      ],
+      "editing_class": "minor_edits",
+      "evidence": "JSON parses after removing the outer code fence, but the raw output violates the no-fence contract and uses scenario_id=excel-workbook-demo rather than excel; fields otherwise cover objectives, activities and source gaps."
+    },
+    {
+      "model": "Ornith-1.5-9B-MLX-4bit",
+      "scenario_id": "partial_source_dbms",
+      "artifact": "lesson_plan",
+      "scores": [
+        1,
+        1,
+        0,
+        0,
+        2,
+        0,
+        0,
+        0,
+        0
+      ],
+      "editing_class": "unusable",
+      "evidence": "finish_reason=length at 8,500 tokens; 3,723 words begin with self-referential drafting commentary, duplicate the plan, and contradict the supported-duration arithmetic (30/80/90 minutes)."
+    }
+  ],
+  "not_yet_scored": [
+    {
+      "model": "Ornith-1.5-9B-MLX-4bit",
+      "scenario_id": "partial_source_dbms",
+      "artifact": "teacher_script",
+      "status": "INTERRUPTED_STALLED_NO_COMPLETED_RESPONSE",
+      "note": "Request persisted; operator stopped after 21m31s without a completed, persisted response. No score or model output fabricated."
+    },
+    {
+      "model": "Ornith-1.5-9B-MLX-4bit",
+      "scenario_id": "partial_source_dbms",
+      "artifact": "student_material",
+      "status": "NOT_RUN_AFTER_STALL"
+    },
+    {
+      "model": "Ornith-1.5-9B-MLX-4bit",
+      "scenario_id": "partial_source_dbms",
+      "artifact": "metadata_json",
+      "status": "NOT_RUN_AFTER_STALL"
+    }
+  ]
+}

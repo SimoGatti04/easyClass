@@ -1,0 +1,40 @@
+{
+  "schema_version": 1,
+  "benchmark": "Gate-C-v2-transport-fix",
+  "generated_at_utc": "2026-09-30T17:25:17.909643+00:00",
+  "status": "PARTIAL",
+  "parser_regression_status": "PASS",
+  "attempt_03_status": "PARTIAL",
+  "corpus_sent": false,
+  "credential_source": "validation/shared/runtime_config.py only",
+  "forbidden_credential_sources_used": false,
+  "files": [
+    {
+      "path": "validation/artifacts/Gate-C-v2-transport-fix/parser-regression-tests.json",
+      "sha256": "bc0bc0a61c4414848e63eddd2c48beea54deabc6f6b439bc1662857c69558d01",
+      "bytes": 2280
+    },
+    {
+      "path": "validation/artifacts/Gate-C-v2-transport-fix/attempt-03-preflight.json",
+      "sha256": "c197fa05fefd916efc4bd712c7fa668a0581596691c282b80e2dd56ebf0b1356",
+      "bytes": 13518
+    },
+    {
+      "path": "validation/artifacts/Gate-C-v2-transport-fix/transport-metrics.json",
+      "sha256": "98d44e800ee255e99ce4fdf3531d81538f661149dcd8f7dc8ff55ba4260f51df",
+      "bytes": 10567
+    },
+    {
+      "path": "validation/artifacts/Gate-C-v2-transport-fix/catalog-snapshot.json",
+      "sha256": "96b52e6ab5d325fce9e22624c03133f349f82ec651f8ca0e88eb51850d23da16",
+      "bytes": 48830
+    }
+  ],
+  "code_and_raw_evidence": [
+    "validation/shared/omniroute_sse.py",
+    "validation/work/Gate-C-v2/scripts/run_composite_benchmark.py",
+    "validation/work/Gate-C-v2/scripts/run_attempt03_preflight.py",
+    "validation/work/Gate-C-v2/scripts/test_omniroute_sse.py",
+    "validation/work/Gate-C-v2/outputs/attempt-03/"
+  ]
+}

@@ -1,0 +1,208 @@
+{
+  "schema_version": 1,
+  "benchmark": "Gate-C-v2",
+  "status": "NOT_RUN_NO_COHORT",
+  "preflight_checks": [
+    {
+      "model_id": "agy/gemini-3.8-flash-tiered",
+      "http_status": 200,
+      "non_empty_content": false,
+      "identity_verified": false,
+      "returned_model_id": "keepalive",
+      "finish_reason": null,
+      "json_parse_valid": false,
+      "schema_valid": false,
+      "semantic_valid": false,
+      "classification": "UNAVAILABLE_FOR_TEST / GATEWAY_DISCREPANCY",
+      "failure_reasons": [
+        "empty_content",
+        "model_identity_unverified",
+        "finish_reason_not_stop",
+        "strict_json_schema_invalid"
+      ]
+    },
+    {
+      "model_id": "mistral/mistral-medium-3-5",
+      "http_status": 200,
+      "non_empty_content": false,
+      "identity_verified": false,
+      "returned_model_id": "keepalive",
+      "finish_reason": null,
+      "json_parse_valid": false,
+      "schema_valid": false,
+      "semantic_valid": false,
+      "classification": "UNAVAILABLE_FOR_TEST / GATEWAY_DISCREPANCY",
+      "failure_reasons": [
+        "empty_content",
+        "model_identity_unverified",
+        "finish_reason_not_stop",
+        "strict_json_schema_invalid"
+      ]
+    },
+    {
+      "model_id": "opencode-zen/mimo-v2.5-free",
+      "http_status": 200,
+      "non_empty_content": false,
+      "identity_verified": false,
+      "returned_model_id": "keepalive",
+      "finish_reason": null,
+      "json_parse_valid": false,
+      "schema_valid": false,
+      "semantic_valid": false,
+      "classification": "UNAVAILABLE_FOR_TEST / GATEWAY_DISCREPANCY",
+      "failure_reasons": [
+        "empty_content",
+        "model_identity_unverified",
+        "finish_reason_not_stop",
+        "strict_json_schema_invalid"
+      ]
+    },
+    {
+      "model_id": "nvidia/moonshotai/kimi-k3",
+      "http_status": 200,
+      "non_empty_content": false,
+      "identity_verified": false,
+      "returned_model_id": "keepalive",
+      "finish_reason": null,
+      "json_parse_valid": false,
+      "schema_valid": false,
+      "semantic_valid": false,
+      "classification": "UNAVAILABLE_FOR_TEST / GATEWAY_DISCREPANCY",
+      "failure_reasons": [
+        "empty_content",
+        "model_identity_unverified",
+        "finish_reason_not_stop",
+        "strict_json_schema_invalid"
+      ]
+    },
+    {
+      "model_id": "nvidia/deepseek-ai/deepseek-v4.1-flash",
+      "http_status": 200,
+      "non_empty_content": false,
+      "identity_verified": false,
+      "returned_model_id": "keepalive",
+      "finish_reason": null,
+      "json_parse_valid": false,
+      "schema_valid": false,
+      "semantic_valid": false,
+      "classification": "UNAVAILABLE_FOR_TEST / GATEWAY_DISCREPANCY",
+      "failure_reasons": [
+        "empty_content",
+        "model_identity_unverified",
+        "finish_reason_not_stop",
+        "strict_json_schema_invalid"
+      ]
+    },
+    {
+      "model_id": "groq/openai/gpt-oss-120b",
+      "http_status": 200,
+      "non_empty_content": false,
+      "identity_verified": false,
+      "returned_model_id": "keepalive",
+      "finish_reason": null,
+      "json_parse_valid": false,
+      "schema_valid": false,
+      "semantic_valid": false,
+      "classification": "UNAVAILABLE_FOR_TEST / GATEWAY_DISCREPANCY",
+      "failure_reasons": [
+        "empty_content",
+        "model_identity_unverified",
+        "finish_reason_not_stop",
+        "strict_json_schema_invalid"
+      ]
+    },
+    {
+      "model_id": "openrouter/qwen/qwen3.8-27b:free",
+      "http_status": 200,
+      "non_empty_content": false,
+      "identity_verified": false,
+      "returned_model_id": "keepalive",
+      "finish_reason": null,
+      "json_parse_valid": false,
+      "schema_valid": false,
+      "semantic_valid": false,
+      "classification": "UNAVAILABLE_FOR_TEST / GATEWAY_DISCREPANCY",
+      "failure_reasons": [
+        "empty_content",
+        "model_identity_unverified",
+        "finish_reason_not_stop",
+        "strict_json_schema_invalid"
+      ]
+    },
+    {
+      "model_id": "openrouter/google/gemma-4-31b-it:free",
+      "http_status": 200,
+      "non_empty_content": false,
+      "identity_verified": false,
+      "returned_model_id": "keepalive",
+      "finish_reason": null,
+      "json_parse_valid": false,
+      "schema_valid": false,
+      "semantic_valid": false,
+      "classification": "UNAVAILABLE_FOR_TEST / GATEWAY_DISCREPANCY",
+      "failure_reasons": [
+        "empty_content",
+        "model_identity_unverified",
+        "finish_reason_not_stop",
+        "strict_json_schema_invalid"
+      ]
+    },
+    {
+      "model_id": "openrouter/nvidia/nemotron-3.5-lightning:free",
+      "http_status": 200,
+      "non_empty_content": false,
+      "identity_verified": false,
+      "returned_model_id": "keepalive",
+      "finish_reason": null,
+      "json_parse_valid": false,
+      "schema_valid": false,
+      "semantic_valid": false,
+      "classification": "UNAVAILABLE_FOR_TEST / GATEWAY_DISCREPANCY",
+      "failure_reasons": [
+        "empty_content",
+        "model_identity_unverified",
+        "finish_reason_not_stop",
+        "strict_json_schema_invalid"
+      ]
+    },
+    {
+      "model_id": "nvidia/z-ai/glm-5.3",
+      "http_status": 200,
+      "non_empty_content": false,
+      "identity_verified": false,
+      "returned_model_id": "keepalive",
+      "finish_reason": null,
+      "json_parse_valid": false,
+      "schema_valid": false,
+      "semantic_valid": false,
+      "classification": "UNAVAILABLE_FOR_TEST / GATEWAY_DISCREPANCY",
+      "failure_reasons": [
+        "empty_content",
+        "model_identity_unverified",
+        "finish_reason_not_stop",
+        "strict_json_schema_invalid"
+      ]
+    },
+    {
+      "model_id": "opencode-zen/mimo-v2.6-flash-free",
+      "http_status": 200,
+      "non_empty_content": false,
+      "identity_verified": false,
+      "returned_model_id": "keepalive",
+      "finish_reason": null,
+      "json_parse_valid": false,
+      "schema_valid": false,
+      "semantic_valid": false,
+      "classification": "UNAVAILABLE_FOR_TEST / GATEWAY_DISCREPANCY",
+      "failure_reasons": [
+        "empty_content",
+        "model_identity_unverified",
+        "finish_reason_not_stop",
+        "strict_json_schema_invalid"
+      ]
+    }
+  ],
+  "generation_checks": "NOT_RUN; no route passed preflight; no CORPUS Source Set sent to chat-completions",
+  "longform_checks": "NOT_RUN; no route passed preflight",
+  "source_specific_excel_checks": "NOT_RUN; held-out teacher reference not used"
+}

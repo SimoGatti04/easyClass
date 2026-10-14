@@ -1,0 +1,49 @@
+{
+  "gate": "Gate B — Local Capability Validation",
+  "status": "PARTIAL",
+  "created_at_local": "2026-09-30",
+  "gold_sets_written": false,
+  "gold_draft_status": "QUARANTINED_NOT_VALIDATED_NOT_USED",
+  "files": [
+    {
+      "path": "validation/artifacts/Gate-B/local-capability-matrix.json",
+      "sha256": "e57ec00322467eccc1e8514e94e403c333a646fa5afc52873fc236dd3ec10a09",
+      "bytes": 4137
+    },
+    {
+      "path": "validation/artifacts/Gate-B/profile-validation.json",
+      "sha256": "1236cfcaaf24f6d24f100d9260af16bdeaf041c6ebf475fa37d9fc4dea953d03",
+      "bytes": 2398
+    },
+    {
+      "path": "validation/artifacts/Gate-B/benchmark-summary.json",
+      "sha256": "8ddab7d5dc8aa1944b5ea492dc97ee3202c27e4ecd1425cebdf640a989e7e237",
+      "bytes": 1841
+    },
+    {
+      "path": "validation/results/Gate-B-local-capabilities-report.md",
+      "sha256": "df410c9c4615939ed58334e71a84689de75be6e11849b5ff8d7766d3ccc8d9a3",
+      "bytes": 9309
+    },
+    {
+      "path": "validation/work/Gate-B/metrics/deterministic-audit.json",
+      "sha256": "6948cbb39302f4b392bbda5ab5740768ea14386168e97250aba54d9e3b33e31c",
+      "bytes": 22665
+    },
+    {
+      "path": "validation/work/Gate-B/scripts/audit_deterministic.py",
+      "sha256": "7eb0e0e42817932b906bc508c563b6b6216efcf64e8b25500707bfc059e659e7",
+      "bytes": 7955
+    },
+    {
+      "path": "validation/work/Gate-B/scripts/build_gold.py",
+      "sha256": "3a57be27ccdfe9a2094315107e76b3e5ee83eed21af79b0517be1449bee2ddde",
+      "bytes": 297
+    },
+    {
+      "path": "validation/work/Gate-B/scripts/build_gold.unreviewed_draft.py",
+      "sha256": "bfa6694e0ec95ab0b185d5406594800a23f844d7289947d9a8d1bf1499701297",
+      "bytes": 30516
+    }
+  ]
+}

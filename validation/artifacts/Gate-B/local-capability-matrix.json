@@ -1,0 +1,78 @@
+{
+  "gate": "Gate B — Local Capability Validation",
+  "assessment_status": "PARTIAL",
+  "completion_blocker": "Independent human annotation is required before any semantic gold labels or accuracy claims are accepted.",
+  "global_model_registry_changed": false,
+  "capabilities": [
+    {
+      "task": "structural_schema_and_contract_checks",
+      "decision": "DETERMINISTIC",
+      "minimum_method": "JSON parsing, required-field/enum/type validation, finish_reason and arithmetic checks",
+      "implementation_evidence": "validation/work/Gate-B/scripts/audit_deterministic.py",
+      "quality_evidence": "B3 metadata: 0/8 artifacts fully conform to the B5-B6 metadata schema; B5-B6 raw metadata: 0/3 are bare parseable JSON. These are direct contract checks, not semantic accuracy scores.",
+      "automation_boundary": "AUTO_INTERNAL"
+    },
+    {
+      "task": "verbatim_repetition",
+      "decision": "ALGORITHMIC",
+      "minimum_method": "Normalized exact-paragraph and exact-line frequency counts; no tuned threshold",
+      "implementation_evidence": "validation/work/Gate-B/scripts/audit_deterministic.py",
+      "quality_evidence": "Offline exact-match audit of existing B3/B5 outputs; counts are descriptive and do not establish semantic-duplicate recall or precision.",
+      "automation_boundary": "AUTO_INTERNAL for flagging exact repeats; never a global quality judgment"
+    },
+    {
+      "task": "semantic_near_duplicate_detection",
+      "decision": null,
+      "gate_b_status": "BLOCKED",
+      "minimum_method": "Not determined; embeddings and semantic model require a human-annotated evaluation set.",
+      "automation_boundary": "UNVERIFIED"
+    },
+    {
+      "task": "source_grounding_check",
+      "decision": null,
+      "gate_b_status": "BLOCKED",
+      "minimum_method": "Not determined; no valid independent gold set was produced.",
+      "automation_boundary": "UNVERIFIED; do not use as authority"
+    },
+    {
+      "task": "short_semantic_tagging",
+      "decision": null,
+      "gate_b_status": "BLOCKED",
+      "minimum_method": "Not determined; no valid independent gold set was produced.",
+      "automation_boundary": "UNVERIFIED"
+    },
+    {
+      "task": "generated_artifact_semantic_check",
+      "decision": null,
+      "gate_b_status": "BLOCKED",
+      "minimum_method": "Deterministic contract checks apply only to machine-verifiable requirements; semantic checks remain unvalidated.",
+      "automation_boundary": "UNVERIFIED; human review required"
+    },
+    {
+      "task": "relevance_suggestion_after_retrieval",
+      "decision": "NOT_NEEDED",
+      "minimum_method": "B2 FTS5 exact/lexical plus dense Qwen3 retrieval according to query type; B4 Rizzo only as recall-first candidate expansion suggestion.",
+      "quality_evidence": "Reuses B2/B4; no repeated Rizzo calls. No additional decision model is justified as a default stage after retrieval.",
+      "automation_boundary": "SUGGEST_ONLY for optional relevance expansion"
+    },
+    {
+      "task": "file_type_and_source_category",
+      "decision": "DETERMINISTIC",
+      "minimum_method": "Reuse B4 deterministic file-type and source-category rules.",
+      "quality_evidence": "Existing B4 report; not rerun in Gate B.",
+      "automation_boundary": "AUTO_INTERNAL for bounded dispatch metadata"
+    },
+    {
+      "task": "subject_candidate_and_local_search_needed",
+      "decision": "NOT_NEEDED",
+      "minimum_method": "Reuse the simpler tested B4 baselines; do not add Rizzo as a default decision stage.",
+      "quality_evidence": "B4 reports simple subject baseline at least as good as Rizzo and local-search-needed baseline better than Rizzo on tested cases; not rerun in Gate B.",
+      "automation_boundary": "AUTO_INTERNAL only within prior tested scope"
+    }
+  ],
+  "notes": [
+    "No model inference was run for Gate B. One localhost /v1/models inventory request was used only to confirm already-installed candidates; it did not submit evaluation examples.",
+    "The draft gold builder was quarantined and disabled. No gold JSONL was written or used.",
+    "No confidence calibration is claimed."
+  ]
+}

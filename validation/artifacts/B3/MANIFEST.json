@@ -1,0 +1,842 @@
+{
+  "schema_version": 1,
+  "benchmark": "B3 — Small / General Model Benchmark",
+  "created_date": "2026-09-29",
+  "report": "validation/results/B3-models-report.md",
+  "protocol": "artifact-v3; manual human rubric; no LLM-as-a-judge",
+  "source_separation_audit": "validation/work/B3/metrics/source-separation-audit.json",
+  "raw_outputs_preserved": true,
+  "output_counts": {
+    "artifact_v3_raw_responses": 33,
+    "all_raw_responses_including_pilots": 36,
+    "v3_metric_rows": 33,
+    "ornith_stalled_request_has_no_raw_response": true
+  },
+  "files": [
+    {
+      "path": "validation/artifacts/B3/manual-scorecard.json",
+      "sha256": "d0cd06fee89c1f6d05e816f3ddc56dd84b7a704ff0edc8dcaa9bbe54ed53dd38",
+      "bytes": 16754
+    },
+    {
+      "path": "validation/results/B3-models-report.md",
+      "sha256": "736685fad527bc52ac4492b90a98d794e4f2f54111a4501ee5655a68a724bf09",
+      "bytes": 19791
+    },
+    {
+      "path": "validation/work/B3/inputs/evaluation-protocol.md",
+      "sha256": "2d281dcda17cc32ba67e0b4bba26a0fb7bd79ae690cc16f2bc5deb4b2bb2a6e3",
+      "bytes": 2320
+    },
+    {
+      "path": "validation/work/B3/inputs/prompt-template.md",
+      "sha256": "44f47cab71ee4f54b418dd54b26b12bb241115023038d5ccf4aa97c174115603",
+      "bytes": 3463
+    },
+    {
+      "path": "validation/work/B3/inputs/scenario-scope-notes.md",
+      "sha256": "5b77072ca8558a3bc32a0c5b4fc2fc56aed8eb1e7181825cccfb22fdf638d83c",
+      "bytes": 1194
+    },
+    {
+      "path": "validation/work/B3/inputs/scenario-source-separation.json",
+      "sha256": "0a68a7d6f9c87480821d05477f46fa4570e7b64d82ae401749a72bd86dedff34",
+      "bytes": 5614
+    },
+    {
+      "path": "validation/work/B3/logs/run-index.jsonl",
+      "sha256": "cfb809fd697b22015f1b73b5486c0131c1dfa3e8f5ceb1534f0782bee84a0e98",
+      "bytes": 105
+    },
+    {
+      "path": "validation/work/B3/metrics/environment.json",
+      "sha256": "6406342f298aeb83def2630f5ed0f982f1b43e7b85d1d9cb458176325bc6436e",
+      "bytes": 471
+    },
+    {
+      "path": "validation/work/B3/metrics/metrics-summary.csv",
+      "sha256": "a5cbe496889a22cf60b1715a636fd9306493bdcf07c6e60f989bcd388a46f190",
+      "bytes": 7669
+    },
+    {
+      "path": "validation/work/B3/metrics/metrics-summary.json",
+      "sha256": "052d24b9d0513bbaba20e6ca0174e9c8b9426fafcecc9a1a79f6ab519d766f4a",
+      "bytes": 93283
+    },
+    {
+      "path": "validation/work/B3/metrics/ornith-run-status.json",
+      "sha256": "3f50b91f245ecd3d060b4580ca803e3cba017d3d852bdf412fb1aebbf2ef7e5a",
+      "bytes": 1407
+    },
+    {
+      "path": "validation/work/B3/metrics/source-separation-audit.json",
+      "sha256": "6c58a278dd2c89840eab303c7abe0b3e1851a2f9135f3217e6d49f27c3602b60",
+      "bytes": 21981
+    },
+    {
+      "path": "validation/work/B3/outputs/gemini-3.8-flash-tiered/dbms_sql/artifact-v3/lesson_plan/lesson-plan.md",
+      "sha256": "7931214c4a1888a4a8ddda44ef594ac9b844b077fc877573d8f4c5fe17bf9760",
+      "bytes": 13763
+    },
+    {
+      "path": "validation/work/B3/outputs/gemini-3.8-flash-tiered/dbms_sql/artifact-v3/lesson_plan/request.json",
+      "sha256": "054acb7161c3486487e227ab1da9e2c92c8f0fea8ae0ef1071245d131ef621fa",
+      "bytes": 5866
+    },
+    {
+      "path": "validation/work/B3/outputs/gemini-3.8-flash-tiered/dbms_sql/artifact-v3/lesson_plan/response.raw.md",
+      "sha256": "8b6af4f4b64bf51af69e45f0e4d0ba610e890f4b67aef92f21a5a496bffa0143",
+      "bytes": 13762
+    },
+    {
+      "path": "validation/work/B3/outputs/gemini-3.8-flash-tiered/dbms_sql/artifact-v3/lesson_plan/run-metrics.json",
+      "sha256": "a139efc56294a592b76ac4edb41f80d9c582ee02cbe2533ca78a5a53ca9f66b5",
+      "bytes": 1499
+    },
+    {
+      "path": "validation/work/B3/outputs/gemini-3.8-flash-tiered/dbms_sql/artifact-v3/metadata_json/metadata.json",
+      "sha256": "6482f925a3ebac59cff8c369acb319d4ef29605482a619beaf31304646e11d83",
+      "bytes": 4675
+    },
+    {
+      "path": "validation/work/B3/outputs/gemini-3.8-flash-tiered/dbms_sql/artifact-v3/metadata_json/metadata.json.raw.txt",
+      "sha256": "6482f925a3ebac59cff8c369acb319d4ef29605482a619beaf31304646e11d83",
+      "bytes": 4675
+    },
+    {
+      "path": "validation/work/B3/outputs/gemini-3.8-flash-tiered/dbms_sql/artifact-v3/metadata_json/request.json",
+      "sha256": "8467e57397f7a29f78153030ec9775cbce797b97f85fc91506a961d62ae77228",
+      "bytes": 6132
+    },
+    {
+      "path": "validation/work/B3/outputs/gemini-3.8-flash-tiered/dbms_sql/artifact-v3/metadata_json/response.raw.md",
+      "sha256": "a7a9fc1922531e9ca64fd9b4a13b38e63a2f78e901131598626ebd7b51abc837",
+      "bytes": 4674
+    },
+    {
+      "path": "validation/work/B3/outputs/gemini-3.8-flash-tiered/dbms_sql/artifact-v3/metadata_json/run-metrics.json",
+      "sha256": "212e6694d5486041f41be974c095f7b247147f882667736eae214de8bac56aa4",
+      "bytes": 1500
+    },
+    {
+      "path": "validation/work/B3/outputs/gemini-3.8-flash-tiered/dbms_sql/artifact-v3/student_material/request.json",
+      "sha256": "6630298d8842ed9f06abb6f189af57c32f01b8191566939c00521b791642c23c",
+      "bytes": 5743
+    },
+    {
+      "path": "validation/work/B3/outputs/gemini-3.8-flash-tiered/dbms_sql/artifact-v3/student_material/response.raw.md",
+      "sha256": "4aca5961849ee8d57edd4a9f041adff260bc8fffc0ee42dd7b8f54b34b6d80a4",
+      "bytes": 6529
+    },
+    {
+      "path": "validation/work/B3/outputs/gemini-3.8-flash-tiered/dbms_sql/artifact-v3/student_material/run-metrics.json",
+      "sha256": "a8a17c44ba14a59541032dce1b239aac2a8b7a103d2033dcb91797f371bb1b8c",
+      "bytes": 1500
+    },
+    {
+      "path": "validation/work/B3/outputs/gemini-3.8-flash-tiered/dbms_sql/artifact-v3/student_material/student-material.md",
+      "sha256": "40a469d4ab9f73ccd531d4dcb612b27280692ccd7d464181a13ed78b2a009357",
+      "bytes": 6530
+    },
+    {
+      "path": "validation/work/B3/outputs/gemini-3.8-flash-tiered/dbms_sql/artifact-v3/teacher_script/request.json",
+      "sha256": "6ee9ec312a9e62331910d72ec91c5316ffe6cb5ced4422b7d148529cafaecf73",
+      "bytes": 6191
+    },
+    {
+      "path": "validation/work/B3/outputs/gemini-3.8-flash-tiered/dbms_sql/artifact-v3/teacher_script/response.raw.md",
+      "sha256": "0fd1753775e456034f0cf8aadb37dcb1183cd43261628b6985602def5b756655",
+      "bytes": 21862
+    },
+    {
+      "path": "validation/work/B3/outputs/gemini-3.8-flash-tiered/dbms_sql/artifact-v3/teacher_script/run-metrics.json",
+      "sha256": "1c7356609b709b432263bfbf3d792cc62d0ed1174624a8fe5af1fa5e4bfb6a85",
+      "bytes": 1505
+    },
+    {
+      "path": "validation/work/B3/outputs/gemini-3.8-flash-tiered/dbms_sql/artifact-v3/teacher_script/teacher-script.md",
+      "sha256": "78fc5bc7255ac8574c7712bbfa77b7c5a2f4637914ce22b47809f2860cf99d79",
+      "bytes": 21863
+    },
+    {
+      "path": "validation/work/B3/outputs/gemini-3.8-flash-tiered/excel/artifact-v3/lesson_plan/lesson-plan.md",
+      "sha256": "e7f4a8fbb2ffb795c8301d71952b833c4206c379ce3e26fba8d1eaedb82be654",
+      "bytes": 13366
+    },
+    {
+      "path": "validation/work/B3/outputs/gemini-3.8-flash-tiered/excel/artifact-v3/lesson_plan/request.json",
+      "sha256": "c3571acac69406289741cbf1c21fa5e04f3b596de12740daa4f6054737aacf74",
+      "bytes": 13069
+    },
+    {
+      "path": "validation/work/B3/outputs/gemini-3.8-flash-tiered/excel/artifact-v3/lesson_plan/response.raw.md",
+      "sha256": "3cda73996d2e10ba12c08436772783b1a16ef9afa953e53b24718e7f881edf63",
+      "bytes": 13365
+    },
+    {
+      "path": "validation/work/B3/outputs/gemini-3.8-flash-tiered/excel/artifact-v3/lesson_plan/run-metrics.json",
+      "sha256": "394ad3e285990d25c6b101952fdb478411b46a5e3f0fcf0a29b4a29f95a04f30",
+      "bytes": 1501
+    },
+    {
+      "path": "validation/work/B3/outputs/gemini-3.8-flash-tiered/excel/artifact-v3/metadata_json/metadata.json",
+      "sha256": "c7403e7c77274f6541b8a975121b74774906a3b51f9289b98500444ca60d0006",
+      "bytes": 4735
+    },
+    {
+      "path": "validation/work/B3/outputs/gemini-3.8-flash-tiered/excel/artifact-v3/metadata_json/metadata.json.raw.txt",
+      "sha256": "c7403e7c77274f6541b8a975121b74774906a3b51f9289b98500444ca60d0006",
+      "bytes": 4735
+    },
+    {
+      "path": "validation/work/B3/outputs/gemini-3.8-flash-tiered/excel/artifact-v3/metadata_json/request.json",
+      "sha256": "d934eb5f322c1cd44dd0e8eca23289163c0713e443462b70b91502212ff6e834",
+      "bytes": 13335
+    },
+    {
+      "path": "validation/work/B3/outputs/gemini-3.8-flash-tiered/excel/artifact-v3/metadata_json/response.raw.md",
+      "sha256": "5009551bf0cc3d15d45920315cc73f1ff174a1c19d88d6f394f6fb514da0fb0d",
+      "bytes": 4734
+    },
+    {
+      "path": "validation/work/B3/outputs/gemini-3.8-flash-tiered/excel/artifact-v3/metadata_json/run-metrics.json",
+      "sha256": "dd0fe4b5fc64faf98ac05a146478838b80a5ecb5bc58c94f71cb3901d490ee04",
+      "bytes": 1499
+    },
+    {
+      "path": "validation/work/B3/outputs/gemini-3.8-flash-tiered/excel/artifact-v3/student_material/request.json",
+      "sha256": "5131d925caf0f5e717938e56bba12abc1ebf72b6f56ce1fd9c41cb1ec0d39aac",
+      "bytes": 12946
+    },
+    {
+      "path": "validation/work/B3/outputs/gemini-3.8-flash-tiered/excel/artifact-v3/student_material/response.raw.md",
+      "sha256": "4233018cb743aa117ed15d9024ed238732a76222e9edf5835ce6d4fa8e0c0273",
+      "bytes": 6118
+    },
+    {
+      "path": "validation/work/B3/outputs/gemini-3.8-flash-tiered/excel/artifact-v3/student_material/run-metrics.json",
+      "sha256": "fdd6d0747756815c6559087376287b01d11bd197c152b6c9ab5994ed9ce23eba",
+      "bytes": 1502
+    },
+    {
+      "path": "validation/work/B3/outputs/gemini-3.8-flash-tiered/excel/artifact-v3/student_material/student-material.md",
+      "sha256": "1857c06511b1243f83a3daf4e8f7a2e1fccab6d672b0e0388f7f03e78f764cb7",
+      "bytes": 6119
+    },
+    {
+      "path": "validation/work/B3/outputs/gemini-3.8-flash-tiered/excel/artifact-v3/teacher_script/request.json",
+      "sha256": "51d8aae209658465f35edc281ed0fbc7ef4c4bbab4dd0b6f997d66901d252103",
+      "bytes": 13394
+    },
+    {
+      "path": "validation/work/B3/outputs/gemini-3.8-flash-tiered/excel/artifact-v3/teacher_script/response.raw.md",
+      "sha256": "56532ddfbeaceb65e585f499db1fb13b20c01a719f23f2b8ab68b42e67448d41",
+      "bytes": 23058
+    },
+    {
+      "path": "validation/work/B3/outputs/gemini-3.8-flash-tiered/excel/artifact-v3/teacher_script/run-metrics.json",
+      "sha256": "54d864b0f329a8c810226ad693eec341d0817e5544c07a70729926ca55620b64",
+      "bytes": 1507
+    },
+    {
+      "path": "validation/work/B3/outputs/gemini-3.8-flash-tiered/excel/artifact-v3/teacher_script/teacher-script.md",
+      "sha256": "1af8a3ae38e42d35697faf50e865450d4e68ba3057bdfd64a8545f9c27891967",
+      "bytes": 23059
+    },
+    {
+      "path": "validation/work/B3/outputs/gemini-3.8-flash-tiered/partial_source_dbms/artifact-v3/lesson_plan/lesson-plan.md",
+      "sha256": "fde1e9b3e45cbf4d2c446d4c65e4abbec8cd51496def12587eefb847c09dc037",
+      "bytes": 5829
+    },
+    {
+      "path": "validation/work/B3/outputs/gemini-3.8-flash-tiered/partial_source_dbms/artifact-v3/lesson_plan/request.json",
+      "sha256": "aa92301baeb1a13b77b8c9f45aeda390570dec0698943f6523a3a15d0cd4d4a1",
+      "bytes": 3505
+    },
+    {
+      "path": "validation/work/B3/outputs/gemini-3.8-flash-tiered/partial_source_dbms/artifact-v3/lesson_plan/response.raw.md",
+      "sha256": "1e9f8985ab6913b2657ac70961139542dd656b595cf0fa37af4ea6275f6a7fac",
+      "bytes": 5828
+    },
+    {
+      "path": "validation/work/B3/outputs/gemini-3.8-flash-tiered/partial_source_dbms/artifact-v3/lesson_plan/run-metrics.json",
+      "sha256": "ed4be787961269e35e1ddecec2a36080b2a671cad867c900c1ebb3ca23f3b4f8",
+      "bytes": 1508
+    },
+    {
+      "path": "validation/work/B3/outputs/gemini-3.8-flash-tiered/partial_source_dbms/artifact-v3/metadata_json/metadata.json",
+      "sha256": "b6fe8feaa7b3a24aa38ad394e8046ff1cdd613017afb036162c45a8dfe1d4145",
+      "bytes": 3318
+    },
+    {
+      "path": "validation/work/B3/outputs/gemini-3.8-flash-tiered/partial_source_dbms/artifact-v3/metadata_json/metadata.json.raw.txt",
+      "sha256": "b6fe8feaa7b3a24aa38ad394e8046ff1cdd613017afb036162c45a8dfe1d4145",
+      "bytes": 3318
+    },
+    {
+      "path": "validation/work/B3/outputs/gemini-3.8-flash-tiered/partial_source_dbms/artifact-v3/metadata_json/request.json",
+      "sha256": "f4fde1403628c7fc9eb5e9edd542daae356b79e5e4585b927e7cdf416631d658",
+      "bytes": 3771
+    },
+    {
+      "path": "validation/work/B3/outputs/gemini-3.8-flash-tiered/partial_source_dbms/artifact-v3/metadata_json/response.raw.md",
+      "sha256": "b80ed6f4fd42fcc1040f3a9fcfb8dafd522eda07c0a9c89b70bca2f47a694f63",
+      "bytes": 3317
+    },
+    {
+      "path": "validation/work/B3/outputs/gemini-3.8-flash-tiered/partial_source_dbms/artifact-v3/metadata_json/run-metrics.json",
+      "sha256": "cc3d942545124a125c1039d050db39061ed9b6a52dcba4990d9ff5e9ca06c90a",
+      "bytes": 1510
+    },
+    {
+      "path": "validation/work/B3/outputs/gemini-3.8-flash-tiered/partial_source_dbms/artifact-v3/student_material/request.json",
+      "sha256": "1c6e3ae36ec0578fb3cd494152fcd5e311a37d0943bd7c3e1cde65f4cb9985fe",
+      "bytes": 3382
+    },
+    {
+      "path": "validation/work/B3/outputs/gemini-3.8-flash-tiered/partial_source_dbms/artifact-v3/student_material/response.raw.md",
+      "sha256": "0a5fdaa274cac765e303921aa694109b88d846854d44de0b7322294487207d83",
+      "bytes": 3682
+    },
+    {
+      "path": "validation/work/B3/outputs/gemini-3.8-flash-tiered/partial_source_dbms/artifact-v3/student_material/run-metrics.json",
+      "sha256": "11ec46db88466569a424bd0bca02e507c2cf27fe34217ae898137e5eb7471e5d",
+      "bytes": 1511
+    },
+    {
+      "path": "validation/work/B3/outputs/gemini-3.8-flash-tiered/partial_source_dbms/artifact-v3/student_material/student-material.md",
+      "sha256": "500fa48b645b1c30eb4602c4f2e3f377d6d21f439dd198f1dfb37dd908bcb8af",
+      "bytes": 3683
+    },
+    {
+      "path": "validation/work/B3/outputs/gemini-3.8-flash-tiered/partial_source_dbms/artifact-v3/teacher_script/request.json",
+      "sha256": "7f6c776d2b27b7d63743de7f612f0de39da76adca92a9b314c4ea7aa8c60abc2",
+      "bytes": 3830
+    },
+    {
+      "path": "validation/work/B3/outputs/gemini-3.8-flash-tiered/partial_source_dbms/artifact-v3/teacher_script/response.raw.md",
+      "sha256": "1f0be15f8694389ab5be13b47af2de83052d88d38fd2dc1e024adcf24d4dd38e",
+      "bytes": 10604
+    },
+    {
+      "path": "validation/work/B3/outputs/gemini-3.8-flash-tiered/partial_source_dbms/artifact-v3/teacher_script/run-metrics.json",
+      "sha256": "406c5f717a0c6880da8913963b3606a6227f35101d67afdbe56759c090732317",
+      "bytes": 1514
+    },
+    {
+      "path": "validation/work/B3/outputs/gemini-3.8-flash-tiered/partial_source_dbms/artifact-v3/teacher_script/teacher-script.md",
+      "sha256": "a93c068ce9d6f96960cccad546ed8ad3846d7de5df3ca55b23077b46faec5f98",
+      "bytes": 10605
+    },
+    {
+      "path": "validation/work/B3/outputs/minicpm5-2b-mlx/dbms_sql/artifact-v3/lesson_plan/lesson-plan.md",
+      "sha256": "482dbc4056a04b83b5a0f10683d267037671acb4c18b12116d49b2091c1eb36e",
+      "bytes": 2362
+    },
+    {
+      "path": "validation/work/B3/outputs/minicpm5-2b-mlx/dbms_sql/artifact-v3/lesson_plan/request.json",
+      "sha256": "e9db7a7109840daca6da8d8b71d9d82fdddb800585a605ef127556bf32b98de5",
+      "bytes": 5854
+    },
+    {
+      "path": "validation/work/B3/outputs/minicpm5-2b-mlx/dbms_sql/artifact-v3/lesson_plan/response.raw.md",
+      "sha256": "de0e7b52fe777d4ffa33c7eb5bf13393a2031de356d5c15b33b12495f9f2be6c",
+      "bytes": 2361
+    },
+    {
+      "path": "validation/work/B3/outputs/minicpm5-2b-mlx/dbms_sql/artifact-v3/lesson_plan/run-metrics.json",
+      "sha256": "bf3f3746be5c2d253332a3287be5004e4a519b3f20fa6893800aea61f869e6a4",
+      "bytes": 1684
+    },
+    {
+      "path": "validation/work/B3/outputs/minicpm5-2b-mlx/dbms_sql/artifact-v3/metadata_json/metadata.json",
+      "sha256": "7bb82eb486bab504bbd3739bf57a6cc1c007cabea81e802f05061e786e3a7f1e",
+      "bytes": 1448
+    },
+    {
+      "path": "validation/work/B3/outputs/minicpm5-2b-mlx/dbms_sql/artifact-v3/metadata_json/metadata.json.raw.txt",
+      "sha256": "797ac36c55964f5b761fd208c570516bd425f89cc0d6b01bb276491edb1f2a79",
+      "bytes": 1097
+    },
+    {
+      "path": "validation/work/B3/outputs/minicpm5-2b-mlx/dbms_sql/artifact-v3/metadata_json/request.json",
+      "sha256": "515abc63a173e238e4383dc345cad92cbab137670640d6936ee78deb6da80774",
+      "bytes": 6120
+    },
+    {
+      "path": "validation/work/B3/outputs/minicpm5-2b-mlx/dbms_sql/artifact-v3/metadata_json/response.raw.md",
+      "sha256": "47a4bef46bdb22e6aaf4e9f0f10b0a95c3412281af241993955972f72f56af34",
+      "bytes": 1096
+    },
+    {
+      "path": "validation/work/B3/outputs/minicpm5-2b-mlx/dbms_sql/artifact-v3/metadata_json/run-metrics.json",
+      "sha256": "b8958be5915eba168de67ffed3905b936a1b3cf32eb408737400bbdcfcf795e2",
+      "bytes": 1685
+    },
+    {
+      "path": "validation/work/B3/outputs/minicpm5-2b-mlx/dbms_sql/artifact-v3/student_material/request.json",
+      "sha256": "148ba8ba86eeadfb67c289bc4a5d317848e558ec487917fc7cc521adf5d866cf",
+      "bytes": 5731
+    },
+    {
+      "path": "validation/work/B3/outputs/minicpm5-2b-mlx/dbms_sql/artifact-v3/student_material/response.raw.md",
+      "sha256": "af0abe0d7650878b88480268f3c2c07029df91b21e2e2b5c709a68950026533b",
+      "bytes": 3497
+    },
+    {
+      "path": "validation/work/B3/outputs/minicpm5-2b-mlx/dbms_sql/artifact-v3/student_material/run-metrics.json",
+      "sha256": "a95315932dcf6583526ba91d58585b13945eb61aa8190ede9eaf75308c774c35",
+      "bytes": 1700
+    },
+    {
+      "path": "validation/work/B3/outputs/minicpm5-2b-mlx/dbms_sql/artifact-v3/student_material/student-material.md",
+      "sha256": "feed88d47adb7dc2d5a3e0ab27104c900204441b8b116e2f7284286186308c2a",
+      "bytes": 3498
+    },
+    {
+      "path": "validation/work/B3/outputs/minicpm5-2b-mlx/dbms_sql/artifact-v3/teacher_script/request.json",
+      "sha256": "c0d28bbb467639c463eaefbb2ab40694b5cbd7161d254a5ac381f2fec609ca1f",
+      "bytes": 6179
+    },
+    {
+      "path": "validation/work/B3/outputs/minicpm5-2b-mlx/dbms_sql/artifact-v3/teacher_script/response.raw.md",
+      "sha256": "b5a83e7304da33bdf0a85c520292bde5ad1f5ac0e76274e7671bb2397f1de1e8",
+      "bytes": 8171
+    },
+    {
+      "path": "validation/work/B3/outputs/minicpm5-2b-mlx/dbms_sql/artifact-v3/teacher_script/run-metrics.json",
+      "sha256": "75d91e0cb94b712250e73cbc063fb88a23b38c256b0737a02fcfbfa9716ff364",
+      "bytes": 1696
+    },
+    {
+      "path": "validation/work/B3/outputs/minicpm5-2b-mlx/dbms_sql/artifact-v3/teacher_script/teacher-script.md",
+      "sha256": "51ce949754bea19b963f7bedf2e869b052548a9c9fbead6645c762f76657aa78",
+      "bytes": 8172
+    },
+    {
+      "path": "validation/work/B3/outputs/minicpm5-2b-mlx/dbms_sql/request.json",
+      "sha256": "154cdebffdf81b339178d63b273eb8031ba14a17acecee85a853dd27540d4cb2",
+      "bytes": 7753
+    },
+    {
+      "path": "validation/work/B3/outputs/minicpm5-2b-mlx/dbms_sql/response.raw.md",
+      "sha256": "685f78786f0bf58a0ca0e1d0de73086438a126b54cec88d02bb039029bfbc6c5",
+      "bytes": 12424
+    },
+    {
+      "path": "validation/work/B3/outputs/minicpm5-2b-mlx/dbms_sql/run-metrics.json",
+      "sha256": "f48682806a1be33168838f4b98c52551448fd5b58efe98b7c4c90670c4bdbec3",
+      "bytes": 1719
+    },
+    {
+      "path": "validation/work/B3/outputs/minicpm5-2b-mlx/dbms_sql/split-v2/support_bundle/request.json",
+      "sha256": "c441d3e772b7e83c7ba438c7fdaccc6f2db04729f08e2d982c6c672eae434dfc",
+      "bytes": 6336
+    },
+    {
+      "path": "validation/work/B3/outputs/minicpm5-2b-mlx/dbms_sql/split-v2/support_bundle/response.raw.md",
+      "sha256": "b7f600eb1c437544ab11260d8f309ce81fdc95b3c3c65943c68a9ffa1454018b",
+      "bytes": 2253
+    },
+    {
+      "path": "validation/work/B3/outputs/minicpm5-2b-mlx/dbms_sql/split-v2/support_bundle/run-metrics.json",
+      "sha256": "024ecbe0b2f17a5458e067c04151106dc139ac7118bdb09f6e4cbaeda5b37671",
+      "bytes": 1633
+    },
+    {
+      "path": "validation/work/B3/outputs/minicpm5-2b-mlx/dbms_sql/split-v2/teacher_script/request.json",
+      "sha256": "8799b45ef31a4199b00a2f27432f9c89dabd1f4f02d8b94f9e6eb13edab31eee",
+      "bytes": 6133
+    },
+    {
+      "path": "validation/work/B3/outputs/minicpm5-2b-mlx/dbms_sql/split-v2/teacher_script/response.raw.md",
+      "sha256": "6832e365760bca1026245d2e01ef8edff960214c6903d091d843763e2132be4f",
+      "bytes": 18399
+    },
+    {
+      "path": "validation/work/B3/outputs/minicpm5-2b-mlx/dbms_sql/split-v2/teacher_script/run-metrics.json",
+      "sha256": "c4e9a248efe6a8202a54b8a45f79c3f67ff651ec3ddafaf4be00b41d175aee34",
+      "bytes": 1635
+    },
+    {
+      "path": "validation/work/B3/outputs/minicpm5-2b-mlx/dbms_sql/split-v2/teacher_script/teacher-script.md",
+      "sha256": "e4e2c84215a0b0bb83d69475b318171cd75d76237f677ceffa34e929193d361f",
+      "bytes": 18400
+    },
+    {
+      "path": "validation/work/B3/outputs/minicpm5-2b-mlx/excel/artifact-v3/lesson_plan/lesson-plan.md",
+      "sha256": "90be17e6b1c1eb43bece0dede32ec22cabdd4c15e9b857b2b0330f349d1e83f8",
+      "bytes": 1819
+    },
+    {
+      "path": "validation/work/B3/outputs/minicpm5-2b-mlx/excel/artifact-v3/lesson_plan/request.json",
+      "sha256": "18e803010d513bd2d0acdeb3e10761ba0ac26c28346292e0e116b665fd8454c7",
+      "bytes": 13057
+    },
+    {
+      "path": "validation/work/B3/outputs/minicpm5-2b-mlx/excel/artifact-v3/lesson_plan/response.raw.md",
+      "sha256": "13bb26dc84e0f93e6e20ae734e7809536de01000f4a63a8d400cc4f3c4ef2995",
+      "bytes": 1818
+    },
+    {
+      "path": "validation/work/B3/outputs/minicpm5-2b-mlx/excel/artifact-v3/lesson_plan/run-metrics.json",
+      "sha256": "48350de437689d24a5bcf68223674eeff1058e19cad6d255e9005bd25815fdb0",
+      "bytes": 1687
+    },
+    {
+      "path": "validation/work/B3/outputs/minicpm5-2b-mlx/excel/artifact-v3/metadata_json/metadata.json.raw.txt",
+      "sha256": "91f473ee734f26a6239f6f463d2b12abc705fa28d2a51af903039c67be61ffec",
+      "bytes": 36023
+    },
+    {
+      "path": "validation/work/B3/outputs/minicpm5-2b-mlx/excel/artifact-v3/metadata_json/request.json",
+      "sha256": "87180e81ef844bc1cd9dc11bc55994d902bb8460c04bc38a7944a15d47c9ac5b",
+      "bytes": 13323
+    },
+    {
+      "path": "validation/work/B3/outputs/minicpm5-2b-mlx/excel/artifact-v3/metadata_json/response.raw.md",
+      "sha256": "0ab4bf9deeac39b0f7740c226ee0218a556d9514aa4cc275760aa4983da55b68",
+      "bytes": 36022
+    },
+    {
+      "path": "validation/work/B3/outputs/minicpm5-2b-mlx/excel/artifact-v3/metadata_json/run-metrics.json",
+      "sha256": "353c3097d813a00cca23f5dff3a5b66fff89a5d1266295dff3bff01020e8e163",
+      "bytes": 1790
+    },
+    {
+      "path": "validation/work/B3/outputs/minicpm5-2b-mlx/excel/artifact-v3/student_material/request.json",
+      "sha256": "fb8d1671131c31e51f12cd65032ed10eca95ef8acfc86bd20ff4df22e9392a42",
+      "bytes": 12934
+    },
+    {
+      "path": "validation/work/B3/outputs/minicpm5-2b-mlx/excel/artifact-v3/student_material/response.raw.md",
+      "sha256": "e1662f83dfca5b393013d7891fe8a74afaedefc0803762d5276337e46e538e27",
+      "bytes": 28164
+    },
+    {
+      "path": "validation/work/B3/outputs/minicpm5-2b-mlx/excel/artifact-v3/student_material/run-metrics.json",
+      "sha256": "39e9ba5ea48d09d459f8369ed23d9b78a6bc66e1c132ce814607eb1dc8c02804",
+      "bytes": 1712
+    },
+    {
+      "path": "validation/work/B3/outputs/minicpm5-2b-mlx/excel/artifact-v3/student_material/student-material.md",
+      "sha256": "e1662f83dfca5b393013d7891fe8a74afaedefc0803762d5276337e46e538e27",
+      "bytes": 28164
+    },
+    {
+      "path": "validation/work/B3/outputs/minicpm5-2b-mlx/excel/artifact-v3/teacher_script/request.json",
+      "sha256": "73f7674f45500b0f997213deda4aafcab4e8ed16bdc576028425eacbf220442a",
+      "bytes": 13382
+    },
+    {
+      "path": "validation/work/B3/outputs/minicpm5-2b-mlx/excel/artifact-v3/teacher_script/response.raw.md",
+      "sha256": "8d609e14cb754575e4c2a34e55e6f766b65b4874995d2d394f0e235b534ccca2",
+      "bytes": 46863
+    },
+    {
+      "path": "validation/work/B3/outputs/minicpm5-2b-mlx/excel/artifact-v3/teacher_script/run-metrics.json",
+      "sha256": "692a7c4d3e5bc3406ac1158894a489e80fa9fe4543916a1231f085d19c01dc19",
+      "bytes": 1710
+    },
+    {
+      "path": "validation/work/B3/outputs/minicpm5-2b-mlx/excel/artifact-v3/teacher_script/teacher-script.md",
+      "sha256": "6bcd494a7df679a2cd8aa03cf257117800d50e15b8c4c5d091cc307b1fbc7d0c",
+      "bytes": 46864
+    },
+    {
+      "path": "validation/work/B3/outputs/minicpm5-2b-mlx/partial_source_dbms/artifact-v3/lesson_plan/lesson-plan.md",
+      "sha256": "4a20b8113ac21ffee90e2dff9152b342cbac48784b49effa7fc2f2bc4753cb62",
+      "bytes": 1759
+    },
+    {
+      "path": "validation/work/B3/outputs/minicpm5-2b-mlx/partial_source_dbms/artifact-v3/lesson_plan/request.json",
+      "sha256": "8ef6696f90c38d3011a285802f0eabedd8964040995eadd3150ba9f85511620c",
+      "bytes": 3493
+    },
+    {
+      "path": "validation/work/B3/outputs/minicpm5-2b-mlx/partial_source_dbms/artifact-v3/lesson_plan/response.raw.md",
+      "sha256": "1f8d803c4d6eaeb100fa9a2d4a2f28c2ede8bc1b3005f8b8b7c42fb0e36f6545",
+      "bytes": 1758
+    },
+    {
+      "path": "validation/work/B3/outputs/minicpm5-2b-mlx/partial_source_dbms/artifact-v3/lesson_plan/run-metrics.json",
+      "sha256": "9685027069d1703aca14ba327cee2f1032afe87433c36a7c8d911f1e14ac286b",
+      "bytes": 1694
+    },
+    {
+      "path": "validation/work/B3/outputs/minicpm5-2b-mlx/partial_source_dbms/artifact-v3/metadata_json/metadata.json",
+      "sha256": "d82969879caf1fe6a4f301e534325674fb38f277fe4e6f1cc3c3fb104b6e1d14",
+      "bytes": 1042
+    },
+    {
+      "path": "validation/work/B3/outputs/minicpm5-2b-mlx/partial_source_dbms/artifact-v3/metadata_json/metadata.json.raw.txt",
+      "sha256": "733d90b3bac38084b389e304fcd54be854ca10824e241a22a7a1f1ee8bd1bb67",
+      "bytes": 800
+    },
+    {
+      "path": "validation/work/B3/outputs/minicpm5-2b-mlx/partial_source_dbms/artifact-v3/metadata_json/request.json",
+      "sha256": "d337e8d47adabb15de882451d34e28655dfca660796dfc6b2b6031fa8d32b59b",
+      "bytes": 3759
+    },
+    {
+      "path": "validation/work/B3/outputs/minicpm5-2b-mlx/partial_source_dbms/artifact-v3/metadata_json/response.raw.md",
+      "sha256": "f054a506c3b8352500d2eeb3dabfbebadb49d770ea9c8b3a266d3e17e47b6b44",
+      "bytes": 799
+    },
+    {
+      "path": "validation/work/B3/outputs/minicpm5-2b-mlx/partial_source_dbms/artifact-v3/metadata_json/run-metrics.json",
+      "sha256": "10d8df115bef28f580adcf7dd80876fe9a82db5be561c6398f7016d69cc23fe0",
+      "bytes": 1694
+    },
+    {
+      "path": "validation/work/B3/outputs/minicpm5-2b-mlx/partial_source_dbms/artifact-v3/student_material/request.json",
+      "sha256": "e1130b4d2fa82ef3abed989a4e4dd72d4c5e3550ea945d88674d7a1cc9c4b20e",
+      "bytes": 3370
+    },
+    {
+      "path": "validation/work/B3/outputs/minicpm5-2b-mlx/partial_source_dbms/artifact-v3/student_material/response.raw.md",
+      "sha256": "c02fd6ad8d39144198281ef36350fc317aa32b1ce78b6841f235975c26de8115",
+      "bytes": 1346
+    },
+    {
+      "path": "validation/work/B3/outputs/minicpm5-2b-mlx/partial_source_dbms/artifact-v3/student_material/run-metrics.json",
+      "sha256": "aed0e2dd1adc8fd87433b4f951fa598270bc5a8b1c6290b0c8e950e95915ffca",
+      "bytes": 1696
+    },
+    {
+      "path": "validation/work/B3/outputs/minicpm5-2b-mlx/partial_source_dbms/artifact-v3/student_material/student-material.md",
+      "sha256": "10a43282baa1f46e6064388a298eba5d1238cc095bc70e4acf9f9a0f709bc56d",
+      "bytes": 1347
+    },
+    {
+      "path": "validation/work/B3/outputs/minicpm5-2b-mlx/partial_source_dbms/artifact-v3/teacher_script/request.json",
+      "sha256": "7672725e188f3ea1d97b5d112effc192e9685373750aea53b5accebbe798a349",
+      "bytes": 3818
+    },
+    {
+      "path": "validation/work/B3/outputs/minicpm5-2b-mlx/partial_source_dbms/artifact-v3/teacher_script/response.raw.md",
+      "sha256": "fbbf9e98d9a9828fe34e7d6723a290842dbc86d575163c47e9d9626bd1ca5800",
+      "bytes": 27202
+    },
+    {
+      "path": "validation/work/B3/outputs/minicpm5-2b-mlx/partial_source_dbms/artifact-v3/teacher_script/run-metrics.json",
+      "sha256": "269b562c246102c981beeb5fa64389457abbc3251c4bbdf53c8a141f25bc01ef",
+      "bytes": 1715
+    },
+    {
+      "path": "validation/work/B3/outputs/minicpm5-2b-mlx/partial_source_dbms/artifact-v3/teacher_script/teacher-script.md",
+      "sha256": "893e816b3042cd11760db3668159487141180e52a5ec36edf64e30ebcedbd5b2",
+      "bytes": 27203
+    },
+    {
+      "path": "validation/work/B3/outputs/ornith-1.5-9b-mlx-4bit/dbms_sql/artifact-v3/lesson_plan/lesson-plan.md",
+      "sha256": "761dd1ef320f4d5fca87aa46f5b2fa3cd8e485687be723d2df39f23cdf376d5b",
+      "bytes": 6388
+    },
+    {
+      "path": "validation/work/B3/outputs/ornith-1.5-9b-mlx-4bit/dbms_sql/artifact-v3/lesson_plan/request.json",
+      "sha256": "fa302325b3e631a4f636b28b26df959a090ae631b2ae821d3d48ba542407dab5",
+      "bytes": 5861
+    },
+    {
+      "path": "validation/work/B3/outputs/ornith-1.5-9b-mlx-4bit/dbms_sql/artifact-v3/lesson_plan/response.raw.md",
+      "sha256": "6bf48e49b6072e0c6d2240bcb628e8673da00a5032abd3f4c9c0d74ea4ca523b",
+      "bytes": 6387
+    },
+    {
+      "path": "validation/work/B3/outputs/ornith-1.5-9b-mlx-4bit/dbms_sql/artifact-v3/lesson_plan/run-metrics.json",
+      "sha256": "a899d919d3b6cb5b73ac68027ec5fc192123162b24d330b0f5c8e072b49901bc",
+      "bytes": 1744
+    },
+    {
+      "path": "validation/work/B3/outputs/ornith-1.5-9b-mlx-4bit/dbms_sql/artifact-v3/metadata_json/metadata.json.raw.txt",
+      "sha256": "2eccc3608256dbc16012fbdfd67b5ecf7150f1913dc3990069504ed834bb3806",
+      "bytes": 26240
+    },
+    {
+      "path": "validation/work/B3/outputs/ornith-1.5-9b-mlx-4bit/dbms_sql/artifact-v3/metadata_json/request.json",
+      "sha256": "fedbf88f0941c276ba9d639d5ad81901ab8971a2058591af3cd62bc11e21fbd4",
+      "bytes": 6127
+    },
+    {
+      "path": "validation/work/B3/outputs/ornith-1.5-9b-mlx-4bit/dbms_sql/artifact-v3/metadata_json/response.raw.md",
+      "sha256": "b25ae3d9a6315b511b739bf812e725b8e3fdb4423cf5d3f8e9ae6aec8be944a6",
+      "bytes": 26239
+    },
+    {
+      "path": "validation/work/B3/outputs/ornith-1.5-9b-mlx-4bit/dbms_sql/artifact-v3/metadata_json/run-metrics.json",
+      "sha256": "ff836db8e40e05d4a3a398dc28b6025a41dcc78752a4c35f70c1c8598c5fc86e",
+      "bytes": 1776
+    },
+    {
+      "path": "validation/work/B3/outputs/ornith-1.5-9b-mlx-4bit/dbms_sql/artifact-v3/student_material/request.json",
+      "sha256": "42157218e46b3dc228692eeeb01a2a71e7b6081f6906c945542846f4e549804d",
+      "bytes": 5738
+    },
+    {
+      "path": "validation/work/B3/outputs/ornith-1.5-9b-mlx-4bit/dbms_sql/artifact-v3/student_material/response.raw.md",
+      "sha256": "3cb28fdcb8d711674b17926019cc85b8b43aa75abee4ff4de0cdc85d7ba7d300",
+      "bytes": 5736
+    },
+    {
+      "path": "validation/work/B3/outputs/ornith-1.5-9b-mlx-4bit/dbms_sql/artifact-v3/student_material/run-metrics.json",
+      "sha256": "aa9ab505254f60b561fac9f6d5bee1755a110bbff8f738ded531c8f7872aecc8",
+      "bytes": 1717
+    },
+    {
+      "path": "validation/work/B3/outputs/ornith-1.5-9b-mlx-4bit/dbms_sql/artifact-v3/student_material/student-material.md",
+      "sha256": "b3ef954484eb1d4d00baaf55f980de72d017496c5e98724c14b393e445ca7a0f",
+      "bytes": 5737
+    },
+    {
+      "path": "validation/work/B3/outputs/ornith-1.5-9b-mlx-4bit/dbms_sql/artifact-v3/teacher_script/request.json",
+      "sha256": "84305b25901e370b4707c797819054470ec4f8b9b0e028d68be4131e42bee5cc",
+      "bytes": 6186
+    },
+    {
+      "path": "validation/work/B3/outputs/ornith-1.5-9b-mlx-4bit/dbms_sql/artifact-v3/teacher_script/response.raw.md",
+      "sha256": "ac8f9792231ea2bd43bc4eceafdb87f694f1e650bad1e1b0ca8175e969947f89",
+      "bytes": 24528
+    },
+    {
+      "path": "validation/work/B3/outputs/ornith-1.5-9b-mlx-4bit/dbms_sql/artifact-v3/teacher_script/run-metrics.json",
+      "sha256": "fec8375d53e8e47c6e00d440349faf3b6eabc725cd965ade94a0ebad912ad708",
+      "bytes": 1722
+    },
+    {
+      "path": "validation/work/B3/outputs/ornith-1.5-9b-mlx-4bit/dbms_sql/artifact-v3/teacher_script/teacher-script.md",
+      "sha256": "f2fd8e9d611f0041006e5adf02d9dbb467d97cac4430a793e504eee5885f14d1",
+      "bytes": 24529
+    },
+    {
+      "path": "validation/work/B3/outputs/ornith-1.5-9b-mlx-4bit/excel/artifact-v3/lesson_plan/lesson-plan.md",
+      "sha256": "6400d474071769dcc84d1bcb9be2cbd96bd3f3da349a0bca59832fdcea3d4e71",
+      "bytes": 5312
+    },
+    {
+      "path": "validation/work/B3/outputs/ornith-1.5-9b-mlx-4bit/excel/artifact-v3/lesson_plan/request.json",
+      "sha256": "d019aeac34dc1fbca985ce787e00fa251ee3ed8a01d04baab366143a1ede20e0",
+      "bytes": 13064
+    },
+    {
+      "path": "validation/work/B3/outputs/ornith-1.5-9b-mlx-4bit/excel/artifact-v3/lesson_plan/response.raw.md",
+      "sha256": "1c3252574231aa902966681ffde0a1e13b766f75603d35a5f5732961b3e54c15",
+      "bytes": 5311
+    },
+    {
+      "path": "validation/work/B3/outputs/ornith-1.5-9b-mlx-4bit/excel/artifact-v3/lesson_plan/run-metrics.json",
+      "sha256": "33034ad8b6f1fe95a1d81639ac350e3d61c8f0ea77bebd0a008c3c1cd949d406",
+      "bytes": 1711
+    },
+    {
+      "path": "validation/work/B3/outputs/ornith-1.5-9b-mlx-4bit/excel/artifact-v3/metadata_json/metadata.json.raw.txt",
+      "sha256": "c8635a5d1ac65f782aab424a131cfcb107c74cc42850007e3eb47994ce42232f",
+      "bytes": 3705
+    },
+    {
+      "path": "validation/work/B3/outputs/ornith-1.5-9b-mlx-4bit/excel/artifact-v3/metadata_json/request.json",
+      "sha256": "62fa977c89d599fcd198823fecf0e07e48b7e1d752e86bde4b0a2f2b0c520ef5",
+      "bytes": 13330
+    },
+    {
+      "path": "validation/work/B3/outputs/ornith-1.5-9b-mlx-4bit/excel/artifact-v3/metadata_json/response.raw.md",
+      "sha256": "987068c5b81e9b76dfc305ca7ef8ddd2e37bdd752bfe6c21aeb9181347cc64bb",
+      "bytes": 3704
+    },
+    {
+      "path": "validation/work/B3/outputs/ornith-1.5-9b-mlx-4bit/excel/artifact-v3/metadata_json/run-metrics.json",
+      "sha256": "38e73deb74a720309c3b95e3c7671d8970a073042992eb1ddf302550a4e307cc",
+      "bytes": 1777
+    },
+    {
+      "path": "validation/work/B3/outputs/ornith-1.5-9b-mlx-4bit/excel/artifact-v3/student_material/request.json",
+      "sha256": "2c49411de20e4d287d9a48f08631e5ccdd756c719796b959559fac73e7c47404",
+      "bytes": 12941
+    },
+    {
+      "path": "validation/work/B3/outputs/ornith-1.5-9b-mlx-4bit/excel/artifact-v3/student_material/response.raw.md",
+      "sha256": "460ef1b2e83926ece79ee0bd001b27781f85f2f6d734d0680c32da8ed67abf85",
+      "bytes": 3507
+    },
+    {
+      "path": "validation/work/B3/outputs/ornith-1.5-9b-mlx-4bit/excel/artifact-v3/student_material/run-metrics.json",
+      "sha256": "239b011554fa62df91696644017af2a0a9ef1e6be3d27f03c542e2ab56ef3047",
+      "bytes": 1718
+    },
+    {
+      "path": "validation/work/B3/outputs/ornith-1.5-9b-mlx-4bit/excel/artifact-v3/student_material/student-material.md",
+      "sha256": "0a95663fd8ca448af4c519c2b648e2fc5cd14bd8e430e747645ab1dc18e504a0",
+      "bytes": 3508
+    },
+    {
+      "path": "validation/work/B3/outputs/ornith-1.5-9b-mlx-4bit/excel/artifact-v3/teacher_script/request.json",
+      "sha256": "7c558c4ded2692daa4888ee6943ea0d32e6cdcc3dfb0c563a1767c31336f2dc1",
+      "bytes": 13389
+    },
+    {
+      "path": "validation/work/B3/outputs/ornith-1.5-9b-mlx-4bit/excel/artifact-v3/teacher_script/response.raw.md",
+      "sha256": "98e1b32d6650255d673032c11100bebc983f02032aa955dc0765184f4694e23a",
+      "bytes": 25887
+    },
+    {
+      "path": "validation/work/B3/outputs/ornith-1.5-9b-mlx-4bit/excel/artifact-v3/teacher_script/run-metrics.json",
+      "sha256": "ad98995a759cea92a3cc3d87c9c4e1cc4ec7446cefa3e6885564491b6dab291a",
+      "bytes": 1724
+    },
+    {
+      "path": "validation/work/B3/outputs/ornith-1.5-9b-mlx-4bit/excel/artifact-v3/teacher_script/teacher-script.md",
+      "sha256": "48e0248509abd7fb36edff41e4fb8724ad25b6defe7fd9b294c160e53bbe2627",
+      "bytes": 25888
+    },
+    {
+      "path": "validation/work/B3/outputs/ornith-1.5-9b-mlx-4bit/partial_source_dbms/artifact-v3/lesson_plan/lesson-plan.md",
+      "sha256": "d965ad2195d3c2123059dc1a86683d41c1b887cb66eb83cb89955ba732d4100a",
+      "bytes": 22664
+    },
+    {
+      "path": "validation/work/B3/outputs/ornith-1.5-9b-mlx-4bit/partial_source_dbms/artifact-v3/lesson_plan/request.json",
+      "sha256": "43a2ab3932b791e95421289c941837c5842c003c48af337cbbc72b9102f4e34a",
+      "bytes": 3500
+    },
+    {
+      "path": "validation/work/B3/outputs/ornith-1.5-9b-mlx-4bit/partial_source_dbms/artifact-v3/lesson_plan/response.raw.md",
+      "sha256": "7e1fadc8ea088b31ebbd7681dcdd45f7ba2439cec1bd03ceb1940144981a7f3f",
+      "bytes": 22664
+    },
+    {
+      "path": "validation/work/B3/outputs/ornith-1.5-9b-mlx-4bit/partial_source_dbms/artifact-v3/lesson_plan/run-metrics.json",
+      "sha256": "55cc4d267f833ddc542e469f8f2924a4f62ae17708f63b45372d365d8bef54d0",
+      "bytes": 1724
+    },
+    {
+      "path": "validation/work/B3/outputs/ornith-1.5-9b-mlx-4bit/partial_source_dbms/artifact-v3/teacher_script/request.json",
+      "sha256": "b23dcea75bf24e0ddba5afee86d2f0330df475754a0a287be264ffe21c34cfb3",
+      "bytes": 3825
+    },
+    {
+      "path": "validation/work/B3/scripts/audit_b3_separation.py",
+      "sha256": "f5edbcb6744f85cbd2b33dbec1f99ddd6997ef5986880b86ad2b08b975a3905f",
+      "bytes": 4235
+    },
+    {
+      "path": "validation/work/B3/scripts/run_b3.py",
+      "sha256": "c6413cccaac418a1194905c4337137fd0eccedb4325897681b1315f3d0c17728",
+      "bytes": 13166
+    },
+    {
+      "path": "validation/work/B3/scripts/run_b3_artifacts.py",
+      "sha256": "9b885b8797dabce46589b12db5046c513027904283ea02c11e33ee2518b2d74d",
+      "bytes": 10855
+    },
+    {
+      "path": "validation/work/B3/scripts/run_b3_split.py",
+      "sha256": "3dc46e2de1a767a95b52bca68322e74c1b1e075d7fd3afb3298d031e8d6ad3aa",
+      "bytes": 9265
+    },
+    {
+      "path": "validation/work/B3/scripts/summarize_b3.py",
+      "sha256": "5fe52af0a204c070c77803a4eabbf271cb99ef98fbb6fe34aed7713bbb73cf10",
+      "bytes": 6301
+    }
+  ]
+}

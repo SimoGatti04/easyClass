@@ -1,0 +1,360 @@
+{
+  "local_search_needed": {
+    "baseline": {
+      "labels": [
+        "search_local",
+        "skip_local",
+        "ABSTAIN"
+      ],
+      "rows_gold_cols_predicted": {
+        "search_local": {
+          "search_local": 19,
+          "skip_local": 1,
+          "ABSTAIN": 0
+        },
+        "skip_local": {
+          "search_local": 5,
+          "skip_local": 15,
+          "ABSTAIN": 0
+        },
+        "ABSTAIN": {
+          "search_local": 0,
+          "skip_local": 0,
+          "ABSTAIN": 0
+        }
+      }
+    },
+    "rizzo": {
+      "labels": [
+        "search_local",
+        "skip_local",
+        "ABSTAIN"
+      ],
+      "rows_gold_cols_predicted": {
+        "search_local": {
+          "search_local": 11,
+          "skip_local": 9,
+          "ABSTAIN": 0
+        },
+        "skip_local": {
+          "search_local": 7,
+          "skip_local": 13,
+          "ABSTAIN": 0
+        },
+        "ABSTAIN": {
+          "search_local": 0,
+          "skip_local": 0,
+          "ABSTAIN": 0
+        }
+      }
+    }
+  },
+  "material_type_classification": {
+    "baseline": {
+      "labels": [
+        "pdf",
+        "docx",
+        "xlsx",
+        "ABSTAIN"
+      ],
+      "rows_gold_cols_predicted": {
+        "pdf": {
+          "pdf": 3,
+          "docx": 0,
+          "xlsx": 0,
+          "ABSTAIN": 0
+        },
+        "docx": {
+          "pdf": 0,
+          "docx": 2,
+          "xlsx": 0,
+          "ABSTAIN": 0
+        },
+        "xlsx": {
+          "pdf": 0,
+          "docx": 0,
+          "xlsx": 1,
+          "ABSTAIN": 0
+        },
+        "ABSTAIN": {
+          "pdf": 0,
+          "docx": 0,
+          "xlsx": 0,
+          "ABSTAIN": 0
+        }
+      }
+    },
+    "rizzo": {
+      "labels": [
+        "pdf",
+        "docx",
+        "xlsx",
+        "ABSTAIN"
+      ],
+      "rows_gold_cols_predicted": {
+        "pdf": {
+          "pdf": 3,
+          "docx": 0,
+          "xlsx": 0,
+          "ABSTAIN": 0
+        },
+        "docx": {
+          "pdf": 0,
+          "docx": 2,
+          "xlsx": 0,
+          "ABSTAIN": 0
+        },
+        "xlsx": {
+          "pdf": 0,
+          "docx": 0,
+          "xlsx": 1,
+          "ABSTAIN": 0
+        },
+        "ABSTAIN": {
+          "pdf": 0,
+          "docx": 0,
+          "xlsx": 0,
+          "ABSTAIN": 0
+        }
+      }
+    }
+  },
+  "relevance_yes_no": {
+    "baseline": {
+      "labels": [
+        "yes",
+        "no",
+        "ABSTAIN"
+      ],
+      "rows_gold_cols_predicted": {
+        "yes": {
+          "yes": 13,
+          "no": 3,
+          "ABSTAIN": 0
+        },
+        "no": {
+          "yes": 0,
+          "no": 16,
+          "ABSTAIN": 0
+        },
+        "ABSTAIN": {
+          "yes": 0,
+          "no": 0,
+          "ABSTAIN": 0
+        }
+      }
+    },
+    "rizzo": {
+      "labels": [
+        "yes",
+        "no",
+        "ABSTAIN"
+      ],
+      "rows_gold_cols_predicted": {
+        "yes": {
+          "yes": 16,
+          "no": 0,
+          "ABSTAIN": 0
+        },
+        "no": {
+          "yes": 3,
+          "no": 13,
+          "ABSTAIN": 0
+        },
+        "ABSTAIN": {
+          "yes": 0,
+          "no": 0,
+          "ABSTAIN": 0
+        }
+      }
+    }
+  },
+  "source_category": {
+    "baseline": {
+      "labels": [
+        "teacher_script",
+        "student_handout",
+        "teacher_guide",
+        "instructor_demo",
+        "ABSTAIN"
+      ],
+      "rows_gold_cols_predicted": {
+        "teacher_script": {
+          "teacher_script": 2,
+          "student_handout": 0,
+          "teacher_guide": 0,
+          "instructor_demo": 0,
+          "ABSTAIN": 0
+        },
+        "student_handout": {
+          "teacher_script": 0,
+          "student_handout": 1,
+          "teacher_guide": 0,
+          "instructor_demo": 0,
+          "ABSTAIN": 0
+        },
+        "teacher_guide": {
+          "teacher_script": 0,
+          "student_handout": 0,
+          "teacher_guide": 2,
+          "instructor_demo": 0,
+          "ABSTAIN": 0
+        },
+        "instructor_demo": {
+          "teacher_script": 0,
+          "student_handout": 0,
+          "teacher_guide": 0,
+          "instructor_demo": 1,
+          "ABSTAIN": 0
+        },
+        "ABSTAIN": {
+          "teacher_script": 0,
+          "student_handout": 0,
+          "teacher_guide": 0,
+          "instructor_demo": 0,
+          "ABSTAIN": 0
+        }
+      }
+    },
+    "rizzo": {
+      "labels": [
+        "teacher_script",
+        "student_handout",
+        "teacher_guide",
+        "instructor_demo",
+        "ABSTAIN"
+      ],
+      "rows_gold_cols_predicted": {
+        "teacher_script": {
+          "teacher_script": 0,
+          "student_handout": 0,
+          "teacher_guide": 2,
+          "instructor_demo": 0,
+          "ABSTAIN": 0
+        },
+        "student_handout": {
+          "teacher_script": 0,
+          "student_handout": 1,
+          "teacher_guide": 0,
+          "instructor_demo": 0,
+          "ABSTAIN": 0
+        },
+        "teacher_guide": {
+          "teacher_script": 0,
+          "student_handout": 0,
+          "teacher_guide": 2,
+          "instructor_demo": 0,
+          "ABSTAIN": 0
+        },
+        "instructor_demo": {
+          "teacher_script": 0,
+          "student_handout": 0,
+          "teacher_guide": 0,
+          "instructor_demo": 1,
+          "ABSTAIN": 0
+        },
+        "ABSTAIN": {
+          "teacher_script": 0,
+          "student_handout": 0,
+          "teacher_guide": 0,
+          "instructor_demo": 0,
+          "ABSTAIN": 0
+        }
+      }
+    }
+  },
+  "subject_candidate_choice": {
+    "baseline": {
+      "labels": [
+        "dbms_sql",
+        "cybersecurity",
+        "computing_history",
+        "spreadsheet_excel",
+        "ABSTAIN"
+      ],
+      "rows_gold_cols_predicted": {
+        "dbms_sql": {
+          "dbms_sql": 5,
+          "cybersecurity": 0,
+          "computing_history": 0,
+          "spreadsheet_excel": 1,
+          "ABSTAIN": 2
+        },
+        "cybersecurity": {
+          "dbms_sql": 0,
+          "cybersecurity": 7,
+          "computing_history": 0,
+          "spreadsheet_excel": 0,
+          "ABSTAIN": 1
+        },
+        "computing_history": {
+          "dbms_sql": 0,
+          "cybersecurity": 0,
+          "computing_history": 8,
+          "spreadsheet_excel": 0,
+          "ABSTAIN": 0
+        },
+        "spreadsheet_excel": {
+          "dbms_sql": 1,
+          "cybersecurity": 0,
+          "computing_history": 0,
+          "spreadsheet_excel": 7,
+          "ABSTAIN": 0
+        },
+        "ABSTAIN": {
+          "dbms_sql": 0,
+          "cybersecurity": 0,
+          "computing_history": 0,
+          "spreadsheet_excel": 0,
+          "ABSTAIN": 0
+        }
+      }
+    },
+    "rizzo": {
+      "labels": [
+        "dbms_sql",
+        "cybersecurity",
+        "computing_history",
+        "spreadsheet_excel",
+        "ABSTAIN"
+      ],
+      "rows_gold_cols_predicted": {
+        "dbms_sql": {
+          "dbms_sql": 8,
+          "cybersecurity": 0,
+          "computing_history": 0,
+          "spreadsheet_excel": 0,
+          "ABSTAIN": 0
+        },
+        "cybersecurity": {
+          "dbms_sql": 0,
+          "cybersecurity": 8,
+          "computing_history": 0,
+          "spreadsheet_excel": 0,
+          "ABSTAIN": 0
+        },
+        "computing_history": {
+          "dbms_sql": 0,
+          "cybersecurity": 1,
+          "computing_history": 4,
+          "spreadsheet_excel": 0,
+          "ABSTAIN": 3
+        },
+        "spreadsheet_excel": {
+          "dbms_sql": 0,
+          "cybersecurity": 0,
+          "computing_history": 0,
+          "spreadsheet_excel": 7,
+          "ABSTAIN": 1
+        },
+        "ABSTAIN": {
+          "dbms_sql": 0,
+          "cybersecurity": 0,
+          "computing_history": 0,
+          "spreadsheet_excel": 0,
+          "ABSTAIN": 0
+        }
+      }
+    }
+  }
+}

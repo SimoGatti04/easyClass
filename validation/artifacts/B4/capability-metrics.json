@@ -1,0 +1,594 @@
+{
+  "date": "2026-09-29",
+  "api_base": "http://127.0.0.1:8017",
+  "endpoint": "POST /v1/decisions",
+  "health": {
+    "status": "ready",
+    "model": {
+      "source": "XHToken/Spark-X2.5-4B",
+      "requested_revision": "0bcb35678590218655dff3765b9e61c83b35e9c4",
+      "gguf_source": "XHToken/Spark-X2.5-4B-GGUF",
+      "gguf_revision": "9826e0be84e6e6e8b9668abc91421109a1df1e2d",
+      "source_files": {
+        "Spark-X2.5-4B-Q8_0.gguf": "5c2c3c190e4337e1016b8593ca8e26e8b18c972200b107385d4ec61a25d9dea2"
+      },
+      "precision": "q8_0",
+      "device": "gpu",
+      "backend": "mtl",
+      "runtime": "llama.cpp",
+      "llama_cpp_release": "b11081",
+      "llama_cpp_commit": "161755f29e415e2c33efe906e91843c068efd664",
+      "prompt_version": "spark-decisions-v3",
+      "fingerprint": "bfc8cc8be19c513c15c00bcf1f2fbe8df98feafbf9c687efc315207039fa9e2b",
+      "device_name": "Apple M4",
+      "context_cells": 10240,
+      "load_seconds": 18.239609458018094
+    }
+  },
+  "gold_path": "validation/corpus/gold/typed-decisions-gold.jsonl",
+  "gold_sha256": "de1d671383a2ef6538ae851fb7219cb7a50d2a4fdbf0eab3b581ccabcb21f147",
+  "gold_count": 116,
+  "cases_by_task": {
+    "local_search_needed": 40,
+    "material_type_classification": 6,
+    "relevance_yes_no": 32,
+    "source_category": 6,
+    "subject_candidate_choice": 32
+  },
+  "rizzo_calls": 116,
+  "rizzo_request_errors": 0,
+  "rizzo_abstentions_or_invalid": 4,
+  "probability_status_values": [
+    "uncalibrated_conditional_option_scores"
+  ],
+  "tasks": {
+    "local_search_needed": {
+      "dataset_size": 40,
+      "baseline": {
+        "n": 40,
+        "correct": 34,
+        "accuracy": 0.85,
+        "failure_count": 0,
+        "failure_rate": 0.0,
+        "latency_seconds": {
+          "n": 40,
+          "mean": 0.0004045613401103765,
+          "median": 0.0003310419851914048,
+          "p95": 0.00115920789539814,
+          "min": 4.0040817111730576e-05,
+          "max": 0.0011936661321669817
+        },
+        "confusion": {
+          "labels": [
+            "search_local",
+            "skip_local",
+            "ABSTAIN"
+          ],
+          "rows_gold_cols_predicted": {
+            "search_local": {
+              "search_local": 19,
+              "skip_local": 1,
+              "ABSTAIN": 0
+            },
+            "skip_local": {
+              "search_local": 5,
+              "skip_local": 15,
+              "ABSTAIN": 0
+            },
+            "ABSTAIN": {
+              "search_local": 0,
+              "skip_local": 0,
+              "ABSTAIN": 0
+            }
+          }
+        }
+      },
+      "rizzo": {
+        "n": 40,
+        "correct": 24,
+        "accuracy": 0.6,
+        "failure_count": 0,
+        "failure_rate": 0.0,
+        "latency_seconds": {
+          "n": 40,
+          "mean": 8.735706945910351,
+          "median": 8.773524479009211,
+          "p95": 11.43157408409752,
+          "min": 5.998908874811605,
+          "max": 15.869081791955978
+        },
+        "confusion": {
+          "labels": [
+            "search_local",
+            "skip_local",
+            "ABSTAIN"
+          ],
+          "rows_gold_cols_predicted": {
+            "search_local": {
+              "search_local": 11,
+              "skip_local": 9,
+              "ABSTAIN": 0
+            },
+            "skip_local": {
+              "search_local": 7,
+              "skip_local": 13,
+              "ABSTAIN": 0
+            },
+            "ABSTAIN": {
+              "search_local": 0,
+              "skip_local": 0,
+              "ABSTAIN": 0
+            }
+          }
+        }
+      },
+      "rizzo_server_total_latency_seconds": {
+        "median": 8.771323667140678,
+        "p95": 11.430332666961476
+      },
+      "rizzo_request_errors": 0,
+      "rizzo_abstentions_or_invalid": 0,
+      "calibration": "NOT MEASURED; no confidence threshold planned; raw option scores remain uncalibrated"
+    },
+    "material_type_classification": {
+      "dataset_size": 6,
+      "baseline": {
+        "n": 6,
+        "correct": 6,
+        "accuracy": 1.0,
+        "failure_count": 0,
+        "failure_rate": 0.0,
+        "latency_seconds": {
+          "n": 6,
+          "mean": 2.3861299268901348e-05,
+          "median": 1.6666948795318604e-05,
+          "p95": 4.816707223653793e-05,
+          "min": 1.429184339940548e-05,
+          "max": 4.816707223653793e-05
+        },
+        "confusion": {
+          "labels": [
+            "pdf",
+            "docx",
+            "xlsx",
+            "ABSTAIN"
+          ],
+          "rows_gold_cols_predicted": {
+            "pdf": {
+              "pdf": 3,
+              "docx": 0,
+              "xlsx": 0,
+              "ABSTAIN": 0
+            },
+            "docx": {
+              "pdf": 0,
+              "docx": 2,
+              "xlsx": 0,
+              "ABSTAIN": 0
+            },
+            "xlsx": {
+              "pdf": 0,
+              "docx": 0,
+              "xlsx": 1,
+              "ABSTAIN": 0
+            },
+            "ABSTAIN": {
+              "pdf": 0,
+              "docx": 0,
+              "xlsx": 0,
+              "ABSTAIN": 0
+            }
+          }
+        }
+      },
+      "rizzo": {
+        "n": 6,
+        "correct": 6,
+        "accuracy": 1.0,
+        "failure_count": 0,
+        "failure_rate": 0.0,
+        "latency_seconds": {
+          "n": 6,
+          "mean": 3.1262987431837246,
+          "median": 1.1613419374916703,
+          "p95": 13.421968125039712,
+          "min": 0.8437784588895738,
+          "max": 13.421968125039712
+        },
+        "confusion": {
+          "labels": [
+            "pdf",
+            "docx",
+            "xlsx",
+            "ABSTAIN"
+          ],
+          "rows_gold_cols_predicted": {
+            "pdf": {
+              "pdf": 3,
+              "docx": 0,
+              "xlsx": 0,
+              "ABSTAIN": 0
+            },
+            "docx": {
+              "pdf": 0,
+              "docx": 2,
+              "xlsx": 0,
+              "ABSTAIN": 0
+            },
+            "xlsx": {
+              "pdf": 0,
+              "docx": 0,
+              "xlsx": 1,
+              "ABSTAIN": 0
+            },
+            "ABSTAIN": {
+              "pdf": 0,
+              "docx": 0,
+              "xlsx": 0,
+              "ABSTAIN": 0
+            }
+          }
+        }
+      },
+      "rizzo_server_total_latency_seconds": {
+        "median": 1.1599587915698066,
+        "p95": 13.387313249986619
+      },
+      "rizzo_request_errors": 0,
+      "rizzo_abstentions_or_invalid": 0,
+      "calibration": "NOT MEASURED; no confidence threshold planned; raw option scores remain uncalibrated"
+    },
+    "relevance_yes_no": {
+      "dataset_size": 32,
+      "baseline": {
+        "n": 32,
+        "correct": 29,
+        "accuracy": 0.90625,
+        "failure_count": 0,
+        "failure_rate": 0.0,
+        "latency_seconds": {
+          "n": 32,
+          "mean": 7.571881724288687e-05,
+          "median": 8.091691415756941e-05,
+          "p95": 9.483308531343937e-05,
+          "min": 4.2625004425644875e-05,
+          "max": 9.675021283328533e-05
+        },
+        "confusion": {
+          "labels": [
+            "yes",
+            "no",
+            "ABSTAIN"
+          ],
+          "rows_gold_cols_predicted": {
+            "yes": {
+              "yes": 13,
+              "no": 3,
+              "ABSTAIN": 0
+            },
+            "no": {
+              "yes": 0,
+              "no": 16,
+              "ABSTAIN": 0
+            },
+            "ABSTAIN": {
+              "yes": 0,
+              "no": 0,
+              "ABSTAIN": 0
+            }
+          }
+        }
+      },
+      "rizzo": {
+        "n": 32,
+        "correct": 29,
+        "accuracy": 0.90625,
+        "failure_count": 0,
+        "failure_rate": 0.0,
+        "latency_seconds": {
+          "n": 32,
+          "mean": 1.5121821862630895,
+          "median": 1.5693599794758484,
+          "p95": 1.6581124169752002,
+          "min": 1.0631901659071445,
+          "max": 1.9013556248974055
+        },
+        "confusion": {
+          "labels": [
+            "yes",
+            "no",
+            "ABSTAIN"
+          ],
+          "rows_gold_cols_predicted": {
+            "yes": {
+              "yes": 16,
+              "no": 0,
+              "ABSTAIN": 0
+            },
+            "no": {
+              "yes": 3,
+              "no": 13,
+              "ABSTAIN": 0
+            },
+            "ABSTAIN": {
+              "yes": 0,
+              "no": 0,
+              "ABSTAIN": 0
+            }
+          }
+        }
+      },
+      "rizzo_server_total_latency_seconds": {
+        "median": 1.5681800625752658,
+        "p95": 1.6569947090465575
+      },
+      "rizzo_request_errors": 0,
+      "rizzo_abstentions_or_invalid": 0,
+      "calibration": "NOT MEASURED; no confidence threshold planned; raw option scores remain uncalibrated"
+    },
+    "source_category": {
+      "dataset_size": 6,
+      "baseline": {
+        "n": 6,
+        "correct": 6,
+        "accuracy": 1.0,
+        "failure_count": 0,
+        "failure_rate": 0.0,
+        "latency_seconds": {
+          "n": 6,
+          "mean": 1.4479155652225018e-05,
+          "median": 1.1041411198675632e-05,
+          "p95": 3.208313137292862e-05,
+          "min": 7.791910320520401e-06,
+          "max": 3.208313137292862e-05
+        },
+        "confusion": {
+          "labels": [
+            "teacher_script",
+            "student_handout",
+            "teacher_guide",
+            "instructor_demo",
+            "ABSTAIN"
+          ],
+          "rows_gold_cols_predicted": {
+            "teacher_script": {
+              "teacher_script": 2,
+              "student_handout": 0,
+              "teacher_guide": 0,
+              "instructor_demo": 0,
+              "ABSTAIN": 0
+            },
+            "student_handout": {
+              "teacher_script": 0,
+              "student_handout": 1,
+              "teacher_guide": 0,
+              "instructor_demo": 0,
+              "ABSTAIN": 0
+            },
+            "teacher_guide": {
+              "teacher_script": 0,
+              "student_handout": 0,
+              "teacher_guide": 2,
+              "instructor_demo": 0,
+              "ABSTAIN": 0
+            },
+            "instructor_demo": {
+              "teacher_script": 0,
+              "student_handout": 0,
+              "teacher_guide": 0,
+              "instructor_demo": 1,
+              "ABSTAIN": 0
+            },
+            "ABSTAIN": {
+              "teacher_script": 0,
+              "student_handout": 0,
+              "teacher_guide": 0,
+              "instructor_demo": 0,
+              "ABSTAIN": 0
+            }
+          }
+        }
+      },
+      "rizzo": {
+        "n": 6,
+        "correct": 4,
+        "accuracy": 0.6666666666666666,
+        "failure_count": 0,
+        "failure_rate": 0.0,
+        "latency_seconds": {
+          "n": 6,
+          "mean": 1.894562354311347,
+          "median": 1.843522104434669,
+          "p95": 2.2166407499462366,
+          "min": 1.7659189580008388,
+          "max": 2.2166407499462366
+        },
+        "confusion": {
+          "labels": [
+            "teacher_script",
+            "student_handout",
+            "teacher_guide",
+            "instructor_demo",
+            "ABSTAIN"
+          ],
+          "rows_gold_cols_predicted": {
+            "teacher_script": {
+              "teacher_script": 0,
+              "student_handout": 0,
+              "teacher_guide": 2,
+              "instructor_demo": 0,
+              "ABSTAIN": 0
+            },
+            "student_handout": {
+              "teacher_script": 0,
+              "student_handout": 1,
+              "teacher_guide": 0,
+              "instructor_demo": 0,
+              "ABSTAIN": 0
+            },
+            "teacher_guide": {
+              "teacher_script": 0,
+              "student_handout": 0,
+              "teacher_guide": 2,
+              "instructor_demo": 0,
+              "ABSTAIN": 0
+            },
+            "instructor_demo": {
+              "teacher_script": 0,
+              "student_handout": 0,
+              "teacher_guide": 0,
+              "instructor_demo": 1,
+              "ABSTAIN": 0
+            },
+            "ABSTAIN": {
+              "teacher_script": 0,
+              "student_handout": 0,
+              "teacher_guide": 0,
+              "instructor_demo": 0,
+              "ABSTAIN": 0
+            }
+          }
+        }
+      },
+      "rizzo_server_total_latency_seconds": {
+        "median": 1.8420775204431266,
+        "p95": 2.215302750002593
+      },
+      "rizzo_request_errors": 0,
+      "rizzo_abstentions_or_invalid": 0,
+      "calibration": "NOT MEASURED; no confidence threshold planned; raw option scores remain uncalibrated"
+    },
+    "subject_candidate_choice": {
+      "dataset_size": 32,
+      "baseline": {
+        "n": 32,
+        "correct": 27,
+        "accuracy": 0.84375,
+        "failure_count": 3,
+        "failure_rate": 0.09375,
+        "latency_seconds": {
+          "n": 32,
+          "mean": 0.0001345716809737496,
+          "median": 0.00012889597564935684,
+          "p95": 0.000180334085598588,
+          "min": 9.062513709068298e-05,
+          "max": 0.00031879101879894733
+        },
+        "confusion": {
+          "labels": [
+            "dbms_sql",
+            "cybersecurity",
+            "computing_history",
+            "spreadsheet_excel",
+            "ABSTAIN"
+          ],
+          "rows_gold_cols_predicted": {
+            "dbms_sql": {
+              "dbms_sql": 5,
+              "cybersecurity": 0,
+              "computing_history": 0,
+              "spreadsheet_excel": 1,
+              "ABSTAIN": 2
+            },
+            "cybersecurity": {
+              "dbms_sql": 0,
+              "cybersecurity": 7,
+              "computing_history": 0,
+              "spreadsheet_excel": 0,
+              "ABSTAIN": 1
+            },
+            "computing_history": {
+              "dbms_sql": 0,
+              "cybersecurity": 0,
+              "computing_history": 8,
+              "spreadsheet_excel": 0,
+              "ABSTAIN": 0
+            },
+            "spreadsheet_excel": {
+              "dbms_sql": 1,
+              "cybersecurity": 0,
+              "computing_history": 0,
+              "spreadsheet_excel": 7,
+              "ABSTAIN": 0
+            },
+            "ABSTAIN": {
+              "dbms_sql": 0,
+              "cybersecurity": 0,
+              "computing_history": 0,
+              "spreadsheet_excel": 0,
+              "ABSTAIN": 0
+            }
+          }
+        }
+      },
+      "rizzo": {
+        "n": 32,
+        "correct": 27,
+        "accuracy": 0.84375,
+        "failure_count": 4,
+        "failure_rate": 0.125,
+        "latency_seconds": {
+          "n": 32,
+          "mean": 1.7173732031878899,
+          "median": 1.5543820415623486,
+          "p95": 2.4571342079434544,
+          "min": 1.1672311669681221,
+          "max": 2.6849909159354866
+        },
+        "confusion": {
+          "labels": [
+            "dbms_sql",
+            "cybersecurity",
+            "computing_history",
+            "spreadsheet_excel",
+            "ABSTAIN"
+          ],
+          "rows_gold_cols_predicted": {
+            "dbms_sql": {
+              "dbms_sql": 8,
+              "cybersecurity": 0,
+              "computing_history": 0,
+              "spreadsheet_excel": 0,
+              "ABSTAIN": 0
+            },
+            "cybersecurity": {
+              "dbms_sql": 0,
+              "cybersecurity": 8,
+              "computing_history": 0,
+              "spreadsheet_excel": 0,
+              "ABSTAIN": 0
+            },
+            "computing_history": {
+              "dbms_sql": 0,
+              "cybersecurity": 1,
+              "computing_history": 4,
+              "spreadsheet_excel": 0,
+              "ABSTAIN": 3
+            },
+            "spreadsheet_excel": {
+              "dbms_sql": 0,
+              "cybersecurity": 0,
+              "computing_history": 0,
+              "spreadsheet_excel": 7,
+              "ABSTAIN": 1
+            },
+            "ABSTAIN": {
+              "dbms_sql": 0,
+              "cybersecurity": 0,
+              "computing_history": 0,
+              "spreadsheet_excel": 0,
+              "ABSTAIN": 0
+            }
+          }
+        }
+      },
+      "rizzo_server_total_latency_seconds": {
+        "median": 1.553108270978555,
+        "p95": 2.45595616591163
+      },
+      "rizzo_request_errors": 0,
+      "rizzo_abstentions_or_invalid": 4,
+      "calibration": "NOT MEASURED; no confidence threshold planned; raw option scores remain uncalibrated"
+    }
+  }
+}

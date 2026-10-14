@@ -1,0 +1,383 @@
+{
+  "schema_version": 1,
+  "benchmark": "Gate-C — Remote Generation Benchmark",
+  "evaluation_date": "2026-09-30",
+  "method": "Revisione umana degli output raw salvati, con controlli deterministici offline; nessun LLM-as-judge.",
+  "scale": {
+    "0": "unusable/incorrect",
+    "1": "major correction required",
+    "2": "usable with meaningful defects",
+    "3": "good/minor defects",
+    "4": "excellent/nearly no correction"
+  },
+  "candidates": [
+    {
+      "model_id": "agy/gemini-3.8-flash-tiered",
+      "catalog_provider": "agy",
+      "route_identity": "verified: returned id gemini-3.8-flash-tiered uniquely matched the requested catalog route",
+      "profile_results": {
+        "remote.generation": {
+          "status": "REJECTED_FOR_PROFILE",
+          "positive_evidence": "DBMS and partial-source completed in both runs; five of six generation responses were parseable/schema-valid.",
+          "blocking_evidence": "Both Excel runs fail the hard no-cell/no-formula policy: run 1 is truncated and invalid JSON; run 2 is structurally valid but contains cell coordinates/formula examples, including prohibited expressions. The same two Excel outputs are not safe to select for general generation without an effective policy-aware validator, which the current runner did not provide.",
+          "scenario_runs": [
+            {
+              "scenario": "dbms_sql",
+              "run": 1,
+              "finish_reason": "stop",
+              "json_schema_valid": true,
+              "pairwise_distinctness_8gram_containment": 0.257,
+              "distinctness_review": "Handout remains a concise student worksheet; teacher script repeats multiple exercise instructions. Counted as substantive redundancy/editing work, not as output diversity.",
+              "rubric_0_4": {
+                "source_fidelity": 2,
+                "factual_correctness": 2,
+                "completeness": 3,
+                "pedagogical_usefulness": 3,
+                "level_adherence": 3,
+                "duration_adherence": 4,
+                "structure": 3,
+                "hallucinations": 1
+              },
+              "editing_effort": "moderate_edits",
+              "rationale": "Useful complete plan/handout/metadata, but includes unsupported ROUND and a net-revenue formula suggestion; manual semantic review contradicts the output metadata claim that unsupported claims are absent."
+            },
+            {
+              "scenario": "dbms_sql",
+              "run": 2,
+              "finish_reason": "stop",
+              "json_schema_valid": true,
+              "pairwise_distinctness_8gram_containment": 0.2045,
+              "distinctness_review": "Student-facing artifact is concise, but repeated task phrasing in the script is meaningful overlap; the metadata self-assertion is not accepted as proof of distinctness.",
+              "rubric_0_4": {
+                "source_fidelity": 2,
+                "factual_correctness": 2,
+                "completeness": 3,
+                "pedagogical_usefulness": 3,
+                "level_adherence": 3,
+                "duration_adherence": 4,
+                "structure": 3,
+                "hallucinations": 1
+              },
+              "editing_effort": "moderate_edits",
+              "rationale": "Plan/handout are coherent and timeline arithmetic is contiguous; notes and unsupported claims still introduce formula/ROUND material prohibited by the prompt."
+            },
+            {
+              "scenario": "excel",
+              "run": 1,
+              "finish_reason": "length",
+              "json_schema_valid": false,
+              "policy_checks": "not fully assessable from invalid/truncated JSON",
+              "pairwise_distinctness": "not assessable: no parsed-output.json",
+              "rubric_0_4": {
+                "source_fidelity": null,
+                "factual_correctness": null,
+                "completeness": 0,
+                "pedagogical_usefulness": null,
+                "level_adherence": null,
+                "duration_adherence": null,
+                "structure": 0,
+                "hallucinations": null
+              },
+              "editing_effort": "unusable",
+              "rationale": "Generation ended at length; unterminated JSON and no complete machine-consumable lesson pack."
+            },
+            {
+              "scenario": "excel",
+              "run": 2,
+              "finish_reason": "stop",
+              "json_schema_valid": true,
+              "policy_violations": [
+                "explicit cell references/ranges (e.g. A2:A7, B2:B7, D7)",
+                "exact formula examples, including formulas described as absent from the source",
+                "numeric criteria/formula details beyond the validated projection"
+              ],
+              "pairwise_distinctness_8gram_containment": 0.01,
+              "distinctness_review": "Low lexical overlap; artifact genres are distinct, but this does not cure the formula/cell policy failure.",
+              "rubric_0_4": {
+                "source_fidelity": 1,
+                "factual_correctness": 1,
+                "completeness": 3,
+                "pedagogical_usefulness": 2,
+                "level_adherence": 3,
+                "duration_adherence": 4,
+                "structure": 4,
+                "hallucinations": 0
+              },
+              "editing_effort": "major_rewrite",
+              "rationale": "The 120-minute structure is coherent, but precise formula/cell material is expressly prohibited by the B1 boundary. It requires a content-level rewrite, not cosmetic review."
+            },
+            {
+              "scenario": "partial_source_dbms",
+              "run": 1,
+              "finish_reason": "stop",
+              "json_schema_valid": true,
+              "supported_duration_minutes": 35,
+              "pairwise_distinctness_8gram_containment": 0.0096,
+              "distinctness_review": "Little verbatim overlap; both pieces are separate genres.",
+              "rubric_0_4": {
+                "source_fidelity": 4,
+                "factual_correctness": 4,
+                "completeness": 3,
+                "pedagogical_usefulness": 3,
+                "level_adherence": 4,
+                "duration_adherence": 4,
+                "structure": 4,
+                "hallucinations": 4
+              },
+              "editing_effort": "minor_edits",
+              "rationale": "Correctly limits the defensible segment to 35 minutes and labels the missing SQL/software coverage."
+            },
+            {
+              "scenario": "partial_source_dbms",
+              "run": 2,
+              "finish_reason": "stop",
+              "json_schema_valid": true,
+              "supported_duration_minutes": 30,
+              "pairwise_distinctness_8gram_containment": 0.0,
+              "distinctness_review": "No measured 8-gram overlap; student sheet and teacher script are substantively distinct.",
+              "rubric_0_4": {
+                "source_fidelity": 4,
+                "factual_correctness": 4,
+                "completeness": 4,
+                "pedagogical_usefulness": 3,
+                "level_adherence": 4,
+                "duration_adherence": 4,
+                "structure": 4,
+                "hallucinations": 4
+              },
+              "editing_effort": "minor_edits",
+              "rationale": "Accurately stops at the supported 30-minute segment, gives bounded formative checks, and keeps unsupported SQL/software objectives visibly out of scope."
+            }
+          ]
+        },
+        "remote.longform": {
+          "status": "REJECTED_FOR_PROFILE",
+          "profile_basis": "Repeated failure on Excel hard source-boundary requirements and truncation; DBMS scripts are useful but exceed the 3,000–4,000-word target and include unsupported SQL formula material. Partial-source scripts are appropriately short and cannot establish full-length longform capability.",
+          "scenario_runs": [
+            {
+              "scenario": "dbms_sql",
+              "run": 1,
+              "finish_reason": "stop",
+              "visible_words": 5711,
+              "rubric_0_4": {
+                "source_fidelity": 2,
+                "factual_correctness": 2,
+                "completeness": 3,
+                "pedagogical_usefulness": 3,
+                "level_adherence": 3,
+                "duration_adherence": 2,
+                "structure": 3,
+                "hallucinations": 1
+              },
+              "editing_effort": "moderate_edits",
+              "rationale": "Complete phase structure, transitions, student work, cues and questions; over target length and adds ungrounded online/recording/chat assumptions and unsupported ROUND/discount formula content."
+            },
+            {
+              "scenario": "dbms_sql",
+              "run": 2,
+              "finish_reason": "stop",
+              "visible_words": 5008,
+              "rubric_0_4": {
+                "source_fidelity": 2,
+                "factual_correctness": 2,
+                "completeness": 3,
+                "pedagogical_usefulness": 3,
+                "level_adherence": 3,
+                "duration_adherence": 2,
+                "structure": 4,
+                "hallucinations": 1
+              },
+              "editing_effort": "moderate_edits",
+              "rationale": "Usable narrative skeleton with activities and checks, but materially over target and includes unsupported formula/ROUND material plus delivery-platform assumptions."
+            },
+            {
+              "scenario": "excel",
+              "run": 1,
+              "finish_reason": "length",
+              "visible_words": 5099,
+              "json_schema_valid": null,
+              "policy_violations": [
+                "exact formula/function signatures",
+                "formula assumptions and numeric criteria",
+                "cell reference F4"
+              ],
+              "rubric_0_4": {
+                "source_fidelity": 1,
+                "factual_correctness": 1,
+                "completeness": 0,
+                "pedagogical_usefulness": 2,
+                "level_adherence": 3,
+                "duration_adherence": 1,
+                "structure": 2,
+                "hallucinations": 0
+              },
+              "editing_effort": "unusable",
+              "rationale": "Truncated at finish_reason=length, exceeds word target and gives prohibited formulas/cell reference; not safe to teach without rebuilding."
+            },
+            {
+              "scenario": "excel",
+              "run": 2,
+              "finish_reason": "length",
+              "visible_words": 4945,
+              "policy_violations": [
+                "formula syntax/signatures and operation details",
+                "invented cell/range dependence"
+              ],
+              "rubric_0_4": {
+                "source_fidelity": 1,
+                "factual_correctness": 1,
+                "completeness": 0,
+                "pedagogical_usefulness": 2,
+                "level_adherence": 3,
+                "duration_adherence": 1,
+                "structure": 2,
+                "hallucinations": 0
+              },
+              "editing_effort": "unusable",
+              "rationale": "Second independent run also truncates and violates the explicit no-formula/no-cell constraint; systematic rather than a single unlucky output."
+            },
+            {
+              "scenario": "partial_source_dbms",
+              "run": 1,
+              "finish_reason": "stop",
+              "visible_words": 1254,
+              "supported_minutes": 20,
+              "rubric_0_4": {
+                "source_fidelity": 4,
+                "factual_correctness": 3,
+                "completeness": 3,
+                "pedagogical_usefulness": 3,
+                "level_adherence": 4,
+                "duration_adherence": 4,
+                "structure": 4,
+                "hallucinations": 3
+              },
+              "editing_effort": "minor_edits",
+              "rationale": "Appropriately short partial script, explicit gap/stop; a few remote-delivery cues are assumptions to remove or adapt."
+            },
+            {
+              "scenario": "partial_source_dbms",
+              "run": 2,
+              "finish_reason": "stop",
+              "visible_words": 1290,
+              "supported_minutes": 25,
+              "rubric_0_4": {
+                "source_fidelity": 4,
+                "factual_correctness": 3,
+                "completeness": 3,
+                "pedagogical_usefulness": 3,
+                "level_adherence": 4,
+                "duration_adherence": 4,
+                "structure": 4,
+                "hallucinations": 3
+              },
+              "editing_effort": "minor_edits",
+              "rationale": "Appropriately limits the script to the source-supported segment and closes the lesson with the missing coverage explicit."
+            }
+          ]
+        },
+        "remote.reasoning": {
+          "status": "ELIGIBLE",
+          "validation_state": "VALIDATED",
+          "scenario_runs": [
+            {
+              "case_id": "assessment_blueprint_dbms",
+              "finish_reason": "stop",
+              "json_schema_valid": true,
+              "rubric_0_4": {
+                "constraint_adherence": 4,
+                "source_program_fidelity": 3,
+                "logical_consistency": 3,
+                "coverage_correctness": 3,
+                "structured_output_validity": 4,
+                "unsupported_assumptions": 3
+              },
+              "editing_effort": "minor_edits",
+              "rationale": "60 minutes/30 points, section points and percentages, item-type counts and requested difficulty percentages reconcile. Rationale makes one additional interpretation about applying JOIN with filters; human review remains appropriate."
+            },
+            {
+              "case_id": "assessment_consistency_dbms",
+              "finish_reason": "stop",
+              "json_schema_valid": true,
+              "rubric_0_4": {
+                "constraint_adherence": 4,
+                "source_program_fidelity": 4,
+                "logical_consistency": 4,
+                "coverage_correctness": 4,
+                "structured_output_validity": 4,
+                "unsupported_assumptions": 4
+              },
+              "editing_effort": "minor_edits",
+              "rationale": "Correctly identifies I8 as out-of-program, I3/I4 duplicate, JOIN coverage 5/30 versus 9/30, and point-weighted difficulty totals base 10/intermediate 14/advanced 6."
+            },
+            {
+              "case_id": "curriculum_constraint_partial_dbms",
+              "finish_reason": "stop",
+              "json_schema_valid": true,
+              "rubric_0_4": {
+                "constraint_adherence": 4,
+                "source_program_fidelity": 4,
+                "logical_consistency": 4,
+                "coverage_correctness": 4,
+                "structured_output_validity": 4,
+                "unsupported_assumptions": 3
+              },
+              "editing_effort": "minor_edits",
+              "rationale": "Retargets the 25-minute check to completed terms/schema/key material only, excludes not-yet-covered SQL, and makes the proposed 10+15-minute allocation explicit; item-type/time choices still need teacher approval."
+            }
+          ],
+          "decision_rationale": "Three distinct Teacher Service reasoning cases pass deterministic JSON/schema/enum/required-field/semantic checks and manual bounded correctness review. Eligible as a candidate under L3 teacher review; not an autonomous assessment authority."
+        }
+      }
+    },
+    {
+      "model_id": "mistral/mistral-medium-3-5",
+      "catalog_provider": "mistral",
+      "route_identity": "unverified: HTTP 200 responses returned model=keepalive, empty content and no finish_reason",
+      "profile_results": {
+        "remote.generation": {
+          "status": "REJECTED_FOR_PROFILE",
+          "quality_assessment": "NOT_EVALUATED",
+          "basis": "operational_execution_identity_failure_not_quality_rejection",
+          "evidence": "Schema probe plus four isolated task calls returned zero output; no model execution identity could be verified. No candidate substitution or fallback was performed."
+        },
+        "remote.longform": {
+          "status": "REJECTED_FOR_PROFILE",
+          "quality_assessment": "NOT_EVALUATED",
+          "basis": "operational_execution_identity_failure_not_quality_rejection",
+          "evidence": "Schema probe plus four isolated task calls returned zero output; no model execution identity could be verified. No candidate substitution or fallback was performed."
+        },
+        "remote.reasoning": {
+          "status": "REJECTED_FOR_PROFILE",
+          "quality_assessment": "NOT_EVALUATED",
+          "basis": "operational_execution_identity_failure_not_quality_rejection",
+          "evidence": "Schema probe plus four isolated task calls returned zero output; no model execution identity could be verified. No candidate substitution or fallback was performed."
+        }
+      }
+    }
+  ],
+  "distinctness_summary": {
+    "method": "Stored pairwise 8-gram containment metric is diagnostic only; manual review considered artifact purpose and exact repeated exercise text. Similarity/duplication is treated as a usability defect, not as diversity.",
+    "dbms_run_01": {
+      "metric": 0.257,
+      "interpretation": "not full-document duplication; teacher script repeats exercise prompts and formula/exercise phrasing, requiring deduplication/editing"
+    },
+    "dbms_run_02": {
+      "metric": 0.2045,
+      "interpretation": "not full-document duplication; exercise instruction overlap remains substantive"
+    },
+    "excel_run_02": {
+      "metric": 0.01,
+      "interpretation": "low lexical overlap; still fails source constraints"
+    },
+    "partial_run_01": {
+      "metric": 0.0096,
+      "interpretation": "low overlap; distinct genres"
+    },
+    "partial_run_02": {
+      "metric": 0.0,
+      "interpretation": "no measured overlap; distinct genres"
+    },
+    "excel_run_01": "not assessable because generation JSON was truncated and no parsed Student Material exists"
+  }
+}

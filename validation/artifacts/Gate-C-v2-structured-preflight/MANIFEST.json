@@ -1,0 +1,24 @@
+{
+  "schema_version": 1,
+  "artifact": "Gate-C-v2-structured-preflight",
+  "attempt": "attempt-04",
+  "created_at_utc": "2026-09-30T17:42:28.803868+00:00",
+  "corpus_sent": false,
+  "files": [
+    {
+      "path": "validation/artifacts/Gate-C-v2-structured-preflight/attempt-04-preflight.json",
+      "sha256": "ab3719430892fba915410a0d991b65d3fc455d63dfc64ff4a2c6e11a9f3ba3a1",
+      "size_bytes": 40142
+    },
+    {
+      "path": "validation/artifacts/Gate-C-v2-structured-preflight/structured-output-metrics.json",
+      "sha256": "022fbf367e86f476862f4c97474547b6185b4d3edc4b75a1565dcfbaadc10b89",
+      "size_bytes": 30968
+    },
+    {
+      "path": "validation/results/Gate-C-v2-structured-preflight-report.md",
+      "sha256": "1b19b5bc8921c417231affa4c9fa12982918fb54a2d8fe279679b75afb97587c",
+      "size_bytes": 2892
+    }
+  ]
+}

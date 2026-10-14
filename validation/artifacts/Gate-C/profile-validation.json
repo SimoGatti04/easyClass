@@ -1,0 +1,92 @@
+{
+  "schema_version": 1,
+  "benchmark": "Gate-C",
+  "evaluated_at": "2026-09-30",
+  "catalog_snapshot": "validation/artifacts/Gate-C/catalog-snapshot.json",
+  "overall_result": "PARTIAL",
+  "profile_status_semantics": {
+    "VALIDATED": "benchmark evidence positive for the profile",
+    "ELIGIBLE": "quality sufficient for product candidate selection under declared controls",
+    "REJECTED_FOR_PROFILE": "does not meet profile threshold in this run; operational identity failures are not quality judgments"
+  },
+  "profiles": {
+    "remote.generation": {
+      "acceptance": "NOT_MET",
+      "eligible_models": [],
+      "candidates": {
+        "agy/gemini-3.8-flash-tiered": {
+          "status": "REJECTED_FOR_PROFILE",
+          "evidence": "Positive DBMS/partial-source results do not offset repeated Excel hard-contract failures; one of two Excel generation outputs is truncated/invalid JSON, the other contains prohibited formula/cell material."
+        },
+        "mistral/mistral-medium-3-5": {
+          "status": "REJECTED_FOR_PROFILE",
+          "evidence": "No model execution verified; all isolated calls returned keepalive/empty response. This is not a quality evaluation."
+        }
+      },
+      "structured_output": "5/6 generation attempts produced parseable schema-valid JSON; the remaining Excel run was truncated. Current deterministic checks missed source-policy violations in Excel and unsupported formulas in DBMS; format reliability alone is insufficient."
+    },
+    "remote.longform": {
+      "acceptance": "NOT_MET",
+      "eligible_models": [],
+      "candidates": {
+        "agy/gemini-3.8-flash-tiered": {
+          "status": "REJECTED_FOR_PROFILE",
+          "evidence": "DBMS scripts finish but are 5,008–5,711 words (over 3,000–4,000 target) and contain unsupported formula/ROUND material and delivery assumptions. Both Excel scripts end with finish_reason=length and violate no-formula/no-cell constraints. Partial-source scripts are appropriately shorter, not evidence of full-length profile performance."
+        },
+        "mistral/mistral-medium-3-5": {
+          "status": "REJECTED_FOR_PROFILE",
+          "evidence": "No model execution verified; operational route/identity failure, not a quality judgment."
+        }
+      }
+    },
+    "remote.reasoning": {
+      "acceptance": "MET_FOR_CANDIDATE",
+      "eligible_models": [
+        "agy/gemini-3.8-flash-tiered"
+      ],
+      "candidates": {
+        "agy/gemini-3.8-flash-tiered": {
+          "status": "ELIGIBLE",
+          "validation_state": "VALIDATED",
+          "evidence": "Three distinct Teacher Service cases; 3/3 JSON/schema/required/enum/semantic deterministic checks pass; manual bounded review finds the blueprint, consistency findings and curriculum retarget substantively correct."
+        },
+        "mistral/mistral-medium-3-5": {
+          "status": "REJECTED_FOR_PROFILE",
+          "evidence": "No model execution verified; operational route/identity failure, not a quality judgment."
+        }
+      }
+    }
+  },
+  "acceptance_summary": {
+    "at_least_one_eligible_remote_generation": false,
+    "at_least_one_eligible_remote_longform": false,
+    "at_least_one_eligible_remote_reasoning": true,
+    "structured_outputs_sufficiently_reliable_for_all_required_profiles": false,
+    "no_provider_model_id_in_domain": true,
+    "explicit_failures_and_fallbacks": true,
+    "gate_c_acceptance": "PARTIAL — remote.generation and remote.longform eligibility are not demonstrated; do not promote to Gate D."
+  },
+  "provisional_recommendations": {
+    "remote.generation": null,
+    "remote.longform": null,
+    "remote.reasoning": {
+      "model_id": "agy/gemini-3.8-flash-tiered",
+      "status": "PROVISIONAL_DEFAULT_FOR_PROFILE",
+      "scope": "bounded assessment blueprint/consistency/curriculum tasks only; L3 teacher review mandatory; not an eternal default"
+    }
+  },
+  "gate_d_readiness": "BLOCKED",
+  "gate_d_blockers": [
+    "No ELIGIBLE route for remote.generation",
+    "No ELIGIBLE route for remote.longform; this is the T1 Teacher Script critical path",
+    "Current content-policy validator fails to reject Excel formula/cell references and unsupported DBMS formula suggestions"
+  ],
+  "source_separation": {
+    "dbms_sql": "VALID_SOURCE_SEPARATION; source dbms_student_lesson.md; target/reference teacher script withheld from all provider prompts",
+    "excel": "VALID_SOURCE_SEPARATION; source excel_demo_no_cellrefs.md; DOCX teacher reference withheld; no cell/formula claims permitted",
+    "partial_source_dbms": "VALID_SOURCE_SEPARATION; only dbms_partial_excerpt.md sent; full teacher-script reference withheld",
+    "cybersecurity": "INSUFFICIENT_SOURCE_SEPARATION; no source sent",
+    "history": "INSUFFICIENT_SOURCE_SEPARATION; no source sent"
+  },
+  "privacy": "Only CORPUS non-sensitive source artifacts and synthetic, non-personal reasoning cases were sent. No student personal data was used. No credential values are present in saved artifacts."
+}

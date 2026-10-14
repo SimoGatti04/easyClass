@@ -1,0 +1,32 @@
+{
+  "schema_version": 1,
+  "attempt": "attempt-09",
+  "selected_model_ids": [
+    "agy/gemini-3.8-flash-tiered",
+    "groq/qwen/qwen3.8-27b"
+  ],
+  "catalog_identity_basis": "FROZEN_ATTEMPT07_CATALOG_AFTER_TRANSIENT_REFRESH_FAILURE",
+  "route_results": {
+    "agy/gemini-3.8-flash-tiered": {
+      "status": "CANDIDATE_UNAVAILABLE",
+      "guard": {
+        "candidate_model_id": "agy/gemini-3.8-flash-tiered",
+        "guard_classification": "CANDIDATE_UNAVAILABLE",
+        "failure_reason": "transport_failure_or_non_200",
+        "metrics_path": "validation/work/Gate-C-v2/outputs/attempt-09/by-model/agy__gemini-3.8-flash-tiered/availability-guard/run-01/run-metrics.json"
+      },
+      "frozen_root": "gemini-3.8-flash-tiered"
+    },
+    "groq/qwen/qwen3.8-27b": {
+      "status": "CANDIDATE_UNAVAILABLE",
+      "guard": {
+        "candidate_model_id": "groq/qwen/qwen3.8-27b",
+        "guard_classification": "CANDIDATE_UNAVAILABLE",
+        "failure_reason": "transport_failure_or_non_200",
+        "metrics_path": "validation/work/Gate-C-v2/outputs/attempt-09/by-model/groq__qwen__qwen3.8-27b/availability-guard/run-01/run-metrics.json"
+      },
+      "frozen_root": "qwen/qwen3.8-27b"
+    }
+  },
+  "global_auth_failure_confirmed": false
+}

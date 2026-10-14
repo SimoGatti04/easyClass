@@ -1,0 +1,587 @@
+{
+  "schema_version": 1,
+  "benchmark": "B5-B6 End-to-End & Distributed Validation",
+  "date": "2026-09-29",
+  "preflight": "PASS",
+  "generation_routes": [
+    "local"
+  ],
+  "remote_reference": "NOT_RUN; no B5/B6 corpus content transmitted",
+  "source_separation_audit": "validation/work/B3/metrics/source-separation-audit.json",
+  "b1_manifest_sha256": "aa609ab73476167d4fec5b5743ccf4c3f42483ae04dc6f51895ea602cc796ba2",
+  "b2_manifest_sha256": "b21dc2a371f841b83d56ea9df51cfa0626ab92b7b5aac57181eda15b49e28d01",
+  "b3_scenario_source_manifest_sha256": "0a68a7d6f9c87480821d05477f46fa4570e7b64d82ae401749a72bd86dedff34",
+  "protected_state_unchanged": true,
+  "files": [
+    {
+      "path": "validation/work/B5-B6/inputs/.gitkeep",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "validation/work/B5-B6/inputs/metadata.schema.json",
+      "sha256": "be82e5afb27699b19505694dad180fe0ffc6511b3465a1a63e8dc48e730a8722",
+      "bytes": 1798
+    },
+    {
+      "path": "validation/work/B5-B6/logs/.gitkeep",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "validation/work/B5-B6/logs/parser-fi-parser-8e9c9f9b34.log",
+      "sha256": "8bbf68d63c254b5dff9791f4e457b500a7ad8f3c34495959d93f1ee3881e253f",
+      "bytes": 3048
+    },
+    {
+      "path": "validation/work/B5-B6/logs/parser-fi-parser-ddb327e7da.log",
+      "sha256": "0cec6b925751ba059abf7ced5a3f04c8511cc26fd3a619ca0f53b5685d1c82c2",
+      "bytes": 3048
+    },
+    {
+      "path": "validation/work/B5-B6/logs/parser-parse-dbms_sql-5d051867.log",
+      "sha256": "f8f7bc2ba5c89f688bdd98145ed9f86101bdec4f781ea2fba6ceac4e51671c0f",
+      "bytes": 396
+    },
+    {
+      "path": "validation/work/B5-B6/logs/parser-parse-dbms_sql-fbb61396.log",
+      "sha256": "15dbd2827a7db35165838a505d0dba1b9ad0b1f4307c067913d321ff56637c45",
+      "bytes": 396
+    },
+    {
+      "path": "validation/work/B5-B6/logs/parser-parse-excel-5c8833a7.log",
+      "sha256": "8e1afef243486d7ab65b062bef1e8fc26ef04c52709573604be16f4349fb8be0",
+      "bytes": 1468
+    },
+    {
+      "path": "validation/work/B5-B6/logs/parser-parse-excel-c071814d.log",
+      "sha256": "07bf974298bac7176180f1f23c7d7ebc2e99cd6945b08d67947750a968233e8d",
+      "bytes": 1468
+    },
+    {
+      "path": "validation/work/B5-B6/logs/parser-service.stdout.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "validation/work/B5-B6/metrics/.gitkeep",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "validation/work/B5-B6/metrics/integration-run.json",
+      "sha256": "419e570b38d07310257cfb75c3813720b0e98cc71232e7d55e40f2f85c052855",
+      "bytes": 27212
+    },
+    {
+      "path": "validation/work/B5-B6/metrics/parser-wrapper-recovery.json",
+      "sha256": "e9800e63a74a6ab27c14cb8aa9d29c5bb74ad812a052526c786910c8bc03d21f",
+      "bytes": 1150
+    },
+    {
+      "path": "validation/work/B5-B6/outputs/.gitkeep",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "validation/work/B5-B6/outputs/failure-injection/failure-injection.json",
+      "sha256": "b60783fcb5d33f3b62c636008af5272f162dff3db098942ebbaa90e961b675f6",
+      "bytes": 2388
+    },
+    {
+      "path": "validation/work/B5-B6/outputs/generated/local/dbms_sql/lesson_plan/lesson-plan.md",
+      "sha256": "49dbd5224170f24c0084c712bd56b4e14a1ab8f2de50e647e5ad3a965781046b",
+      "bytes": 1750
+    },
+    {
+      "path": "validation/work/B5-B6/outputs/generated/local/dbms_sql/lesson_plan/request.json",
+      "sha256": "386e652cfb53c8b20c207c320c51be2257098800c5233af982c4241ff52b86ac",
+      "bytes": 4780
+    },
+    {
+      "path": "validation/work/B5-B6/outputs/generated/local/dbms_sql/lesson_plan/response.raw.txt",
+      "sha256": "7514dbb3f7e6681941040a8c3ddb563e95bf34db46254b733bf71db5a561d987",
+      "bytes": 1749
+    },
+    {
+      "path": "validation/work/B5-B6/outputs/generated/local/dbms_sql/lesson_plan/run-metrics.json",
+      "sha256": "c2fb9106e139ad35a13c2d882b8ae6c5d1c7857b8f47f775a441f0e7879ddcf3",
+      "bytes": 1455
+    },
+    {
+      "path": "validation/work/B5-B6/outputs/generated/local/dbms_sql/metadata_json/request.json",
+      "sha256": "d533ac71fd497aba611fb3a540850e1d641807e5685bf1349fff8677b15c184f",
+      "bytes": 4870
+    },
+    {
+      "path": "validation/work/B5-B6/outputs/generated/local/dbms_sql/metadata_json/response.raw.txt",
+      "sha256": "bc7e1ac99a35ed4ec6e91d8048e2626832cd3022d2b57c65e886e61c5708fab2",
+      "bytes": 1604
+    },
+    {
+      "path": "validation/work/B5-B6/outputs/generated/local/dbms_sql/metadata_json/run-metrics.json",
+      "sha256": "e64c183f65175d490b14f445fa4e7516c2730c85a2fd4cf4607e8d9283634a3e",
+      "bytes": 1429
+    },
+    {
+      "path": "validation/work/B5-B6/outputs/generated/local/dbms_sql/student_material/request.json",
+      "sha256": "f8c9e17e7df00a39634839907539af73e38e12e32cf60acfc27af85046d5d919",
+      "bytes": 4665
+    },
+    {
+      "path": "validation/work/B5-B6/outputs/generated/local/dbms_sql/student_material/response.raw.txt",
+      "sha256": "cb080244e40f685c86a3214b61c04571fbb07d16a9d54c7a166f16102079b90f",
+      "bytes": 24268
+    },
+    {
+      "path": "validation/work/B5-B6/outputs/generated/local/dbms_sql/student_material/run-metrics.json",
+      "sha256": "587a6395ca177a11f6efb6ae7506c5b4e96053f450a1cfc11cd59110c8e27128",
+      "bytes": 1496
+    },
+    {
+      "path": "validation/work/B5-B6/outputs/generated/local/dbms_sql/student_material/student-material.md",
+      "sha256": "18430cb5d0efb6ff18a1b309cb26ff614b7d87e76dbe6493be54a100b0355798",
+      "bytes": 24269
+    },
+    {
+      "path": "validation/work/B5-B6/outputs/generated/local/dbms_sql/teacher_script/request.json",
+      "sha256": "f5f983bca8e114607fd6f72d0a066d34dd3fb1a61322b53dc9c69a30d5fb6995",
+      "bytes": 4924
+    },
+    {
+      "path": "validation/work/B5-B6/outputs/generated/local/dbms_sql/teacher_script/response.raw.txt",
+      "sha256": "848036aaa54cc72c18f3ac8cbd5a0ba6f851aaae4a8a84dea572a5792725b296",
+      "bytes": 4068
+    },
+    {
+      "path": "validation/work/B5-B6/outputs/generated/local/dbms_sql/teacher_script/run-metrics.json",
+      "sha256": "a80b971450f0bf6188d89a1e5301bc74435f9d96b0506fea09b86b15f107545a",
+      "bytes": 1477
+    },
+    {
+      "path": "validation/work/B5-B6/outputs/generated/local/dbms_sql/teacher_script/teacher-script.md",
+      "sha256": "8665875fcceb037ed0c619d4f123a10ec8d5211b3c1cd7afc7de9584e0d6ce00",
+      "bytes": 4069
+    },
+    {
+      "path": "validation/work/B5-B6/outputs/generated/local/excel/lesson_plan/lesson-plan.md",
+      "sha256": "a50ef7897f7c215db93ad951fc0486faf162be4e9224ab581e85b82901a5c5e9",
+      "bytes": 3040
+    },
+    {
+      "path": "validation/work/B5-B6/outputs/generated/local/excel/lesson_plan/request.json",
+      "sha256": "4972a10c29d6b0fc9460a0b0b6bc11ea8ce98b2e24ecf1513a65aea3e0577e7e",
+      "bytes": 3714
+    },
+    {
+      "path": "validation/work/B5-B6/outputs/generated/local/excel/lesson_plan/response.raw.txt",
+      "sha256": "d15b083c449729b9ecfe4b834f000f65dae2e82bbbef4f83b9a1b7c2d19324fe",
+      "bytes": 3039
+    },
+    {
+      "path": "validation/work/B5-B6/outputs/generated/local/excel/lesson_plan/run-metrics.json",
+      "sha256": "dd056e58eba3e292b2b60036f6b15bc3f051c115c342af4e10f3fffe8d622f27",
+      "bytes": 1445
+    },
+    {
+      "path": "validation/work/B5-B6/outputs/generated/local/excel/metadata_json/request.json",
+      "sha256": "18cd816129c7b06c34a7a5d2c590bd9ef04ca6fbd34c0889bf85878319f1e93d",
+      "bytes": 3804
+    },
+    {
+      "path": "validation/work/B5-B6/outputs/generated/local/excel/metadata_json/response.raw.txt",
+      "sha256": "b832242c77de1a76731e9b00b4fa8645723cbe58b664b3bd3cc48da51ea28033",
+      "bytes": 2491
+    },
+    {
+      "path": "validation/work/B5-B6/outputs/generated/local/excel/metadata_json/run-metrics.json",
+      "sha256": "52be97701878814840aae1c625afc8327aed2ae992d45a553f21afd9ac7fe5a5",
+      "bytes": 1422
+    },
+    {
+      "path": "validation/work/B5-B6/outputs/generated/local/excel/student_material/request.json",
+      "sha256": "22a10116fed8fcc1d044697a75964fb923f7d8b276f1071774fb7711ac94ffe6",
+      "bytes": 3599
+    },
+    {
+      "path": "validation/work/B5-B6/outputs/generated/local/excel/student_material/response.raw.txt",
+      "sha256": "ea02d5bd4e8198489d22a3dc9ded6b103d6c71adedc6fe6e948b5aad47528ddc",
+      "bytes": 1171
+    },
+    {
+      "path": "validation/work/B5-B6/outputs/generated/local/excel/student_material/run-metrics.json",
+      "sha256": "b9c889d4bf18c5b7a2802cb62152dbbec102176435a8d9baed8cd9d980509791",
+      "bytes": 1470
+    },
+    {
+      "path": "validation/work/B5-B6/outputs/generated/local/excel/student_material/student-material.md",
+      "sha256": "9edc67257fea113e5398bc00faf9ec5337d00fc9ba296de18735201cd04f879c",
+      "bytes": 1172
+    },
+    {
+      "path": "validation/work/B5-B6/outputs/generated/local/excel/teacher_script/request.json",
+      "sha256": "73910e093ffc7a1b1c180b4b1e9677a766a18cfa9156cb5a615a850ada2d8b03",
+      "bytes": 3858
+    },
+    {
+      "path": "validation/work/B5-B6/outputs/generated/local/excel/teacher_script/response.raw.txt",
+      "sha256": "6eadebb2bd7ea89deeabe47be9b90d8d5bea3f4ae15a08f189f8d35cf734d6c6",
+      "bytes": 22966
+    },
+    {
+      "path": "validation/work/B5-B6/outputs/generated/local/excel/teacher_script/run-metrics.json",
+      "sha256": "3b850f2b90033b845e8a1a58a8ea79940f95c2ecba33639f54dcbb27a3e2c326",
+      "bytes": 1475
+    },
+    {
+      "path": "validation/work/B5-B6/outputs/generated/local/excel/teacher_script/teacher-script.md",
+      "sha256": "46b8c418a17026aa92942228517f933a70ae39c1620454c069add78994677304",
+      "bytes": 22967
+    },
+    {
+      "path": "validation/work/B5-B6/outputs/generated/local/partial_source_dbms/lesson_plan/lesson-plan.md",
+      "sha256": "3d06c0e136bb5fa5df1f1c47ee92a08a484180e58f4652bcac371b0bb65efa62",
+      "bytes": 1335
+    },
+    {
+      "path": "validation/work/B5-B6/outputs/generated/local/partial_source_dbms/lesson_plan/request.json",
+      "sha256": "7fd0d8a68c5a9b9669d36725521a34f88debfaf012e6bb3ffb86826433a61349",
+      "bytes": 3030
+    },
+    {
+      "path": "validation/work/B5-B6/outputs/generated/local/partial_source_dbms/lesson_plan/response.raw.txt",
+      "sha256": "190a398947f25daa7a94a2f128b4ada1b7d62e2399dec58c2ad6117fa42d5435",
+      "bytes": 1334
+    },
+    {
+      "path": "validation/work/B5-B6/outputs/generated/local/partial_source_dbms/lesson_plan/run-metrics.json",
+      "sha256": "a372073186b4a12fc4a1bbe6a41aea39d363967bdd0a7d40913a19ac7966975c",
+      "bytes": 1495
+    },
+    {
+      "path": "validation/work/B5-B6/outputs/generated/local/partial_source_dbms/metadata_json/request.json",
+      "sha256": "8630e3aaef73ba326472f4714490b1eae3c298420522b0265fe74e70c63fab51",
+      "bytes": 3120
+    },
+    {
+      "path": "validation/work/B5-B6/outputs/generated/local/partial_source_dbms/metadata_json/response.raw.txt",
+      "sha256": "567b30edf1aeed7c7f6e214d775c68153533cd0cbea8fb7f34dab63aa343d340",
+      "bytes": 1639
+    },
+    {
+      "path": "validation/work/B5-B6/outputs/generated/local/partial_source_dbms/metadata_json/run-metrics.json",
+      "sha256": "823ca4bbf4c20a8f2c70dd4abe60e3260547c305b5f2ef54571497faacbff521",
+      "bytes": 1459
+    },
+    {
+      "path": "validation/work/B5-B6/outputs/generated/local/partial_source_dbms/student_material/request.json",
+      "sha256": "97ee3a14c8ac82d5961d1c9893fea780486af1b5396f6982a88c36cf6b8bc408",
+      "bytes": 2915
+    },
+    {
+      "path": "validation/work/B5-B6/outputs/generated/local/partial_source_dbms/student_material/response.raw.txt",
+      "sha256": "9f3fe8b57cb1fa27029009a9d92ac2cbdb52a6f2f935c6b20a3ec00730a2ec4f",
+      "bytes": 1433
+    },
+    {
+      "path": "validation/work/B5-B6/outputs/generated/local/partial_source_dbms/student_material/run-metrics.json",
+      "sha256": "c7144196b18b0546b56ba67eaa13a86b2365a067aae4b1d6b2661d3265952f43",
+      "bytes": 1524
+    },
+    {
+      "path": "validation/work/B5-B6/outputs/generated/local/partial_source_dbms/student_material/student-material.md",
+      "sha256": "cfdcca45bf2e95f6f83a534ec7313ec7c8bd1360473999e705d2f416d50af38d",
+      "bytes": 1434
+    },
+    {
+      "path": "validation/work/B5-B6/outputs/generated/local/partial_source_dbms/teacher_script/request.json",
+      "sha256": "1c1f015e4149b08ccc5b0f0a0bf67b6eeba42bed2b466553688b7aedd0e6279b",
+      "bytes": 3174
+    },
+    {
+      "path": "validation/work/B5-B6/outputs/generated/local/partial_source_dbms/teacher_script/response.raw.txt",
+      "sha256": "80eb63238a22b159e10e8f20ed0a658a36bed8a9305a82ab1cba9f538a43ebe5",
+      "bytes": 25681
+    },
+    {
+      "path": "validation/work/B5-B6/outputs/generated/local/partial_source_dbms/teacher_script/run-metrics.json",
+      "sha256": "57b94fd7ffcbcbefdd241fe1ad29e7bb5b5d59a1ca9406d6b59ff2a7b5b046c9",
+      "bytes": 1527
+    },
+    {
+      "path": "validation/work/B5-B6/outputs/generated/local/partial_source_dbms/teacher_script/teacher-script.md",
+      "sha256": "fefc40dc3b558aca2faed46d64a68fa73f9c38efd15c08c24b3ab8b54e14d7f6",
+      "bytes": 25682
+    },
+    {
+      "path": "validation/work/B5-B6/outputs/parser-requests/fi-parser-8e9c9f9b34.json",
+      "sha256": "b82d1ebc68c34c5e3aeb9fa66533ac75609be32e90c0706edba4f73051b511e6",
+      "bytes": 235
+    },
+    {
+      "path": "validation/work/B5-B6/outputs/parser-requests/fi-parser-ddb327e7da.json",
+      "sha256": "79f5ad3252b2b3f81587ad24fa2e05d31e1b4dc7514354c07279f12adbda7863",
+      "bytes": 235
+    },
+    {
+      "path": "validation/work/B5-B6/outputs/parser-requests/parse-dbms_sql-5d051867.json",
+      "sha256": "f6276568df0f56320b2ef6f10575ab8ed445bb0ac86e8e6301e51215108cea8b",
+      "bytes": 253
+    },
+    {
+      "path": "validation/work/B5-B6/outputs/parser-requests/parse-dbms_sql-fbb61396.json",
+      "sha256": "85ab5c62ddebdcfd3ce199ec10cdfb1eb2fa82ec55275cc171f5688b42ec3c2f",
+      "bytes": 253
+    },
+    {
+      "path": "validation/work/B5-B6/outputs/parser-requests/parse-excel-5c8833a7.json",
+      "sha256": "97c92369e24d20a255c6aed8f3362bc75872bb556521819bda5a93c79af9fcaf",
+      "bytes": 231
+    },
+    {
+      "path": "validation/work/B5-B6/outputs/parser-requests/parse-excel-c071814d.json",
+      "sha256": "da7b0240a7c2d086aeecdd601234320f3aba01fa52fcc390ee84ffcdcc02df37",
+      "bytes": 231
+    },
+    {
+      "path": "validation/work/B5-B6/outputs/parser-runs/parse-dbms_sql-5d051867/normalized_artifact.md",
+      "sha256": "d0088409d21d6537e3b96e1581466966fc254fc17695b44c23b6e7dfa77c9035",
+      "bytes": 3623
+    },
+    {
+      "path": "validation/work/B5-B6/outputs/parser-runs/parse-dbms_sql-5d051867/raw/dbms_student_lesson/dbms_student_lesson.md",
+      "sha256": "127f1d49acd19874f1c2bccd4af2b04f599593a5b1867b11d762afbfab445ed9",
+      "bytes": 3622
+    },
+    {
+      "path": "validation/work/B5-B6/outputs/parser-runs/parse-dbms_sql-5d051867/raw/dbms_student_lesson/dbms_student_lesson_meta.json",
+      "sha256": "1d377eb19ef405e0125cec93a7d046129fa885f76a2706caebb1a7836f76d429",
+      "bytes": 7546
+    },
+    {
+      "path": "validation/work/B5-B6/outputs/parser-runs/parse-dbms_sql-fbb61396/normalized_artifact.md",
+      "sha256": "d0088409d21d6537e3b96e1581466966fc254fc17695b44c23b6e7dfa77c9035",
+      "bytes": 3623
+    },
+    {
+      "path": "validation/work/B5-B6/outputs/parser-runs/parse-dbms_sql-fbb61396/raw/dbms_student_lesson/dbms_student_lesson.md",
+      "sha256": "127f1d49acd19874f1c2bccd4af2b04f599593a5b1867b11d762afbfab445ed9",
+      "bytes": 3622
+    },
+    {
+      "path": "validation/work/B5-B6/outputs/parser-runs/parse-dbms_sql-fbb61396/raw/dbms_student_lesson/dbms_student_lesson_meta.json",
+      "sha256": "1d377eb19ef405e0125cec93a7d046129fa885f76a2706caebb1a7836f76d429",
+      "bytes": 7546
+    },
+    {
+      "path": "validation/work/B5-B6/outputs/parser-runs/parse-excel-5c8833a7/raw/excel_demo/office/excel_demo.md",
+      "sha256": "1c01117d91e1552217374a81dee541767856bd8948f091739e6e55d21238b5da",
+      "bytes": 9863
+    },
+    {
+      "path": "validation/work/B5-B6/outputs/parser-runs/parse-excel-5c8833a7/raw/excel_demo/office/excel_demo_content_list.json",
+      "sha256": "2ceb2f4cdd0e413077feb8f449f1c674169181800da3aac2112841a1d4f1edcd",
+      "bytes": 12314
+    },
+    {
+      "path": "validation/work/B5-B6/outputs/parser-runs/parse-excel-5c8833a7/raw/excel_demo/office/excel_demo_content_list_v2.json",
+      "sha256": "0c87c6f1523e413c2263cfe97bb2c05f851210406e89db9f1cf579f55683176d",
+      "bytes": 14919
+    },
+    {
+      "path": "validation/work/B5-B6/outputs/parser-runs/parse-excel-5c8833a7/raw/excel_demo/office/excel_demo_middle.json",
+      "sha256": "709d7a5ce67b4cdc1e1fcc48471d993c7c5d8b5f6a8a60f8bc9279093fa3cd82",
+      "bytes": 23071
+    },
+    {
+      "path": "validation/work/B5-B6/outputs/parser-runs/parse-excel-5c8833a7/raw/excel_demo/office/excel_demo_model.json",
+      "sha256": "50c1477670bb0ad63452eb2076cbc28df594817b1d18ee7a1af29de17b427fc6",
+      "bytes": 11727
+    },
+    {
+      "path": "validation/work/B5-B6/outputs/parser-runs/parse-excel-5c8833a7/raw/excel_demo/office/excel_demo_origin.xlsx",
+      "sha256": "fb8a07d2bfc17839bf8cb3aa9955b36e12c7f4cbb9dfab620d38e05e60bd42b7",
+      "bytes": 8314
+    },
+    {
+      "path": "validation/work/B5-B6/outputs/parser-runs/parse-excel-5c8833a7/raw/excel_demo.md",
+      "sha256": "1c01117d91e1552217374a81dee541767856bd8948f091739e6e55d21238b5da",
+      "bytes": 9863
+    },
+    {
+      "path": "validation/work/B5-B6/outputs/parser-runs/parse-excel-c071814d/normalized_artifact.md",
+      "sha256": "224091bf6e6867be20dbc59838e4b194e61a15f0ec60f73dda379593a80ce414",
+      "bytes": 9864
+    },
+    {
+      "path": "validation/work/B5-B6/outputs/parser-runs/parse-excel-c071814d/raw/excel_demo/office/excel_demo.md",
+      "sha256": "1c01117d91e1552217374a81dee541767856bd8948f091739e6e55d21238b5da",
+      "bytes": 9863
+    },
+    {
+      "path": "validation/work/B5-B6/outputs/parser-runs/parse-excel-c071814d/raw/excel_demo/office/excel_demo_content_list.json",
+      "sha256": "2ceb2f4cdd0e413077feb8f449f1c674169181800da3aac2112841a1d4f1edcd",
+      "bytes": 12314
+    },
+    {
+      "path": "validation/work/B5-B6/outputs/parser-runs/parse-excel-c071814d/raw/excel_demo/office/excel_demo_content_list_v2.json",
+      "sha256": "0c87c6f1523e413c2263cfe97bb2c05f851210406e89db9f1cf579f55683176d",
+      "bytes": 14919
+    },
+    {
+      "path": "validation/work/B5-B6/outputs/parser-runs/parse-excel-c071814d/raw/excel_demo/office/excel_demo_middle.json",
+      "sha256": "709d7a5ce67b4cdc1e1fcc48471d993c7c5d8b5f6a8a60f8bc9279093fa3cd82",
+      "bytes": 23071
+    },
+    {
+      "path": "validation/work/B5-B6/outputs/parser-runs/parse-excel-c071814d/raw/excel_demo/office/excel_demo_model.json",
+      "sha256": "50c1477670bb0ad63452eb2076cbc28df594817b1d18ee7a1af29de17b427fc6",
+      "bytes": 11727
+    },
+    {
+      "path": "validation/work/B5-B6/outputs/parser-runs/parse-excel-c071814d/raw/excel_demo/office/excel_demo_origin.xlsx",
+      "sha256": "fb8a07d2bfc17839bf8cb3aa9955b36e12c7f4cbb9dfab620d38e05e60bd42b7",
+      "bytes": 8314
+    },
+    {
+      "path": "validation/work/B5-B6/outputs/parser-runs/parse-excel-c071814d/raw/excel_demo.md",
+      "sha256": "1c01117d91e1552217374a81dee541767856bd8948f091739e6e55d21238b5da",
+      "bytes": 9863
+    },
+    {
+      "path": "validation/work/B5-B6/outputs/retrieval/dbms_sql/chunks.jsonl",
+      "sha256": "abf6e9c403acf8132aa8ce1550ec04457ef21998f84d449ee65b19bc92dc7a0a",
+      "bytes": 22076
+    },
+    {
+      "path": "validation/work/B5-B6/outputs/retrieval/dbms_sql/index/chunks.npy",
+      "sha256": "888f2cbbfc18ab74b3e3bc40993c558b5cd3478bf8e6bb34e2dceee702fe52fb",
+      "bytes": 49280
+    },
+    {
+      "path": "validation/work/B5-B6/outputs/retrieval/dbms_sql/index/lexical.sqlite3",
+      "sha256": "05bf096ce2857fe6e6c7f25017c79c1a5e5ef552609af0e36c2463a40e8ce7b7",
+      "bytes": 53248
+    },
+    {
+      "path": "validation/work/B5-B6/outputs/retrieval/dbms_sql/retrieval.json",
+      "sha256": "1b8ac60a71301ee4dc1de9b28108212ebea3f9503743b406fa21f77ef27c3b53",
+      "bytes": 17249
+    },
+    {
+      "path": "validation/work/B5-B6/outputs/retrieval/excel/chunks.jsonl",
+      "sha256": "2b44184e24fb35b365187afeea1778da962fa33ba9a66258296bbea97e3d7f06",
+      "bytes": 36723
+    },
+    {
+      "path": "validation/work/B5-B6/outputs/retrieval/excel/index/lexical.sqlite3",
+      "sha256": "54902497a0a85fb13c0a8497fded89a9309f92434af6f562f193104cf4715465",
+      "bytes": 65536
+    },
+    {
+      "path": "validation/work/B5-B6/outputs/retrieval/excel/retrieval.json",
+      "sha256": "de5aa9920438284923dfc7a670379923456e948d5d2962c64db371a0626977e4",
+      "bytes": 6760
+    },
+    {
+      "path": "validation/work/B5-B6/outputs/retrieval/fi_embedding_dense/index/lexical.sqlite3",
+      "sha256": "05bf096ce2857fe6e6c7f25017c79c1a5e5ef552609af0e36c2463a40e8ce7b7",
+      "bytes": 53248
+    },
+    {
+      "path": "validation/work/B5-B6/outputs/retrieval/fi_embedding_dense/retrieval.json",
+      "sha256": "0af1a276ffe2431291c41bbbe7d8d5e31090af7aebfe25edff2df01a29d475db",
+      "bytes": 17495
+    },
+    {
+      "path": "validation/work/B5-B6/outputs/retrieval/partial_source_dbms/chunks.jsonl",
+      "sha256": "057d9b84f47d61ba0ff4915df9161fe9f51954121eafd34ab59b5b15b7138065",
+      "bytes": 7238
+    },
+    {
+      "path": "validation/work/B5-B6/outputs/retrieval/partial_source_dbms/index/lexical.sqlite3",
+      "sha256": "fc996ebfcd12bab9595be9d6851bd885427e6aed49a06e9c8e91ac8601bd9e44",
+      "bytes": 32768
+    },
+    {
+      "path": "validation/work/B5-B6/outputs/retrieval/partial_source_dbms/retrieval.json",
+      "sha256": "1d47875c157e618080b0b97407048f29487490f275939b2de9f7de1086810e07",
+      "bytes": 5561
+    },
+    {
+      "path": "validation/work/B5-B6/outputs/source-projections/dbms_partial_excerpt.md",
+      "sha256": "c8992a2c9d1b5476f64b905c268c0553e96287b51b6d23d0a9a0b675a6d6ce56",
+      "bytes": 1162
+    },
+    {
+      "path": "validation/work/B5-B6/outputs/source-projections/dbms_student_lesson.md",
+      "sha256": "d0088409d21d6537e3b96e1581466966fc254fc17695b44c23b6e7dfa77c9035",
+      "bytes": 3623
+    },
+    {
+      "path": "validation/work/B5-B6/outputs/source-projections/excel_demo_no_cellrefs.md",
+      "sha256": "ec0151a94b9ce9ed6ae4d505cbe0f300f7c33c7a11cbc071042954aeda5d960d",
+      "bytes": 10299
+    },
+    {
+      "path": "validation/work/B5-B6/scripts/.gitkeep",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "validation/work/B5-B6/scripts/parser_http_service.py",
+      "sha256": "58f1a21506663e028e5b3606f33b92aeadf7035074dc46ebbba7061b035b20bc",
+      "bytes": 8215
+    },
+    {
+      "path": "validation/work/B5-B6/scripts/run_integration.py",
+      "sha256": "56c7ee76b35d05505b780a9f96ec8b85c244cf3b004590f898f1aa8619883e05",
+      "bytes": 40392
+    },
+    {
+      "path": "validation/work/B5-B6/tmp/.gitkeep",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "validation/work/B5-B6/tmp/parser_requests/fi-parser-8e9c9f9b34/malformed.pdf",
+      "sha256": "7ba2f1c14ebd1181725bb3599ecef6ea78d11a4f4a9fc36d8d6f6cd064768a04",
+      "bytes": 15
+    },
+    {
+      "path": "validation/work/B5-B6/tmp/parser_requests/fi-parser-ddb327e7da/malformed.pdf",
+      "sha256": "7ba2f1c14ebd1181725bb3599ecef6ea78d11a4f4a9fc36d8d6f6cd064768a04",
+      "bytes": 15
+    },
+    {
+      "path": "validation/work/B5-B6/tmp/parser_requests/parse-dbms_sql-5d051867/dbms_student_lesson.pdf",
+      "sha256": "6a1277ba8c83bad71649aa55d2cb20ae8446eaa30985b7129f0c53bbc127623d",
+      "bytes": 79385
+    },
+    {
+      "path": "validation/work/B5-B6/tmp/parser_requests/parse-dbms_sql-fbb61396/dbms_student_lesson.pdf",
+      "sha256": "6a1277ba8c83bad71649aa55d2cb20ae8446eaa30985b7129f0c53bbc127623d",
+      "bytes": 79385
+    },
+    {
+      "path": "validation/work/B5-B6/tmp/parser_requests/parse-excel-5c8833a7/excel_demo.xlsx",
+      "sha256": "fb8a07d2bfc17839bf8cb3aa9955b36e12c7f4cbb9dfab620d38e05e60bd42b7",
+      "bytes": 8314
+    },
+    {
+      "path": "validation/work/B5-B6/tmp/parser_requests/parse-excel-c071814d/excel_demo.xlsx",
+      "sha256": "fb8a07d2bfc17839bf8cb3aa9955b36e12c7f4cbb9dfab620d38e05e60bd42b7",
+      "bytes": 8314
+    },
+    {
+      "path": "validation/artifacts/B5-B6/manual-scorecard.json",
+      "sha256": "524c9e0e4117a3b29959276dab38e472446c858092db41be041966eaa3a4c24d",
+      "bytes": 12410
+    },
+    {
+      "path": "validation/results/B5-B6-integration-report.md",
+      "sha256": "0bd3b363cc94418f1a0294a463ad8c2a80722ac4824530eccf464b71c71ccfea",
+      "bytes": 22030
+    }
+  ]
+}

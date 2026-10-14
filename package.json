@@ -1,0 +1,28 @@
+{
+  "name": "teacher-service",
+  "version": "0.1.0",
+  "description": "Teacher Service \u2014 Domain Core, Materials Management, and MCP Service",
+  "type": "module",
+  "main": "src/index.js",
+  "bin": {
+    "teacher-service": "bin/teacher-service.js",
+    "teacher-service-mcp": "bin/teacher-service-mcp.js",
+    "teacher-service-http": "bin/teacher-service-http.js"
+  },
+  "scripts": {
+    "test": "node tests/run-all.js",
+    "test:unit": "node tests/unit/run-unit.js",
+    "test:integration": "node tests/integration/run-integration.js",
+    "test:mcp": "node tests/mcp/run-mcp.js",
+    "mcp": "node --env-file=.env.local bin/teacher-service-mcp.js",
+    "start:http": "node --env-file=.env.local bin/teacher-service-http.js"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "1.29.0",
+    "zod": "3.25.76"
+  },
+  "engines": {
+    "node": ">=20.6.0"
+  },
+  "license": "MIT"
+}

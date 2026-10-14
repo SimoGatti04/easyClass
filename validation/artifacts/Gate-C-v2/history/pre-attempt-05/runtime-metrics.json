@@ -1,0 +1,517 @@
+{
+  "schema_version": 1,
+  "benchmark": "Gate-C-v2",
+  "status": "PREFLIGHT_ONLY_NO_COHORT",
+  "records": [
+    {
+      "model_id_requested": "agy/gemini-3.8-flash-tiered",
+      "model_id_returned": "keepalive",
+      "identity_verified": false,
+      "identity_resolution": "mismatch_or_ambiguous",
+      "task_id": "preflight",
+      "run_id": 1,
+      "kind": "probe",
+      "timestamp_utc": "2026-09-30T16:30:56.215024+00:00",
+      "http_status": 200,
+      "non_empty_content": false,
+      "finish_reason": null,
+      "finish_reason_valid": false,
+      "response_id": "chatcmpl-keepalive",
+      "sse_event_count": 1,
+      "json_transport_body": false,
+      "ttft_seconds": null,
+      "ttft_basis": "not_measurable",
+      "total_latency_seconds": 2.048,
+      "input_tokens": null,
+      "output_tokens": null,
+      "provider_usage": null,
+      "tokens_per_second_after_ttft": null,
+      "output_characters": 0,
+      "output_words_whitespace": 0,
+      "cost": null,
+      "cost_source": "unknown",
+      "response_headers_sanitized": {
+        "content-type": "text/event-stream; charset=utf-8",
+        "x-request-id": "b6c4c867-75a9-473a-a110-b8e2a43cccdb"
+      },
+      "request_parameters": {
+        "model": "agy/gemini-3.8-flash-tiered",
+        "temperature": 0.2,
+        "top_p": 0.9,
+        "stream": true,
+        "stream_options": {
+          "include_usage": true
+        },
+        "max_tokens": 160
+      },
+      "response_format_mode": "json_schema",
+      "source_set": [
+        {
+          "provided_file": "synthetic_non_corpus_probe",
+          "sha256": null,
+          "bytes": 0
+        }
+      ],
+      "error": null,
+      "transport_early_stop": "returned_model_identity_mismatch",
+      "fallback_events": 0,
+      "repair_attempt": false,
+      "request_success": false,
+      "metrics_file": "validation/work/Gate-C-v2/outputs/attempt-02/by-model/agy__gemini-3.8-flash-tiered/preflight/run-01/run-metrics.json"
+    },
+    {
+      "model_id_requested": "groq/openai/gpt-oss-120b",
+      "model_id_returned": "keepalive",
+      "identity_verified": false,
+      "identity_resolution": "mismatch_or_ambiguous",
+      "task_id": "preflight",
+      "run_id": 6,
+      "kind": "probe",
+      "timestamp_utc": "2026-09-30T16:31:20.681179+00:00",
+      "http_status": 200,
+      "non_empty_content": false,
+      "finish_reason": null,
+      "finish_reason_valid": false,
+      "response_id": "chatcmpl-keepalive",
+      "sse_event_count": 1,
+      "json_transport_body": false,
+      "ttft_seconds": null,
+      "ttft_basis": "not_measurable",
+      "total_latency_seconds": 2.013,
+      "input_tokens": null,
+      "output_tokens": null,
+      "provider_usage": null,
+      "tokens_per_second_after_ttft": null,
+      "output_characters": 0,
+      "output_words_whitespace": 0,
+      "cost": null,
+      "cost_source": "unknown",
+      "response_headers_sanitized": {
+        "content-type": "text/event-stream; charset=utf-8",
+        "x-request-id": "ee1c752b-9a99-499c-8afb-e634b42c66db"
+      },
+      "request_parameters": {
+        "model": "groq/openai/gpt-oss-120b",
+        "temperature": 0.2,
+        "top_p": 0.9,
+        "stream": true,
+        "stream_options": {
+          "include_usage": true
+        },
+        "max_tokens": 160
+      },
+      "response_format_mode": "json_schema",
+      "source_set": [
+        {
+          "provided_file": "synthetic_non_corpus_probe",
+          "sha256": null,
+          "bytes": 0
+        }
+      ],
+      "error": null,
+      "transport_early_stop": "returned_model_identity_mismatch",
+      "fallback_events": 0,
+      "repair_attempt": false,
+      "request_success": false,
+      "metrics_file": "validation/work/Gate-C-v2/outputs/attempt-02/by-model/groq__openai__gpt-oss-120b/preflight/run-06/run-metrics.json"
+    },
+    {
+      "model_id_requested": "mistral/mistral-medium-3-5",
+      "model_id_returned": "keepalive",
+      "identity_verified": false,
+      "identity_resolution": "mismatch_or_ambiguous",
+      "task_id": "preflight",
+      "run_id": 2,
+      "kind": "probe",
+      "timestamp_utc": "2026-09-30T16:30:58.266356+00:00",
+      "http_status": 200,
+      "non_empty_content": false,
+      "finish_reason": null,
+      "finish_reason_valid": false,
+      "response_id": "chatcmpl-keepalive",
+      "sse_event_count": 1,
+      "json_transport_body": false,
+      "ttft_seconds": null,
+      "ttft_basis": "not_measurable",
+      "total_latency_seconds": 2.044,
+      "input_tokens": null,
+      "output_tokens": null,
+      "provider_usage": null,
+      "tokens_per_second_after_ttft": null,
+      "output_characters": 0,
+      "output_words_whitespace": 0,
+      "cost": null,
+      "cost_source": "unknown",
+      "response_headers_sanitized": {
+        "content-type": "text/event-stream; charset=utf-8",
+        "x-request-id": "d6262855-e009-4a9f-a84c-1e073915a756"
+      },
+      "request_parameters": {
+        "model": "mistral/mistral-medium-3-5",
+        "temperature": 0.2,
+        "top_p": 0.9,
+        "stream": true,
+        "stream_options": {
+          "include_usage": true
+        },
+        "max_tokens": 160
+      },
+      "response_format_mode": "json_schema",
+      "source_set": [
+        {
+          "provided_file": "synthetic_non_corpus_probe",
+          "sha256": null,
+          "bytes": 0
+        }
+      ],
+      "error": null,
+      "transport_early_stop": "returned_model_identity_mismatch",
+      "fallback_events": 0,
+      "repair_attempt": false,
+      "request_success": false,
+      "metrics_file": "validation/work/Gate-C-v2/outputs/attempt-02/by-model/mistral__mistral-medium-3-5/preflight/run-02/run-metrics.json"
+    },
+    {
+      "model_id_requested": "nvidia/deepseek-ai/deepseek-v4.1-flash",
+      "model_id_returned": "keepalive",
+      "identity_verified": false,
+      "identity_resolution": "mismatch_or_ambiguous",
+      "task_id": "preflight",
+      "run_id": 5,
+      "kind": "probe",
+      "timestamp_utc": "2026-09-30T16:31:18.611269+00:00",
+      "http_status": 200,
+      "non_empty_content": false,
+      "finish_reason": null,
+      "finish_reason_valid": false,
+      "response_id": "chatcmpl-keepalive",
+      "sse_event_count": 1,
+      "json_transport_body": false,
+      "ttft_seconds": null,
+      "ttft_basis": "not_measurable",
+      "total_latency_seconds": 2.067,
+      "input_tokens": null,
+      "output_tokens": null,
+      "provider_usage": null,
+      "tokens_per_second_after_ttft": null,
+      "output_characters": 0,
+      "output_words_whitespace": 0,
+      "cost": null,
+      "cost_source": "unknown",
+      "response_headers_sanitized": {
+        "content-type": "text/event-stream; charset=utf-8",
+        "x-request-id": "4b3e989b-3d80-41de-8f36-1f385d7b26e8"
+      },
+      "request_parameters": {
+        "model": "nvidia/deepseek-ai/deepseek-v4.1-flash",
+        "temperature": 0.2,
+        "top_p": 0.9,
+        "stream": true,
+        "stream_options": {
+          "include_usage": true
+        },
+        "max_tokens": 160
+      },
+      "response_format_mode": "json_schema",
+      "source_set": [
+        {
+          "provided_file": "synthetic_non_corpus_probe",
+          "sha256": null,
+          "bytes": 0
+        }
+      ],
+      "error": null,
+      "transport_early_stop": "returned_model_identity_mismatch",
+      "fallback_events": 0,
+      "repair_attempt": false,
+      "request_success": false,
+      "metrics_file": "validation/work/Gate-C-v2/outputs/attempt-02/by-model/nvidia__deepseek-ai__deepseek-v4.1-flash/preflight/run-05/run-metrics.json"
+    },
+    {
+      "model_id_requested": "nvidia/moonshotai/kimi-k3",
+      "model_id_returned": "keepalive",
+      "identity_verified": false,
+      "identity_resolution": "mismatch_or_ambiguous",
+      "task_id": "preflight",
+      "run_id": 4,
+      "kind": "probe",
+      "timestamp_utc": "2026-09-30T16:31:16.578520+00:00",
+      "http_status": 200,
+      "non_empty_content": false,
+      "finish_reason": null,
+      "finish_reason_valid": false,
+      "response_id": "chatcmpl-keepalive",
+      "sse_event_count": 1,
+      "json_transport_body": false,
+      "ttft_seconds": null,
+      "ttft_basis": "not_measurable",
+      "total_latency_seconds": 2.029,
+      "input_tokens": null,
+      "output_tokens": null,
+      "provider_usage": null,
+      "tokens_per_second_after_ttft": null,
+      "output_characters": 0,
+      "output_words_whitespace": 0,
+      "cost": null,
+      "cost_source": "unknown",
+      "response_headers_sanitized": {
+        "content-type": "text/event-stream; charset=utf-8",
+        "x-request-id": "2f1572f4-055e-49ad-8dcf-580b19680a0d"
+      },
+      "request_parameters": {
+        "model": "nvidia/moonshotai/kimi-k3",
+        "temperature": 0.2,
+        "top_p": 0.9,
+        "stream": true,
+        "stream_options": {
+          "include_usage": true
+        },
+        "max_tokens": 160
+      },
+      "response_format_mode": "json_schema",
+      "source_set": [
+        {
+          "provided_file": "synthetic_non_corpus_probe",
+          "sha256": null,
+          "bytes": 0
+        }
+      ],
+      "error": null,
+      "transport_early_stop": "returned_model_identity_mismatch",
+      "fallback_events": 0,
+      "repair_attempt": false,
+      "request_success": false,
+      "metrics_file": "validation/work/Gate-C-v2/outputs/attempt-02/by-model/nvidia__moonshotai__kimi-k3/preflight/run-04/run-metrics.json"
+    },
+    {
+      "requested_model_id": "nvidia/z-ai/glm-5.3",
+      "returned_model_id": "keepalive",
+      "identity_verified": false,
+      "http_status": 200,
+      "finish_reason": null,
+      "ttft_seconds": null,
+      "total_latency_seconds": 2.027,
+      "input_tokens": null,
+      "output_tokens": null,
+      "usage": null,
+      "cost": null,
+      "cost_source": "unknown",
+      "source_set": [
+        {
+          "provided_file": "synthetic_non_corpus_probe",
+          "sha256": null,
+          "bytes": 0
+        }
+      ],
+      "json_schema_requested": true,
+      "json_schema_valid": false,
+      "early_stop": "returned_model_identity_mismatch",
+      "error": null,
+      "fallback_events": 0,
+      "metrics_file": "validation/work/Gate-C-v2/outputs/attempt-02/by-model/nvidia__z-ai__glm-5.3/preflight/run-10/run-metrics.json"
+    },
+    {
+      "model_id_requested": "opencode-zen/mimo-v2.5-free",
+      "model_id_returned": "keepalive",
+      "identity_verified": false,
+      "identity_resolution": "mismatch_or_ambiguous",
+      "task_id": "preflight",
+      "run_id": 3,
+      "kind": "probe",
+      "timestamp_utc": "2026-09-30T16:31:00.313540+00:00",
+      "http_status": 200,
+      "non_empty_content": false,
+      "finish_reason": null,
+      "finish_reason_valid": false,
+      "response_id": "chatcmpl-keepalive",
+      "sse_event_count": 1,
+      "json_transport_body": false,
+      "ttft_seconds": null,
+      "ttft_basis": "not_measurable",
+      "total_latency_seconds": 16.262,
+      "input_tokens": null,
+      "output_tokens": null,
+      "provider_usage": null,
+      "tokens_per_second_after_ttft": null,
+      "output_characters": 0,
+      "output_words_whitespace": 0,
+      "cost": null,
+      "cost_source": "unknown",
+      "response_headers_sanitized": {
+        "content-type": "text/event-stream; charset=utf-8",
+        "x-request-id": "14facc9f-0b7b-4b29-bea9-c9252a2e6d3c"
+      },
+      "request_parameters": {
+        "model": "opencode-zen/mimo-v2.5-free",
+        "temperature": 0.2,
+        "top_p": 0.9,
+        "stream": true,
+        "stream_options": {
+          "include_usage": true
+        },
+        "max_tokens": 160
+      },
+      "response_format_mode": "json_schema",
+      "source_set": [
+        {
+          "provided_file": "synthetic_non_corpus_probe",
+          "sha256": null,
+          "bytes": 0
+        }
+      ],
+      "error": null,
+      "transport_early_stop": "returned_model_identity_mismatch",
+      "fallback_events": 0,
+      "repair_attempt": false,
+      "request_success": false,
+      "metrics_file": "validation/work/Gate-C-v2/outputs/attempt-02/by-model/opencode-zen__mimo-v2.5-free/preflight/run-03/run-metrics.json"
+    },
+    {
+      "requested_model_id": "opencode-zen/mimo-v2.6-flash-free",
+      "returned_model_id": "keepalive",
+      "identity_verified": false,
+      "http_status": 200,
+      "finish_reason": null,
+      "ttft_seconds": null,
+      "total_latency_seconds": 15.013,
+      "input_tokens": null,
+      "output_tokens": null,
+      "usage": null,
+      "cost": null,
+      "cost_source": "unknown",
+      "source_set": [
+        {
+          "provided_file": "synthetic_non_corpus_probe",
+          "sha256": null,
+          "bytes": 0
+        }
+      ],
+      "json_schema_requested": true,
+      "json_schema_valid": false,
+      "early_stop": "returned_model_identity_mismatch",
+      "error": null,
+      "fallback_events": 0,
+      "metrics_file": "validation/work/Gate-C-v2/outputs/attempt-02/by-model/opencode-zen__mimo-v2.6-flash-free/preflight/run-11/run-metrics.json"
+    },
+    {
+      "requested_model_id": "openrouter/google/gemma-4-31b-it:free",
+      "returned_model_id": "keepalive",
+      "identity_verified": false,
+      "http_status": 200,
+      "finish_reason": null,
+      "ttft_seconds": null,
+      "total_latency_seconds": 2.034,
+      "input_tokens": null,
+      "output_tokens": null,
+      "usage": null,
+      "cost": null,
+      "cost_source": "unknown",
+      "source_set": [
+        {
+          "provided_file": "synthetic_non_corpus_probe",
+          "sha256": null,
+          "bytes": 0
+        }
+      ],
+      "json_schema_requested": true,
+      "json_schema_valid": false,
+      "early_stop": "returned_model_identity_mismatch",
+      "error": null,
+      "fallback_events": 0,
+      "metrics_file": "validation/work/Gate-C-v2/outputs/attempt-02/by-model/openrouter__google__gemma-4-31b-it_free/preflight/run-08/run-metrics.json"
+    },
+    {
+      "requested_model_id": "openrouter/nvidia/nemotron-3.5-lightning:free",
+      "returned_model_id": "keepalive",
+      "identity_verified": false,
+      "http_status": 200,
+      "finish_reason": null,
+      "ttft_seconds": null,
+      "total_latency_seconds": 2.027,
+      "input_tokens": null,
+      "output_tokens": null,
+      "usage": null,
+      "cost": null,
+      "cost_source": "unknown",
+      "source_set": [
+        {
+          "provided_file": "synthetic_non_corpus_probe",
+          "sha256": null,
+          "bytes": 0
+        }
+      ],
+      "json_schema_requested": true,
+      "json_schema_valid": false,
+      "early_stop": "returned_model_identity_mismatch",
+      "error": null,
+      "fallback_events": 0,
+      "metrics_file": "validation/work/Gate-C-v2/outputs/attempt-02/by-model/openrouter__nvidia__nemotron-3.5-lightning_free/preflight/run-09/run-metrics.json"
+    },
+    {
+      "model_id_requested": "openrouter/qwen/qwen3.8-27b:free",
+      "model_id_returned": "keepalive",
+      "identity_verified": false,
+      "identity_resolution": "mismatch_or_ambiguous",
+      "task_id": "preflight",
+      "run_id": 7,
+      "kind": "probe",
+      "timestamp_utc": "2026-09-30T16:31:22.697979+00:00",
+      "http_status": 200,
+      "non_empty_content": false,
+      "finish_reason": null,
+      "finish_reason_valid": false,
+      "response_id": "chatcmpl-keepalive",
+      "sse_event_count": 1,
+      "json_transport_body": false,
+      "ttft_seconds": null,
+      "ttft_basis": "not_measurable",
+      "total_latency_seconds": 2.899,
+      "input_tokens": null,
+      "output_tokens": null,
+      "provider_usage": null,
+      "tokens_per_second_after_ttft": null,
+      "output_characters": 0,
+      "output_words_whitespace": 0,
+      "cost": null,
+      "cost_source": "unknown",
+      "response_headers_sanitized": {
+        "content-type": "text/event-stream; charset=utf-8",
+        "x-request-id": "52234b6d-418e-44d1-95a3-33e55fade96a"
+      },
+      "request_parameters": {
+        "model": "openrouter/qwen/qwen3.8-27b:free",
+        "temperature": 0.2,
+        "top_p": 0.9,
+        "stream": true,
+        "stream_options": {
+          "include_usage": true
+        },
+        "max_tokens": 160
+      },
+      "response_format_mode": "json_schema",
+      "source_set": [
+        {
+          "provided_file": "synthetic_non_corpus_probe",
+          "sha256": null,
+          "bytes": 0
+        }
+      ],
+      "error": null,
+      "transport_early_stop": "returned_model_identity_mismatch",
+      "fallback_events": 0,
+      "repair_attempt": false,
+      "request_success": false,
+      "metrics_file": "validation/work/Gate-C-v2/outputs/attempt-02/by-model/openrouter__qwen__qwen3.8-27b_free/preflight/run-07/run-metrics.json"
+    }
+  ],
+  "summary": {
+    "probe_calls": 11,
+    "latency_min_seconds": 2.013,
+    "latency_median_seconds": 2.044,
+    "latency_max_seconds": 16.262,
+    "ttft_measurable_calls": 0,
+    "provider_usage_calls": 0,
+    "reliable_cost": "unknown",
+    "corpus_generation_calls": 0
+  }
+}

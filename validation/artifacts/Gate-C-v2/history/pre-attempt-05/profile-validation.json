@@ -1,0 +1,137 @@
+{
+  "schema_version": 1,
+  "benchmark": "Gate-C-v2",
+  "status": "TECHNICAL_FAIL_NO_OPERATIONAL_ROUTE",
+  "catalog_captured_at_utc": "2026-09-30T16:29:58.878869+00:00",
+  "cohort_model_ids": [],
+  "cohort_target": 3,
+  "candidate_statuses": {
+    "agy/gemini-3.8-flash-tiered": {
+      "model_id": "agy/gemini-3.8-flash-tiered",
+      "preflight_status": "UNAVAILABLE_FOR_TEST / GATEWAY_DISCREPANCY",
+      "preflight_result_path": "validation/work/Gate-C-v2/outputs/attempt-02/by-model/agy__gemini-3.8-flash-tiered/preflight/run-01/run-metrics.json",
+      "remote.generation": "UNAVAILABLE_FOR_TEST",
+      "remote.longform": "UNAVAILABLE_FOR_TEST",
+      "remote.reasoning": "HISTORICAL_ELIGIBLE_BUT_CURRENT_ROUTE_UNAVAILABLE"
+    },
+    "mistral/mistral-medium-3-5": {
+      "model_id": "mistral/mistral-medium-3-5",
+      "preflight_status": "UNAVAILABLE_FOR_TEST / GATEWAY_DISCREPANCY",
+      "preflight_result_path": "validation/work/Gate-C-v2/outputs/attempt-02/by-model/mistral__mistral-medium-3-5/preflight/run-02/run-metrics.json",
+      "remote.generation": "UNAVAILABLE_FOR_TEST",
+      "remote.longform": "UNAVAILABLE_FOR_TEST",
+      "remote.reasoning": "NOT_TESTED"
+    },
+    "opencode-zen/mimo-v2.5-free": {
+      "model_id": "opencode-zen/mimo-v2.5-free",
+      "preflight_status": "UNAVAILABLE_FOR_TEST / GATEWAY_DISCREPANCY",
+      "preflight_result_path": "validation/work/Gate-C-v2/outputs/attempt-02/by-model/opencode-zen__mimo-v2.5-free/preflight/run-03/run-metrics.json",
+      "remote.generation": "UNAVAILABLE_FOR_TEST",
+      "remote.longform": "UNAVAILABLE_FOR_TEST",
+      "remote.reasoning": "NOT_TESTED"
+    },
+    "nvidia/moonshotai/kimi-k3": {
+      "model_id": "nvidia/moonshotai/kimi-k3",
+      "preflight_status": "UNAVAILABLE_FOR_TEST / GATEWAY_DISCREPANCY",
+      "preflight_result_path": "validation/work/Gate-C-v2/outputs/attempt-02/by-model/nvidia__moonshotai__kimi-k3/preflight/run-04/run-metrics.json",
+      "remote.generation": "UNAVAILABLE_FOR_TEST",
+      "remote.longform": "UNAVAILABLE_FOR_TEST",
+      "remote.reasoning": "NOT_TESTED"
+    },
+    "nvidia/deepseek-ai/deepseek-v4.1-flash": {
+      "model_id": "nvidia/deepseek-ai/deepseek-v4.1-flash",
+      "preflight_status": "UNAVAILABLE_FOR_TEST / GATEWAY_DISCREPANCY",
+      "preflight_result_path": "validation/work/Gate-C-v2/outputs/attempt-02/by-model/nvidia__deepseek-ai__deepseek-v4.1-flash/preflight/run-05/run-metrics.json",
+      "remote.generation": "UNAVAILABLE_FOR_TEST",
+      "remote.longform": "UNAVAILABLE_FOR_TEST",
+      "remote.reasoning": "NOT_TESTED"
+    },
+    "groq/openai/gpt-oss-120b": {
+      "model_id": "groq/openai/gpt-oss-120b",
+      "preflight_status": "UNAVAILABLE_FOR_TEST / GATEWAY_DISCREPANCY",
+      "preflight_result_path": "validation/work/Gate-C-v2/outputs/attempt-02/by-model/groq__openai__gpt-oss-120b/preflight/run-06/run-metrics.json",
+      "remote.generation": "UNAVAILABLE_FOR_TEST",
+      "remote.longform": "UNAVAILABLE_FOR_TEST",
+      "remote.reasoning": "NOT_TESTED"
+    },
+    "openrouter/qwen/qwen3.8-27b:free": {
+      "model_id": "openrouter/qwen/qwen3.8-27b:free",
+      "preflight_status": "UNAVAILABLE_FOR_TEST / GATEWAY_DISCREPANCY",
+      "preflight_result_path": "validation/work/Gate-C-v2/outputs/attempt-02/by-model/openrouter__qwen__qwen3.8-27b_free/preflight/run-07/run-metrics.json",
+      "remote.generation": "UNAVAILABLE_FOR_TEST",
+      "remote.longform": "UNAVAILABLE_FOR_TEST",
+      "remote.reasoning": "NOT_TESTED"
+    },
+    "openrouter/google/gemma-4-31b-it:free": {
+      "model_id": "openrouter/google/gemma-4-31b-it:free",
+      "preflight_status": "UNAVAILABLE_FOR_TEST / GATEWAY_DISCREPANCY",
+      "preflight_result_path": "validation/work/Gate-C-v2/outputs/attempt-02/by-model/openrouter__google__gemma-4-31b-it_free/preflight/run-08/run-metrics.json",
+      "remote.generation": "UNAVAILABLE_FOR_TEST",
+      "remote.longform": "UNAVAILABLE_FOR_TEST",
+      "remote.reasoning": "NOT_TESTED"
+    },
+    "openrouter/nvidia/nemotron-3.5-lightning:free": {
+      "model_id": "openrouter/nvidia/nemotron-3.5-lightning:free",
+      "preflight_status": "UNAVAILABLE_FOR_TEST / GATEWAY_DISCREPANCY",
+      "preflight_result_path": "validation/work/Gate-C-v2/outputs/attempt-02/by-model/openrouter__nvidia__nemotron-3.5-lightning_free/preflight/run-09/run-metrics.json",
+      "remote.generation": "UNAVAILABLE_FOR_TEST",
+      "remote.longform": "UNAVAILABLE_FOR_TEST",
+      "remote.reasoning": "NOT_TESTED"
+    },
+    "nvidia/z-ai/glm-5.3": {
+      "model_id": "nvidia/z-ai/glm-5.3",
+      "preflight_status": "UNAVAILABLE_FOR_TEST / GATEWAY_DISCREPANCY",
+      "preflight_result_path": "validation/work/Gate-C-v2/outputs/attempt-02/by-model/nvidia__z-ai__glm-5.3/preflight/run-10/run-metrics.json",
+      "remote.generation": "UNAVAILABLE_FOR_TEST",
+      "remote.longform": "UNAVAILABLE_FOR_TEST",
+      "remote.reasoning": "NOT_TESTED"
+    },
+    "opencode-zen/mimo-v2.6-flash-free": {
+      "model_id": "opencode-zen/mimo-v2.6-flash-free",
+      "preflight_status": "UNAVAILABLE_FOR_TEST / GATEWAY_DISCREPANCY",
+      "preflight_result_path": "validation/work/Gate-C-v2/outputs/attempt-02/by-model/opencode-zen__mimo-v2.6-flash-free/preflight/run-11/run-metrics.json",
+      "remote.generation": "UNAVAILABLE_FOR_TEST",
+      "remote.longform": "UNAVAILABLE_FOR_TEST",
+      "remote.reasoning": "NOT_TESTED"
+    }
+  },
+  "generation_longform_human_eligibility": "NOT_ASSESSED_NO_COHORT",
+  "remote_reasoning_historical_evidence": {
+    "model_id": "agy/gemini-3.8-flash-tiered",
+    "v1_status": "ELIGIBLE (VALIDATED for bounded Teacher Service reasoning tasks)",
+    "current_route_probe": {
+      "candidate_model_id": "agy/gemini-3.8-flash-tiered",
+      "probe_index": 1,
+      "http_status": 200,
+      "content_non_empty": false,
+      "requested_model_id": "agy/gemini-3.8-flash-tiered",
+      "returned_model_id": "keepalive",
+      "identity_verified": false,
+      "identity_resolution": "mismatch_or_ambiguous",
+      "finish_reason": null,
+      "finish_reason_valid": false,
+      "json_schema_requested": true,
+      "json_parse_valid": false,
+      "schema_valid": false,
+      "semantic_valid": false,
+      "ttft_seconds": null,
+      "total_latency_seconds": 2.048,
+      "input_tokens": null,
+      "output_tokens": null,
+      "usage": null,
+      "cost": null,
+      "cost_source": "unknown",
+      "route_usable": false,
+      "classification": "UNAVAILABLE_FOR_TEST / GATEWAY_DISCREPANCY",
+      "failure_reasons": [
+        "empty_content",
+        "model_identity_unverified",
+        "finish_reason_not_stop",
+        "strict_json_schema_invalid"
+      ],
+      "metrics_path": "validation/work/Gate-C-v2/outputs/attempt-02/by-model/agy__gemini-3.8-flash-tiered/preflight/run-01/run-metrics.json"
+    },
+    "regression_state": "AVAILABILITY_REGRESSION_AT_CURRENT_PREFLIGHT; historical task-quality evidence retained",
+    "historical_artifacts_preserved": true
+  }
+}

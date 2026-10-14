@@ -1,0 +1,306 @@
+{
+  "schema_version": 1,
+  "benchmark": "Gate-C-v2",
+  "status": "TECHNICAL_FAIL_NO_OPERATIONAL_ROUTE",
+  "catalog_captured_at_utc": "2026-09-30T16:29:58.878869+00:00",
+  "preflight_status": "COHORT_SHORTFALL",
+  "probe_count": 11,
+  "preflight_failures": 11,
+  "cohort_model_ids": [],
+  "attempt_02_corpus_generation_calls": 0,
+  "attempt_02_source_files_sent_to_chat_completions": [],
+  "historical_invalidated_attempt_01": {
+    "status": "INVALIDATED_NOT_COUNTED",
+    "dbms_source_sent_to_model_ids": [
+      "agy/gemini-3.8-flash-tiered",
+      "groq/openai/gpt-oss-120b",
+      "openrouter/qwen/qwen3.8-27b:free"
+    ],
+    "excel_source_sent": false,
+    "held_out_reference_sent": false
+  },
+  "reasoning_regression_state": "AVAILABILITY_REGRESSION_AT_CURRENT_PREFLIGHT; historical task-quality evidence retained",
+  "artifact_files": [
+    {
+      "path": "validation/artifacts/Gate-C-v2/catalog-snapshot.json",
+      "sha256": "db20bebb5243ebf79fe110fd0698f608c683b572b2cd98b835c77a33bf1d26b6",
+      "bytes": 55464
+    },
+    {
+      "path": "validation/artifacts/Gate-C-v2/deterministic-checks.json",
+      "sha256": "be0fe214152a1abc1bd4b445043dc6210dc3a11375e69e4552a6e5cc9fcfcab6",
+      "bytes": 6514
+    },
+    {
+      "path": "validation/artifacts/Gate-C-v2/preflight-results.json",
+      "sha256": "e4d3c6ce58eba7b597cb74ecb8f30ff22bf827ade2963b6a467632b211adf6af",
+      "bytes": 13330
+    },
+    {
+      "path": "validation/artifacts/Gate-C-v2/profile-validation.json",
+      "sha256": "248e099228777825932ea78f1f9b4828f60a4036852eebeeafa169869d257fa0",
+      "bytes": 6981
+    },
+    {
+      "path": "validation/artifacts/Gate-C-v2/review-key.json",
+      "sha256": "f911282416846af0f7b6474d6a51245d45854e22c216753e48da80293afaf785",
+      "bytes": 225
+    },
+    {
+      "path": "validation/artifacts/Gate-C-v2/runtime-metrics.json",
+      "sha256": "c51f41177e59bafb2f1e8920c61b9288428cf86484624d328ca96d11f3224677",
+      "bytes": 16998
+    },
+    {
+      "path": "validation/work/Gate-C-v2/inputs/candidate-selection.md",
+      "sha256": "abe40a2751cda303bb62044b33ec0e90621561d90477dc30f59675ff5dff0665",
+      "bytes": 6075
+    },
+    {
+      "path": "validation/work/Gate-C-v2/inputs/candidate-selection.json",
+      "sha256": "26c4c4e46a88197bdfab43e1f0474ef9d1f7c86f12b60032aeb6762d1b88c32c",
+      "bytes": 10853
+    },
+    {
+      "path": "validation/work/Gate-C-v2/inputs/preflight-results.json",
+      "sha256": "e4d3c6ce58eba7b597cb74ecb8f30ff22bf827ade2963b6a467632b211adf6af",
+      "bytes": 13330
+    },
+    {
+      "path": "validation/work/Gate-C-v2/inputs/source-reference-audit.json",
+      "sha256": "1174fffd39738d712e80feaa5891802b477569e86e77fc2b747ed1c6aa21266d",
+      "bytes": 3436
+    },
+    {
+      "path": "validation/work/Gate-C-v2/outputs/attempt-02/by-model/agy__gemini-3.8-flash-tiered/preflight/run-01/request.json",
+      "sha256": "7f2a272626ae9921d04e5da892b0faa8ed63b487e444a7e2b3ed505678956c2c",
+      "bytes": 1020
+    },
+    {
+      "path": "validation/work/Gate-C-v2/outputs/attempt-02/by-model/agy__gemini-3.8-flash-tiered/preflight/run-01/response.raw.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "validation/work/Gate-C-v2/outputs/attempt-02/by-model/agy__gemini-3.8-flash-tiered/preflight/run-01/response.sse.txt",
+      "sha256": "6102a8bba6d825396db860210682fb5bb481cbbd6b006ce11cb3c06e49c6bb0e",
+      "bytes": 155
+    },
+    {
+      "path": "validation/work/Gate-C-v2/outputs/attempt-02/by-model/agy__gemini-3.8-flash-tiered/preflight/run-01/run-metrics.json",
+      "sha256": "2bc361744b70c0a70f078f014962b0438137d4738fc716b1e3b7e519da65b9a7",
+      "bytes": 1500
+    },
+    {
+      "path": "validation/work/Gate-C-v2/outputs/attempt-02/by-model/groq__openai__gpt-oss-120b/preflight/run-06/request.json",
+      "sha256": "481705e273a93d6972eefa717ad02fd12de753e9ceccbb5c6fe19532a554934a",
+      "bytes": 1017
+    },
+    {
+      "path": "validation/work/Gate-C-v2/outputs/attempt-02/by-model/groq__openai__gpt-oss-120b/preflight/run-06/response.raw.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "validation/work/Gate-C-v2/outputs/attempt-02/by-model/groq__openai__gpt-oss-120b/preflight/run-06/response.sse.txt",
+      "sha256": "6102a8bba6d825396db860210682fb5bb481cbbd6b006ce11cb3c06e49c6bb0e",
+      "bytes": 155
+    },
+    {
+      "path": "validation/work/Gate-C-v2/outputs/attempt-02/by-model/groq__openai__gpt-oss-120b/preflight/run-06/run-metrics.json",
+      "sha256": "f7f7f3520f1e5aed4e72459d9fb6a208ae71f5e02fbcafdfb2b96c1a0ecfd17e",
+      "bytes": 1494
+    },
+    {
+      "path": "validation/work/Gate-C-v2/outputs/attempt-02/by-model/mistral__mistral-medium-3-5/preflight/run-02/request.json",
+      "sha256": "2274230fd902a1d6608201df32a5c027a21b382cfd8eb5aa4b57af79ab24a59d",
+      "bytes": 1019
+    },
+    {
+      "path": "validation/work/Gate-C-v2/outputs/attempt-02/by-model/mistral__mistral-medium-3-5/preflight/run-02/response.raw.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "validation/work/Gate-C-v2/outputs/attempt-02/by-model/mistral__mistral-medium-3-5/preflight/run-02/response.sse.txt",
+      "sha256": "6102a8bba6d825396db860210682fb5bb481cbbd6b006ce11cb3c06e49c6bb0e",
+      "bytes": 155
+    },
+    {
+      "path": "validation/work/Gate-C-v2/outputs/attempt-02/by-model/mistral__mistral-medium-3-5/preflight/run-02/run-metrics.json",
+      "sha256": "bdd0c0a846a81379b4286a684f7f20cc1372ad2b7456fa359ba79eb8917864b6",
+      "bytes": 1498
+    },
+    {
+      "path": "validation/work/Gate-C-v2/outputs/attempt-02/by-model/nvidia__deepseek-ai__deepseek-v4.1-flash/preflight/run-05/request.json",
+      "sha256": "616a2c1192b9a507fe43921ce65d3aedcbf673d4404069d70d6058981f2ff287",
+      "bytes": 1031
+    },
+    {
+      "path": "validation/work/Gate-C-v2/outputs/attempt-02/by-model/nvidia__deepseek-ai__deepseek-v4.1-flash/preflight/run-05/response.raw.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "validation/work/Gate-C-v2/outputs/attempt-02/by-model/nvidia__deepseek-ai__deepseek-v4.1-flash/preflight/run-05/response.sse.txt",
+      "sha256": "6102a8bba6d825396db860210682fb5bb481cbbd6b006ce11cb3c06e49c6bb0e",
+      "bytes": 155
+    },
+    {
+      "path": "validation/work/Gate-C-v2/outputs/attempt-02/by-model/nvidia__deepseek-ai__deepseek-v4.1-flash/preflight/run-05/run-metrics.json",
+      "sha256": "e4aedc4e889edc7c130ebe7286ef86d634a5119bdd4efe412871af508db60cdf",
+      "bytes": 1522
+    },
+    {
+      "path": "validation/work/Gate-C-v2/outputs/attempt-02/by-model/nvidia__moonshotai__kimi-k3/preflight/run-04/request.json",
+      "sha256": "26643d009fb1c861086e6b860311779a2b628d3fc9ae535de041a7532de32316",
+      "bytes": 1018
+    },
+    {
+      "path": "validation/work/Gate-C-v2/outputs/attempt-02/by-model/nvidia__moonshotai__kimi-k3/preflight/run-04/response.raw.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "validation/work/Gate-C-v2/outputs/attempt-02/by-model/nvidia__moonshotai__kimi-k3/preflight/run-04/response.sse.txt",
+      "sha256": "6102a8bba6d825396db860210682fb5bb481cbbd6b006ce11cb3c06e49c6bb0e",
+      "bytes": 155
+    },
+    {
+      "path": "validation/work/Gate-C-v2/outputs/attempt-02/by-model/nvidia__moonshotai__kimi-k3/preflight/run-04/run-metrics.json",
+      "sha256": "047bd9cda96f410e68949a6fa464d2ccdadf81b2d4109279175938adc7f4846f",
+      "bytes": 1496
+    },
+    {
+      "path": "validation/work/Gate-C-v2/outputs/attempt-02/by-model/nvidia__z-ai__glm-5.3/preflight/run-10/request.json",
+      "sha256": "adf488aaf1e3dc08d480877b967aa9df0dc16442eb9a25eaf01af99cf4a644d7",
+      "bytes": 1012
+    },
+    {
+      "path": "validation/work/Gate-C-v2/outputs/attempt-02/by-model/nvidia__z-ai__glm-5.3/preflight/run-10/response.raw.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "validation/work/Gate-C-v2/outputs/attempt-02/by-model/nvidia__z-ai__glm-5.3/preflight/run-10/response.sse.txt",
+      "sha256": "6102a8bba6d825396db860210682fb5bb481cbbd6b006ce11cb3c06e49c6bb0e",
+      "bytes": 155
+    },
+    {
+      "path": "validation/work/Gate-C-v2/outputs/attempt-02/by-model/nvidia__z-ai__glm-5.3/preflight/run-10/run-metrics.json",
+      "sha256": "e54553716abaf23a8ca635489a530fc3c576bd26c3d4d1daa3ffffbf5b577689",
+      "bytes": 614
+    },
+    {
+      "path": "validation/work/Gate-C-v2/outputs/attempt-02/by-model/opencode-zen__mimo-v2.5-free/preflight/run-03/request.json",
+      "sha256": "9c72b252667eb4b4fcd181e4e668a082cf22171188b68fc84c4de53e78e128cf",
+      "bytes": 1020
+    },
+    {
+      "path": "validation/work/Gate-C-v2/outputs/attempt-02/by-model/opencode-zen__mimo-v2.5-free/preflight/run-03/response.raw.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "validation/work/Gate-C-v2/outputs/attempt-02/by-model/opencode-zen__mimo-v2.5-free/preflight/run-03/response.sse.txt",
+      "sha256": "6102a8bba6d825396db860210682fb5bb481cbbd6b006ce11cb3c06e49c6bb0e",
+      "bytes": 155
+    },
+    {
+      "path": "validation/work/Gate-C-v2/outputs/attempt-02/by-model/opencode-zen__mimo-v2.5-free/preflight/run-03/run-metrics.json",
+      "sha256": "8d5d6ced7027c44b08e8037933479d3c1a0ea9466a9b4244b7f5dfec0c3b2f76",
+      "bytes": 1501
+    },
+    {
+      "path": "validation/work/Gate-C-v2/outputs/attempt-02/by-model/opencode-zen__mimo-v2.6-flash-free/preflight/run-11/request.json",
+      "sha256": "0f8b21f6d76a6eb2b1974150a60b89edfd5f83cea50eb260536a992759e2b63d",
+      "bytes": 1026
+    },
+    {
+      "path": "validation/work/Gate-C-v2/outputs/attempt-02/by-model/opencode-zen__mimo-v2.6-flash-free/preflight/run-11/response.raw.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "validation/work/Gate-C-v2/outputs/attempt-02/by-model/opencode-zen__mimo-v2.6-flash-free/preflight/run-11/response.sse.txt",
+      "sha256": "6102a8bba6d825396db860210682fb5bb481cbbd6b006ce11cb3c06e49c6bb0e",
+      "bytes": 155
+    },
+    {
+      "path": "validation/work/Gate-C-v2/outputs/attempt-02/by-model/opencode-zen__mimo-v2.6-flash-free/preflight/run-11/run-metrics.json",
+      "sha256": "fb57c327690e6237f691dfd79c20ad0a36920028eb5709231dcb71dcd279028a",
+      "bytes": 629
+    },
+    {
+      "path": "validation/work/Gate-C-v2/outputs/attempt-02/by-model/openrouter__google__gemma-4-31b-it_free/preflight/run-08/request.json",
+      "sha256": "258455a09361e4603798dde7f6cbb0a491d2f58755c2dc224685b9634eb6128f",
+      "bytes": 1030
+    },
+    {
+      "path": "validation/work/Gate-C-v2/outputs/attempt-02/by-model/openrouter__google__gemma-4-31b-it_free/preflight/run-08/response.raw.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "validation/work/Gate-C-v2/outputs/attempt-02/by-model/openrouter__google__gemma-4-31b-it_free/preflight/run-08/response.sse.txt",
+      "sha256": "6102a8bba6d825396db860210682fb5bb481cbbd6b006ce11cb3c06e49c6bb0e",
+      "bytes": 155
+    },
+    {
+      "path": "validation/work/Gate-C-v2/outputs/attempt-02/by-model/openrouter__google__gemma-4-31b-it_free/preflight/run-08/run-metrics.json",
+      "sha256": "7d62b7a1b2084bd2a9b3c45a7121704b6669cfabd50b0410c2e723f31cc48ddb",
+      "bytes": 632
+    },
+    {
+      "path": "validation/work/Gate-C-v2/outputs/attempt-02/by-model/openrouter__nvidia__nemotron-3.5-lightning_free/preflight/run-09/request.json",
+      "sha256": "4be697b57b9dbcedabc3e116f4a3e0083d54f565ca372209a8098b66dfb2fe21",
+      "bytes": 1038
+    },
+    {
+      "path": "validation/work/Gate-C-v2/outputs/attempt-02/by-model/openrouter__nvidia__nemotron-3.5-lightning_free/preflight/run-09/response.raw.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "validation/work/Gate-C-v2/outputs/attempt-02/by-model/openrouter__nvidia__nemotron-3.5-lightning_free/preflight/run-09/response.sse.txt",
+      "sha256": "6102a8bba6d825396db860210682fb5bb481cbbd6b006ce11cb3c06e49c6bb0e",
+      "bytes": 155
+    },
+    {
+      "path": "validation/work/Gate-C-v2/outputs/attempt-02/by-model/openrouter__nvidia__nemotron-3.5-lightning_free/preflight/run-09/run-metrics.json",
+      "sha256": "fbe743bbaf9099e9fb3ebacadfdac8b57789f4b59b378220b6721189b1a1edbf",
+      "bytes": 640
+    },
+    {
+      "path": "validation/work/Gate-C-v2/outputs/attempt-02/by-model/openrouter__qwen__qwen3.8-27b_free/preflight/run-07/request.json",
+      "sha256": "eea052f8d4bd02bed6fd8a23e1ae4242eb6ddb7835ae09c946052d9b9afd2f98",
+      "bytes": 1025
+    },
+    {
+      "path": "validation/work/Gate-C-v2/outputs/attempt-02/by-model/openrouter__qwen__qwen3.8-27b_free/preflight/run-07/response.raw.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "validation/work/Gate-C-v2/outputs/attempt-02/by-model/openrouter__qwen__qwen3.8-27b_free/preflight/run-07/response.sse.txt",
+      "sha256": "6102a8bba6d825396db860210682fb5bb481cbbd6b006ce11cb3c06e49c6bb0e",
+      "bytes": 155
+    },
+    {
+      "path": "validation/work/Gate-C-v2/outputs/attempt-02/by-model/openrouter__qwen__qwen3.8-27b_free/preflight/run-07/run-metrics.json",
+      "sha256": "79d225392a4e1408889bf9b5567b2377abb3e479e3082c6e0b720fafe1f3a493",
+      "bytes": 1510
+    },
+    {
+      "path": "validation/results/Gate-C-v2-remote-models-report.md",
+      "sha256": "b6298c0660c0c2dc01b652e17557e2468c78ae1f2df20e44ff2c0a65f3cf34cc",
+      "bytes": 11130
+    },
+    {
+      "path": "validation/results/Gate-C-v2-human-review-packet.md",
+      "sha256": "8fa587c9c846a798145f9621b0d231993c70e3bd3e51701519cffe6ca072cf2f",
+      "bytes": 1064
+    }
+  ],
+  "manifest_self_hash": "omitted"
+}

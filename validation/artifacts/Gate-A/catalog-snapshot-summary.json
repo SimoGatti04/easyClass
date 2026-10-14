@@ -1,0 +1,44 @@
+{
+  "timestamp": "2026-09-30T00:03:59.903662+00:00",
+  "sources": {
+    "omniroute": {
+      "source": "OmniRoute",
+      "success": true,
+      "endpoint_used": "http://198.51.100.13/v1/models",
+      "endpoint_class": "LAN",
+      "status_code": 200,
+      "latency_ms": 27.06,
+      "models_count": 8,
+      "auth_required": false,
+      "error": null
+    },
+    "omlx": {
+      "source": "oMLX",
+      "success": true,
+      "endpoint_used": "http://127.0.0.1:8000/v1/models",
+      "endpoint_class": "LOCAL",
+      "status_code": 200,
+      "latency_ms": 3.95,
+      "models_count": 6,
+      "auth_required": false,
+      "error": null
+    }
+  },
+  "registry": {
+    "total_models": 14,
+    "discovered": 0,
+    "compatible": 14,
+    "profiles": {
+      "local.embedding": 1,
+      "local.semantic_small": 3,
+      "local.reranker": 1,
+      "local.typed_decision": 4,
+      "remote.fast": 1,
+      "remote.generation": 8,
+      "remote.longform": 8,
+      "remote.reasoning": 8,
+      "remote.research": 7,
+      "remote.multimodal": 4
+    }
+  }
+}

@@ -1,0 +1,85 @@
+{
+  "schema_version": 1,
+  "test_suite": "Gate-C-v2 OmniRoute SSE transport synthetic regressions",
+  "provider_calls": 0,
+  "corpus_sent": false,
+  "results": [
+    {
+      "case": "A_keepalive_real_content_stop_done",
+      "expected": "PASS",
+      "actual": "PASS",
+      "checks": {
+        "heartbeat_events": 1,
+        "returned_model_id": "agy/gemini-3.8-flash-tiered",
+        "response_id": "chatcmpl-a",
+        "content": "ok",
+        "finish_reason": "stop",
+        "termination": "done"
+      }
+    },
+    {
+      "case": "B_interleaved_keepalive_reasoning_content_usage_done",
+      "expected": "PASS",
+      "actual": "PASS",
+      "checks": {
+        "heartbeat_events": 2,
+        "content": "answer",
+        "finish_reason": "stop",
+        "usage": {
+          "prompt_tokens": 4,
+          "completion_tokens": 2
+        },
+        "termination": "done"
+      }
+    },
+    {
+      "case": "C_heartbeat_only_simulated_timeout",
+      "expected": "HEARTBEAT_ONLY_TIMEOUT",
+      "actual": "HEARTBEAT_ONLY_TIMEOUT",
+      "checks": {
+        "heartbeat_events": 1,
+        "actual_model_ids_seen": [],
+        "content_non_empty": false
+      }
+    },
+    {
+      "case": "D_incompatible_real_model_ids",
+      "expected": "IDENTITY_FAILURE",
+      "actual": "IDENTITY_FAILURE",
+      "checks": {
+        "actual_model_ids_seen": [
+          "provider-a/family/model-a",
+          "provider-b/family/model-b"
+        ],
+        "identity_failure": {
+          "returned_model_id": "provider-b/family/model-b",
+          "requested_model_id": "provider-a/family/model-a",
+          "verified": false,
+          "resolution": "mismatch_or_ambiguous"
+        }
+      }
+    },
+    {
+      "case": "E_unique_provider_native_model_alias",
+      "expected": "PASS",
+      "actual": "PASS",
+      "checks": {
+        "resolution": "unique_catalog_alias",
+        "actual_model_ids_seen": [
+          "gemini-3.8-flash-tiered"
+        ],
+        "identity_verified": true
+      }
+    },
+    {
+      "case": "F_structural_empty_heartbeat_does_not_hide_real_identity",
+      "expected": "PASS",
+      "actual": "PASS",
+      "checks": {
+        "empty_chunk_is_heartbeat": true,
+        "real_model_event_is_not_heartbeat": true
+      }
+    }
+  ],
+  "status": "PASS"
+}

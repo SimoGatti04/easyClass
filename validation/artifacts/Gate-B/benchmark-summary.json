@@ -1,0 +1,40 @@
+{
+  "gate": "Gate B — Local Capability Validation",
+  "result": "PARTIAL",
+  "gate_c_readiness": "BLOCKED",
+  "new_semantic_benchmarks": {
+    "status": "BLOCKED",
+    "grounding_gold_count": 0,
+    "tagging_gold_count": 0,
+    "artifact_check_gold_count": 0,
+    "accuracy": null,
+    "f1": null,
+    "confusion_matrices": null,
+    "model_latency": null,
+    "calibration": "NOT_RUN",
+    "reason": "A qualified human annotator has not been identified to independently author/review the ground-truth labels. No gold dataset or semantic model evaluation was used."
+  },
+  "reused_evidence": {
+    "B1": ["Marker PDF", "MinerU Office"],
+    "B2": ["Qwen3-Embedding-0.6B eligible for demonstrated dense retrieval", "FTS5 exact/lexical useful", "Qwen3-Reranker-0.6B not a default"],
+    "B4": ["file type and source category deterministic", "simple subject/local-search baselines meet or exceed Rizzo on tested cases", "Rizzo relevance only suggest-only recall expansion"]
+  },
+  "offline_deterministic_audit": "validation/work/Gate-B/metrics/deterministic-audit.json",
+  "runtime_discovery": {
+    "status": "COMPLETED",
+    "scope": "one localhost model inventory request only; no inference request",
+    "models_seen": ["MiniCPM5-2B-MLX", "Ornith-1.5-9B-MLX-4bit", "Qwen3-Embedding-0.6B", "Qwen3-Reranker-0.6B"],
+    "credentials_logged": false
+  },
+  "automation_boundary": {
+    "structural_checks": "AUTO_INTERNAL",
+    "semantic_grounding": "UNVERIFIED; not authoritative",
+    "grade_or_integrity_decisions": "FORBIDDEN_AS_AUTHORITY"
+  },
+  "limitations": [
+    "No gold labels were created or consumed.",
+    "No local model inference or embedding requests were made.",
+    "Exact-repeat counts do not evaluate semantic near-duplicates.",
+    "Existing B1/B2/B3/B4/B5 evidence is reused, not rerun; no Gate C/D work started."
+  ]
+}

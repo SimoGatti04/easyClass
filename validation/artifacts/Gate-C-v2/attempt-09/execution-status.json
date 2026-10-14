@@ -1,0 +1,136 @@
+{
+  "status": "CANDIDATE_UNAVAILABLE",
+  "attempt": "attempt-09",
+  "attempt_history": [
+    {
+      "attempt": "attempt-01",
+      "status": "INVALID_HISTORICAL_EVIDENCE"
+    },
+    {
+      "attempt": "attempt-02",
+      "status": "INVALIDATED_TRANSPORT_CLIENT_BUG"
+    },
+    {
+      "attempt": "attempt-03",
+      "status": "VALID_STAGE_A"
+    },
+    {
+      "attempt": "attempt-04",
+      "status": "VALID_STAGE_B"
+    },
+    {
+      "attempt": "attempt-05",
+      "status": "TECHNICAL_PARTIAL_RUNNER_FAILURE"
+    },
+    {
+      "attempt": "attempt-06",
+      "status": "ABORTED_PREBENCHMARK_CATALOG_TRANSPORT_FAILURE"
+    },
+    {
+      "attempt": "attempt-07",
+      "status": "RUNNER_FAILURE_PHASE1_VALID"
+    },
+    {
+      "attempt": "attempt-08",
+      "status": "RUNNER_FAILURE_BEFORE_PHASE2"
+    },
+    {
+      "attempt": "attempt-09",
+      "status": "NEXT_PHASE2_CONTINUATION"
+    }
+  ],
+  "composition": {
+    "PHASE_1_SOURCE": "attempt-07",
+    "PHASE_2_SOURCE": "attempt-09"
+  },
+  "cohort_model_ids": [
+    "agy/gemini-3.8-flash-tiered",
+    "groq/qwen/qwen3.8-27b",
+    "openrouter/dots-studio/dots-3-note-preview:free"
+  ],
+  "selected_phase2_model_ids": [
+    "agy/gemini-3.8-flash-tiered",
+    "groq/qwen/qwen3.8-27b"
+  ],
+  "availability": {
+    "agy/gemini-3.8-flash-tiered": {
+      "status": "CANDIDATE_UNAVAILABLE",
+      "guard": {
+        "candidate_model_id": "agy/gemini-3.8-flash-tiered",
+        "guard_classification": "CANDIDATE_UNAVAILABLE",
+        "failure_reason": "transport_failure_or_non_200",
+        "metrics_path": "validation/work/Gate-C-v2/outputs/attempt-09/by-model/agy__gemini-3.8-flash-tiered/availability-guard/run-01/run-metrics.json"
+      },
+      "frozen_root": "gemini-3.8-flash-tiered"
+    },
+    "groq/qwen/qwen3.8-27b": {
+      "status": "CANDIDATE_UNAVAILABLE",
+      "guard": {
+        "candidate_model_id": "groq/qwen/qwen3.8-27b",
+        "guard_classification": "CANDIDATE_UNAVAILABLE",
+        "failure_reason": "transport_failure_or_non_200",
+        "metrics_path": "validation/work/Gate-C-v2/outputs/attempt-09/by-model/groq__qwen__qwen3.8-27b/availability-guard/run-01/run-metrics.json"
+      },
+      "frozen_root": "qwen/qwen3.8-27b"
+    }
+  },
+  "phase1_matrix_complete": true,
+  "phase1_matrix_reference": {
+    "path": "validation/work/Gate-C-v2/metrics/attempt-07/phase1-matrix.json",
+    "sha256": "e105eb6a8c3b2b7bb3ab7c17df38abb3ce073760742feb706e9954020aa182ce"
+  },
+  "phase2_matrix": [
+    {
+      "model_id": "agy/gemini-3.8-flash-tiered",
+      "scenario_id": "excel_run2",
+      "deliverables": {
+        "generation": {
+          "state": "NOT_RUN",
+          "result": null,
+          "failure": {
+            "failure_code": "candidate_unavailable",
+            "failure_scope": "ROUTE_UNAVAILABLE_OR_ACCESS_DENIED",
+            "reason": "candidate_unavailable"
+          }
+        },
+        "longform": {
+          "state": "NOT_RUN",
+          "result": null,
+          "failure": {
+            "failure_code": "candidate_unavailable",
+            "failure_scope": "ROUTE_UNAVAILABLE_OR_ACCESS_DENIED",
+            "reason": "candidate_unavailable"
+          }
+        }
+      }
+    },
+    {
+      "model_id": "groq/qwen/qwen3.8-27b",
+      "scenario_id": "excel_run2",
+      "deliverables": {
+        "generation": {
+          "state": "NOT_RUN",
+          "result": null,
+          "failure": {
+            "failure_code": "candidate_unavailable",
+            "failure_scope": "ROUTE_UNAVAILABLE_OR_ACCESS_DENIED",
+            "reason": "candidate_unavailable"
+          }
+        },
+        "longform": {
+          "state": "NOT_RUN",
+          "result": null,
+          "failure": {
+            "failure_code": "candidate_unavailable",
+            "failure_scope": "ROUTE_UNAVAILABLE_OR_ACCESS_DENIED",
+            "reason": "candidate_unavailable"
+          }
+        }
+      }
+    }
+  ],
+  "global_auth_failure_confirmed": false,
+  "human_review": "required before profile eligibility",
+  "remote_calls": 5,
+  "corpus_sent": false
+}

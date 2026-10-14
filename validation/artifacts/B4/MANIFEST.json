@@ -1,0 +1,79 @@
+{
+  "schema_version": 1,
+  "benchmark": "B4 Typed Decisions / Rizzo Flow",
+  "date": "2026-09-29",
+  "gold_count": 116,
+  "gold_sha256": "de1d671383a2ef6538ae851fb7219cb7a50d2a4fdbf0eab3b581ccabcb21f147",
+  "files": [
+    {
+      "path": "validation/corpus/gold/typed-decisions-gold.jsonl",
+      "sha256": "de1d671383a2ef6538ae851fb7219cb7a50d2a4fdbf0eab3b581ccabcb21f147",
+      "size_bytes": 376556
+    },
+    {
+      "path": "validation/work/B4/inputs/labeling-and-scope.md",
+      "sha256": "60f9939a024a9e8f8d268ae0860610057a9fcd0f5e3e7dcb078a73b0971dc8c1",
+      "size_bytes": 4212
+    },
+    {
+      "path": "validation/work/B4/scripts/build_gold.py",
+      "sha256": "f63600b27c3bf1bc6d4e8b70477bf7ff260fb342697c3d992b214345ea7272f8",
+      "size_bytes": 21242
+    },
+    {
+      "path": "validation/work/B4/scripts/validate_gold.py",
+      "sha256": "80cae752bcbd358802f2c493a74f413aa888bbf3bd2c81d537d05a2a9d26b2a3",
+      "size_bytes": 1224
+    },
+    {
+      "path": "validation/work/B4/scripts/run_b4.py",
+      "sha256": "59c6399a3c3b1fa3685b458f7fca26bb35f61831f761562f7cb49d47d7a14780",
+      "size_bytes": 14899
+    },
+    {
+      "path": "validation/work/B4/scripts/assemble_report.py",
+      "sha256": "7311d6a995a2d15b0d5eda97728cec57032d5c2acc9a581c462f69e0b2a46c03",
+      "size_bytes": 21509
+    },
+    {
+      "path": "validation/work/B4/outputs/baseline-decisions.jsonl",
+      "sha256": "32468e5cb46be27c09fc5ecabb8b8d520d70c8f8046b6eafd1f92a76997db6d7",
+      "size_bytes": 49582
+    },
+    {
+      "path": "validation/work/B4/outputs/rizzo-decisions.jsonl",
+      "sha256": "d4b9e1a0eb72ba85678495da6778f8f23dd8190c9ef726080fa6080e85121bfb",
+      "size_bytes": 348197
+    },
+    {
+      "path": "validation/work/B4/metrics/metrics.json",
+      "sha256": "8e6d2dbfc03fe8044b2c11f5a2a6e749c456dd647d0e556cec23a0ff11d3f2d3",
+      "size_bytes": 16474
+    },
+    {
+      "path": "validation/results/B4-decisions-report.md",
+      "sha256": "9cfc8e87d38321f2bb5667ef99c5c67c84743ce93d4e8bfc21f62b3f332a8d25",
+      "size_bytes": 21464
+    },
+    {
+      "path": "validation/artifacts/B4/README.md",
+      "sha256": "be97993fafab483aeb794254dc9bbb8aa400e7f79a9a4053d34a68b6d24b6b0e",
+      "size_bytes": 546
+    },
+    {
+      "path": "validation/artifacts/B4/capability-metrics.json",
+      "sha256": "8e6d2dbfc03fe8044b2c11f5a2a6e749c456dd647d0e556cec23a0ff11d3f2d3",
+      "size_bytes": 16474
+    },
+    {
+      "path": "validation/artifacts/B4/confusion-matrices.json",
+      "sha256": "c36086c94bfbd1cd241bc3b52107f0f986cc39884c1dee8791dd4034d67f3df5",
+      "size_bytes": 7784
+    },
+    {
+      "path": "validation/artifacts/B4/case-outcomes.jsonl",
+      "sha256": "ab4513f37759d61f32667b8a937edda6bd8dcf64f2279013a5b194dfc6848fde",
+      "size_bytes": 44832
+    }
+  ]
+}

@@ -1,0 +1,285 @@
+{
+  "schema_version": 1,
+  "attempt": "attempt-03",
+  "catalog_http_status": 200,
+  "catalog_latency_ms": 3508.68,
+  "overall_timeout_seconds": 120,
+  "corpus_sent": false,
+  "calls": [
+    {
+      "candidate_model_id": "agy/gemini-3.8-flash-tiered",
+      "stage": "stage-a",
+      "probe_index": 1,
+      "timestamp_utc": "2026-09-30T17:17:20.953860+00:00",
+      "http_status": 200,
+      "requested_model_id": "agy/gemini-3.8-flash-tiered",
+      "actual_model_ids_seen": [
+        "gemini-3.8-flash-tiered"
+      ],
+      "returned_model_id": "gemini-3.8-flash-tiered",
+      "identity_verified": true,
+      "identity_failure": null,
+      "response_id": "chatcmpl-IUS9aueKHdOjnsEPlsnxcA",
+      "heartbeat_events": 1,
+      "heartbeat_ids": [
+        "chatcmpl-keepalive"
+      ],
+      "stream_termination": "done",
+      "content_non_empty": true,
+      "finish_reason": "stop",
+      "finish_reason_valid": true,
+      "ttft_seconds": 2.394,
+      "ttft_basis": "first_nonempty_delta.content",
+      "total_latency_seconds": 2.414,
+      "input_tokens": 98,
+      "output_tokens": 200,
+      "usage": {
+        "prompt_tokens": 98,
+        "completion_tokens": 200,
+        "total_tokens": 298,
+        "completion_tokens_details": {
+          "reasoning_tokens": 197
+        }
+      },
+      "cost": null,
+      "cost_source": "unknown",
+      "output_words_whitespace": 2,
+      "json_schema_requested": false,
+      "response_format_mode": "none",
+      "response_headers_sanitized": {
+        "content-type": "text/event-stream; charset=utf-8",
+        "x-request-id": "4beded5f-1119-4a5e-8c58-6958dc9313fb"
+      },
+      "error": null,
+      "fallback_events": 0,
+      "raw_response_path": "validation/work/Gate-C-v2/outputs/attempt-03/by-model/agy__gemini-3.8-flash-tiered/stage-a/response.sse.txt",
+      "request_path": "validation/work/Gate-C-v2/outputs/attempt-03/by-model/agy__gemini-3.8-flash-tiered/stage-a/request.json"
+    },
+    {
+      "candidate_model_id": "groq/qwen/qwen3.8-27b",
+      "stage": "stage-a",
+      "probe_index": 2,
+      "timestamp_utc": "2026-09-30T17:17:23.370547+00:00",
+      "http_status": 200,
+      "requested_model_id": "groq/qwen/qwen3.8-27b",
+      "actual_model_ids_seen": [
+        "qwen/qwen3.8-27b"
+      ],
+      "returned_model_id": "qwen/qwen3.8-27b",
+      "identity_verified": true,
+      "identity_failure": null,
+      "response_id": "chatcmpl-c72346af-36db-4f88-a682-b54a21f71e73",
+      "heartbeat_events": 0,
+      "heartbeat_ids": [],
+      "stream_termination": "done",
+      "content_non_empty": true,
+      "finish_reason": "stop",
+      "finish_reason_valid": true,
+      "ttft_seconds": 0.607,
+      "ttft_basis": "first_nonempty_delta.content",
+      "total_latency_seconds": 0.628,
+      "input_tokens": 34,
+      "output_tokens": 6,
+      "usage": {
+        "queue_time": 0.016281207,
+        "prompt_tokens": 34,
+        "prompt_time": 0.002474719,
+        "completion_tokens": 6,
+        "completion_time": 0.01253743,
+        "total_tokens": 40,
+        "total_time": 0.015012149
+      },
+      "cost": null,
+      "cost_source": "unknown",
+      "output_words_whitespace": 3,
+      "json_schema_requested": false,
+      "response_format_mode": "none",
+      "response_headers_sanitized": {
+        "content-type": "text/event-stream",
+        "server": "cloudflare",
+        "x-ratelimit-limit-requests": "1000",
+        "x-ratelimit-limit-tokens": "8000",
+        "x-ratelimit-remaining-requests": "999",
+        "x-ratelimit-remaining-tokens": "7887",
+        "x-ratelimit-reset-requests": "1m26.4s",
+        "x-ratelimit-reset-tokens": "847ms",
+        "x-request-id": "9154d0a8-738f-406a-a64c-b9edfa4a33d5"
+      },
+      "error": null,
+      "fallback_events": 0,
+      "raw_response_path": "validation/work/Gate-C-v2/outputs/attempt-03/by-model/groq__qwen__qwen3.8-27b/stage-a/response.sse.txt",
+      "request_path": "validation/work/Gate-C-v2/outputs/attempt-03/by-model/groq__qwen__qwen3.8-27b/stage-a/request.json"
+    },
+    {
+      "candidate_model_id": "openrouter/dots-studio/dots-3-note-preview:free",
+      "stage": "stage-a",
+      "probe_index": 3,
+      "timestamp_utc": "2026-09-30T17:17:24.001734+00:00",
+      "http_status": 200,
+      "requested_model_id": "openrouter/dots-studio/dots-3-note-preview:free",
+      "actual_model_ids_seen": [
+        "dots-studio/dots-3-note-preview:free"
+      ],
+      "returned_model_id": "dots-studio/dots-3-note-preview:free",
+      "identity_verified": true,
+      "identity_failure": null,
+      "response_id": "gen-1790788644-H56j9RhyNYMOtqj3MG5H",
+      "heartbeat_events": 0,
+      "heartbeat_ids": [],
+      "stream_termination": "done",
+      "content_non_empty": true,
+      "finish_reason": "stop",
+      "finish_reason_valid": true,
+      "ttft_seconds": 1.843,
+      "ttft_basis": "first_nonempty_delta.content",
+      "total_latency_seconds": 2.226,
+      "input_tokens": 37,
+      "output_tokens": 59,
+      "usage": {
+        "prompt_tokens": 37,
+        "completion_tokens": 59,
+        "total_tokens": 96,
+        "cached_tokens": 0,
+        "reasoning_tokens": 50,
+        "prompt_tokens_details": {
+          "cached_tokens": 0
+        },
+        "cache_creation_input_tokens": 0
+      },
+      "cost": null,
+      "cost_source": "unknown",
+      "output_words_whitespace": 2,
+      "json_schema_requested": false,
+      "response_format_mode": "none",
+      "response_headers_sanitized": {
+        "content-type": "text/event-stream",
+        "server": "cloudflare",
+        "x-request-id": "d44931f8-a068-4409-bc43-bc0b51ca4550"
+      },
+      "error": null,
+      "fallback_events": 0,
+      "raw_response_path": "validation/work/Gate-C-v2/outputs/attempt-03/by-model/openrouter__dots-studio__dots-3-note-preview__free/stage-a/response.sse.txt",
+      "request_path": "validation/work/Gate-C-v2/outputs/attempt-03/by-model/openrouter__dots-studio__dots-3-note-preview__free/stage-a/request.json"
+    },
+    {
+      "candidate_model_id": "groq/openai/gpt-oss-120b",
+      "stage": "stage-a",
+      "probe_index": 4,
+      "timestamp_utc": "2026-09-30T17:17:26.231383+00:00",
+      "http_status": 200,
+      "requested_model_id": "groq/openai/gpt-oss-120b",
+      "actual_model_ids_seen": [
+        "openai/gpt-oss-120b"
+      ],
+      "returned_model_id": "openai/gpt-oss-120b",
+      "identity_verified": true,
+      "identity_failure": null,
+      "response_id": "chatcmpl-4fad4ae8-02e4-4935-b23f-8fa0ed2cb687",
+      "heartbeat_events": 0,
+      "heartbeat_ids": [],
+      "stream_termination": "done",
+      "content_non_empty": false,
+      "finish_reason": "length",
+      "finish_reason_valid": true,
+      "ttft_seconds": null,
+      "ttft_basis": "not_measurable",
+      "total_latency_seconds": 0.684,
+      "input_tokens": 94,
+      "output_tokens": 96,
+      "usage": {
+        "queue_time": 0.295290839,
+        "prompt_tokens": 94,
+        "prompt_time": 0.01934164,
+        "completion_tokens": 96,
+        "completion_time": 0.200507691,
+        "total_tokens": 190,
+        "total_time": 0.219849331,
+        "completion_tokens_details": {
+          "reasoning_tokens": 94
+        }
+      },
+      "cost": null,
+      "cost_source": "unknown",
+      "output_words_whitespace": 0,
+      "json_schema_requested": false,
+      "response_format_mode": "none",
+      "response_headers_sanitized": {
+        "content-type": "text/event-stream",
+        "server": "cloudflare",
+        "x-ratelimit-limit-requests": "1000",
+        "x-ratelimit-limit-tokens": "8000",
+        "x-ratelimit-remaining-requests": "999",
+        "x-ratelimit-remaining-tokens": "7810",
+        "x-ratelimit-reset-requests": "1m26.4s",
+        "x-ratelimit-reset-tokens": "1.425s",
+        "x-request-id": "c5155596-543c-4145-afcf-5c55d881be6b"
+      },
+      "error": null,
+      "fallback_events": 0,
+      "raw_response_path": "validation/work/Gate-C-v2/outputs/attempt-03/by-model/groq__openai__gpt-oss-120b/stage-a/response.sse.txt",
+      "request_path": "validation/work/Gate-C-v2/outputs/attempt-03/by-model/groq__openai__gpt-oss-120b/stage-a/request.json"
+    },
+    {
+      "candidate_model_id": "openrouter/thinkingmachines/inkling-small:free",
+      "stage": "stage-a",
+      "probe_index": 5,
+      "timestamp_utc": "2026-09-30T17:17:26.918747+00:00",
+      "http_status": 200,
+      "requested_model_id": "openrouter/thinkingmachines/inkling-small:free",
+      "actual_model_ids_seen": [],
+      "returned_model_id": null,
+      "identity_verified": false,
+      "identity_failure": null,
+      "response_id": null,
+      "heartbeat_events": 13,
+      "heartbeat_ids": [
+        "chatcmpl-keepalive"
+      ],
+      "stream_termination": "eof",
+      "content_non_empty": false,
+      "finish_reason": null,
+      "finish_reason_valid": false,
+      "ttft_seconds": null,
+      "ttft_basis": "not_measurable",
+      "total_latency_seconds": 34.178,
+      "input_tokens": null,
+      "output_tokens": null,
+      "usage": null,
+      "cost": null,
+      "cost_source": "unknown",
+      "output_words_whitespace": 0,
+      "json_schema_requested": false,
+      "response_format_mode": "none",
+      "response_headers_sanitized": {
+        "content-type": "text/event-stream; charset=utf-8",
+        "x-request-id": "e23abb7d-2fb1-4596-8b44-786d3fefaf62"
+      },
+      "error": null,
+      "fallback_events": 0,
+      "raw_response_path": "validation/work/Gate-C-v2/outputs/attempt-03/by-model/openrouter__thinkingmachines__inkling-small__free/stage-a/response.sse.txt",
+      "request_path": "validation/work/Gate-C-v2/outputs/attempt-03/by-model/openrouter__thinkingmachines__inkling-small__free/stage-a/request.json"
+    }
+  ],
+  "heartbeat_event_total": 14,
+  "fallback_events_total": 0,
+  "costs_known": false,
+  "stage_a_operational_routes": [
+    "agy/gemini-3.8-flash-tiered",
+    "groq/qwen/qwen3.8-27b",
+    "openrouter/dots-studio/dots-3-note-preview:free"
+  ],
+  "stage_b_structured_output_routes": [],
+  "cohort_model_ids": [],
+  "stopped_on_http_auth_status": {
+    "candidate_model_id": "openrouter/thinkingmachines/inkling-small:free-high",
+    "status": "401_or_403 (exact code/body not persisted)",
+    "auth_attribution": "undetermined",
+    "alternate_credentials_used": false,
+    "further_remote_calls_after_event": false
+  },
+  "local_driver_anomaly": {
+    "cause": "stage_a_classification called startswith on error=None",
+    "effect": "all recorded Stage A metrics were produced but were not advanced to Stage B by initial driver"
+  },
+  "full_preflight_cohort_ready": false
+}

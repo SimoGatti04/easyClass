@@ -1,0 +1,73 @@
+{
+  "schema_version": 1,
+  "benchmark": "Gate-C post-response offline policy audit",
+  "run_date": "2026-09-30",
+  "credential_access": "No credential/runtime configuration accessed during this post-benchmark audit; no new OmniRoute calls.",
+  "deterministic_checks": [
+    {
+      "id": "json-parse-schema-enum-required",
+      "scope": "all saved structured generation/reasoning results",
+      "result": "5/6 generation run outputs parse/schema-valid; 3/3 reasoning outputs parse/schema/required/enum-valid; one Excel generation response truncated and invalid."
+    },
+    {
+      "id": "excel-no-cell-formula-range-result",
+      "scope": "Excel outputs; B1 parsing limitation",
+      "result": "FAIL",
+      "evidence": [
+        "excel/run-02/parsed-output.json contains specific cell references/ranges and exact formula examples, including =SOMMA(B2:B7) and a CERCA.X cell/range expression, even while identifying these as unsupported.",
+        "excel__teacher_script/run-01/response.raw.txt includes formula/function signatures, numeric criteria and a cell reference (F4).",
+        "excel__teacher_script/run-02/response.raw.txt includes formula syntax/function details and cell-dependent instructions.",
+        "excel/run-01 is truncated before valid JSON; content-level structured checks cannot pass."
+      ]
+    },
+    {
+      "id": "dbms-no-unsupported-formulas",
+      "scope": "DBMS complete-source lesson packs/scripts",
+      "result": "FAIL",
+      "evidence": [
+        "Generation and longform content supply ROUND syntax and a specific discount/net-revenue formula although these are gaps in the source and prompt forbids formula invention. Output metadata incorrectly characterizes unsupported claims as absent or merely noted."
+      ]
+    },
+    {
+      "id": "partial-source-stop-at-supported-coverage",
+      "scope": "partial-source DBMS",
+      "result": "PASS_WITH_MINOR_CAVEAT",
+      "evidence": [
+        "Generation plans support 35 and 30 minutes and disclose the unsupported 85/90 minutes. Longform scripts support only 20 and 25 minutes and do not introduce SQL syntax. Output schedule choices vary across runs but stay bounded."
+      ]
+    },
+    {
+      "id": "activity-interval-arithmetic",
+      "scope": "all parseable generation outputs",
+      "result": "PASS",
+      "evidence": [
+        "DBMS full-source activities in both runs are contiguous 0–120; Excel run 2 is contiguous 0–120; partial-source schedules are contiguous 0–35 and 0–30 respectively."
+      ]
+    },
+    {
+      "id": "source-id-and-distinctness-contract",
+      "scope": "all parseable generation metadata",
+      "result": "PARTIAL",
+      "evidence": [
+        "Required source_ids and distinctness boolean are present. Pairwise DBMS checks show 20.45–25.7% stored 8-gram containment; repeated exercise text in scripts is treated as substantive redundancy and editing effort, not as useful diversity. Partial-source and Excel run 2 show low containment. Excel run 1 is not assessable."
+      ]
+    },
+    {
+      "id": "reference-leakage",
+      "scope": "all provider requests/source-reference audit",
+      "result": "PASS",
+      "evidence": [
+        "Held-out DBMS and Excel teacher references are not in prompts; scenario audit confirms no direct source/reference reuse. Cybersecurity and History were excluded."
+      ]
+    },
+    {
+      "id": "identity-and-no-fallback",
+      "scope": "all candidate calls",
+      "result": "PASS_FOR_GEMINI; MISTRAL_UNVERIFIED",
+      "evidence": [
+        "Gemini returned an ID uniquely matching the catalog route. Mistral returned keepalive with empty output/no finish reason; no substitution or fallback occurred."
+      ]
+    }
+  ],
+  "manual_review_required": "This offline policy audit supplements, and overrides where applicable, the runner semantic_valid flag: the runner checked generic schema/semantic invariants but did not encode all source-specific Excel and formula prohibitions."
+}
