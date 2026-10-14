@@ -56,3 +56,27 @@ Before any remote connection:
 5. Distinguish a successful local protocol test from an authenticated remote ChatGPT test. Do not state remote readiness until the latter is completed.
 
 The current remote endpoint in the plugin descriptor has **not** been tested in this checkpoint. No live/public ingress, DNS, Access, Tunnel, or production service was changed; only the local declarative Terraform manifest was prepared for review.
+
+## Architettura e Deployment Definitivo (K3s)
+
+In conformità con le decisioni vincolanti del Domain Owner:
+- **Web UI & Portale**: `https://class.simogatti.it` è il dominio dell'interfaccia web completa, in sostituzione immediata dell'inutilizzato `portale-classi`.
+- **MCP Endpoint**: `https://mcp-teacher.simogatti.it/mcp` per il collegamento di ChatGPT con Cloudflare Access Managed OAuth e autorizzazione docente.
+- **Backend Unificato**: Una sola istanza logica di Teacher Service in esecuzione su K3s (cluster `<backup-host>`), che serve sia l'interfaccia Web sia l'endpoint MCP. Non è prevista una seconda istanza produttiva su MacMini.
+- **Storage & Persistenza**:
+  - SQLite persistente con WAL (`PRAGMA journal_mode = WAL; PRAGMA synchronous = NORMAL;`) sul PVC `class-teacher-db` montato in `/app/storage/db`.
+  - FileStore persistente per gli allegati/documenti sul PVC `class-teacher-files` montato in `/app/storage/files`.
+  - Dati legacy di `portale-classi` (PostgreSQL e upload storici) preservati per rollback in `/srv/class/backup_before_teacher_service_20261014.sql` e volume mounts dedicati.
+- **Connettività AI OmniRoute**: Raggiungibile tramite rete interna al cluster Kubernetes all'indirizzo `http://omniroute.omniroute.svc.cluster.local:20128/v1` con chiave gestita tramite Infisical ExternalSecret.
+
+## Architettura e Deployment Definitivo (K3s)
+
+In conformità con le decisioni vincolanti del Domain Owner:
+- **Web UI & Portale**: `https://class.simogatti.it` è il dominio dell'interfaccia web completa, in sostituzione immediata dell'inutilizzato `portale-classi`.
+- **MCP Endpoint**: `https://mcp-teacher.simogatti.it/mcp` per il collegamento di ChatGPT con Cloudflare Access Managed OAuth e autorizzazione docente.
+- **Backend Unificato**: Una sola istanza logica di Teacher Service in esecuzione su K3s (cluster `<backup-host>`), che serve sia l'interfaccia Web sia l'endpoint MCP. Non è prevista una seconda istanza produttiva su MacMini.
+- **Storage & Persistenza**:
+  - SQLite persistente con WAL (`PRAGMA journal_mode = WAL; PRAGMA synchronous = NORMAL;`) sul PVC `class-teacher-db` montato in `/app/storage/db`.
+  - FileStore persistente per gli allegati/documenti sul PVC `class-teacher-files` montato in `/app/storage/files`.
+  - Dati legacy di `portale-classi` (PostgreSQL e upload storici) preservati per rollback in `/srv/class/backup_before_teacher_service_20261014.sql` e volume mounts dedicati.
+- **Connettività AI OmniRoute**: Raggiungibile tramite rete interna al cluster Kubernetes all'indirizzo `http://omniroute.omniroute.svc.cluster.local:20128/v1` con chiave gestita tramite Infisical ExternalSecret.
