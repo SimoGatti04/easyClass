@@ -27,7 +27,8 @@ export const SESSION_IDLE_TIMEOUT_MS = 30 * 60 * 1000;
 
 export const DEFAULT_ALLOWED_ORIGINS = [
   'https://chatgpt.com',
-  'https://mcp-teacher.simogatti.it'
+  'https://mcp-teacher.simogatti.it',
+  'https://class.simogatti.it'
 ];
 
 export function isInit(body) {

@@ -29,6 +29,10 @@ export class DatabaseManager {
     }
 
     this.db = new DatabaseSync(this.dbPath);
+    if (this.dbPath !== ':memory:') {
+      this.db.exec('PRAGMA journal_mode = WAL;');
+      this.db.exec('PRAGMA synchronous = NORMAL;');
+    }
     this.db.exec(SCHEMA_SQL);
     this._migrateExistingSchema();
     return this;
@@ -110,7 +114,7 @@ export class DatabaseManager {
  * Creates default production database connection
  */
 export function createProductionDatabase(customPath) {
-  const defaultPath = path.resolve(process.cwd(), 'storage', 'teacher_service.db');
+  const defaultPath = process.env.TEACHER_SERVICE_DB_PATH || path.resolve(process.cwd(), 'storage', 'teacher_service.db');
   const targetPath = customPath || defaultPath;
   const manager = new DatabaseManager(targetPath);
   return manager.init();
