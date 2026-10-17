@@ -1,82 +1,93 @@
-# Teacher Service — Operations & MCP Connection Readiness
+# Teacher Service — Production Operations (K3s)
 
-## Local configuration
+**Scope:** production runtime only. The production source of truth is the
+K3s app bundle in `infra/k3s/apps/class/`; this document does not describe the
+retired Mac mini/PM2 deployment.
 
-Copy `.env.example` to the ignored `.env.local` and set values through the operator-controlled local configuration path. Keep file permissions owner-only (`chmod 600 .env.local`). The `npm run mcp` and `npm run start:http` scripts load `.env.local` using Node's built-in `--env-file`; variables already injected by the process manager take precedence.
+## Current architecture
 
-Required/optional variables:
+- One Teacher Service Deployment (`class/class`) serves `https://class.simogatti.it`
+  and the Streamable HTTP MCP route `https://mcp-teacher.simogatti.it/mcp`.
+- The existing Cloudflare Access/Tunnel and hostnames are unchanged by this
+  application runbook. Do not edit Cloudflare or expose a new ingress here.
+- The app image is selected by an immutable GHCR tag in `app.yaml`; the
+  deployment uses the `class` Service and HTTPRoutes in the same bundle.
+- SQLite is stored on the node-local `class-teacher-db` PVC at
+  `/srv/class/teacher-service/db`. FileStore is stored separately on
+  `class-teacher-files` at `/srv/class/teacher-service/files`. Both are
+  authoritative production data and must be preserved during application or
+  legacy-resource cleanup.
+- Runtime secrets flow from Infisical through External Secrets Operator to
+  `class/class-secrets`. Non-secret runtime settings are in `class-config`.
+  The Teacher Service OmniRoute key must use the dedicated
+  `/teacher-service/prod/TEACHER_SERVICE_OMNIROUTE_API_KEY` path once that
+  source is provisioned and verified; never fall back silently to portal
+  credentials. Secret values must not be printed or committed.
+- OmniRoute is reached through the in-cluster Service DNS endpoint configured
+  in `class-config`.
 
-- `TEACHER_SERVICE_OMNIROUTE_BASE_URL`: exact configured OpenAI-compatible gateway. The current target is `http://198.51.100.62:32128/v1` over Tailscale. The Tailscale address was verified on `<backup-host>`, where infra maps NodePort `32128` to the OmniRoute Service port `20128`. `http://198.51.100.13:32128/v1` reaches the same host's LAN NodePort, but is not the configured client target; do not silently switch between paths.
-- `TEACHER_SERVICE_OMNIROUTE_API_KEY`: secret credential; never commit, print, include in diagnostics, or send anywhere other than the configured gateway.
-- `TEACHER_SERVICE_DEFAULT_MODEL`: optional model override. If unset, the adapter uses its configured default.
-- `TEACHER_SERVICE_WEB_SEARCH_URL`: optional SearXNG-compatible `/search` endpoint. Leave unset until an existing provider has been located and explicitly configured; URL registration alone is not web search.
-- `TEACHER_SERVICE_CF_ACCESS_AUD`: operator-supplied Cloudflare Access application audience required for assertion verification. It has no PM2 fallback; strict authentication fails closed if it is missing.
-- `TEACHER_SERVICE_CF_ACCESS_ISS`: Cloudflare Access issuer. The application default is the configured `simogatti.cloudflareaccess.com` tenant; PM2 can pass an explicit override.
-- `TEACHER_SERVICE_TEACHER_EMAILS`: comma-, semicolon-, or newline-separated exact email identities allowed to act as teachers. These identities are matched case-insensitively only against the email claim in a verified Cloudflare Access assertion. Empty means no remote teacher principals are authorized. Wildcards and caller-provided role claims are not supported.
+## Deployment
 
-For PM2, export the same values using the host's approved secret/configuration mechanism before starting `ecosystem.config.cjs`; the PM2 ecosystem file forwards only the explicitly named settings. In particular, set the Access audience and teacher-email allowlist explicitly. Missing audience prevents authenticated requests in strict mode, and an empty teacher allowlist grants no teacher access.
+1. Build and validate the application image with the repository Dockerfile.
+   The build installs the exact pnpm version declared in `package.json` and
+   uses `pnpm-lock.yaml` with `--frozen-lockfile`.
+2. Push the image to the approved GHCR repository under a new immutable tag;
+   do not use a moving tag in K3s manifests.
+3. Update only the image tag in `infra/k3s/apps/class/app.yaml`, after the
+   application and image have been reviewed.
+4. From the infra repository/worktree, validate the bundle and apply it with
+   the repository wrapper:
 
-## Local Streamable HTTP validation
+   ```bash
+   kubectl kustomize k3s/apps/class
+   make k-apply APP=class
+   make k ARGS='-n class rollout status deployment/class'
+   make k ARGS='-n class get deployment,pod,svc,pvc,httproute -o wide'
+   ```
 
-The HTTP server binds to `127.0.0.1:8770` by default. Do not change the bind address or create a public ingress as part of local verification.
+   Use the infra repository's `make k`/`make k-apply` wrappers; do not use a
+   local kubectl context. Confirm both application health and the protected
+   data PVCs after rollout. Do not include secret values in diagnostic output.
 
-```bash
-npm test
-npm run start:http
-```
+## Rollback
 
-A local protocol client can use `http://127.0.0.1:8770/mcp` only in a test configuration with a synthetic identity and an injected test authorizer. That test does not establish remote ChatGPT readiness. Production teacher access requires a real verified Cloudflare assertion whose email is present in `TEACHER_SERVICE_TEACHER_EMAILS`; authentication by shared bearer alone is intentionally insufficient.
+- Restore the previous reviewed immutable image tag in `app.yaml` and apply
+  the class bundle again using `make k-apply APP=class`.
+- Wait for `deployment/class` rollout completion and verify `/health`, the
+  Service/HTTPRoutes, SQLite integrity, and FileStore access.
+- A direct `rollout undo` is an emergency-only temporary action: reconcile the
+  resulting image back into the manifest immediately. Do not roll back storage
+  deletion or database/filesystem data changes by applying old manifests.
 
-## Live integration smoke check
+## Persistent data and recovery risk
 
-The optional live runner is deliberately explicit and writes an isolated database, generated artifacts, source snapshots, and sanitized diagnostics under a unique directory in `validation/live-integrations/`. It sends only synthetic teaching content and a public Python documentation page. It refuses production mode, mock mode, a missing credential, or any OmniRoute endpoint other than the exact approved Tailscale target (`http://198.51.100.62:32128/v1`).
+The `class-teacher-db` and `class-teacher-files` PVCs and their node-local
+folders are production data. They are deliberately retained. **Independent
+backup to separate storage is deferred by Domain Owner direction.** Therefore
+SQLite and FileStore currently share the failure domain of `<backup-host>` and
+its local storage. PVC retention is not a backup and does not protect against
+node/disk loss, corruption, or accidental deletion. No new backup system is
+part of this checkpoint.
 
-```bash
-node --env-file=.env.local bin/teacher-service-live-check.js --confirm-live
-```
+The former portal-classi PostgreSQL database, uploads, and SQL dump are not a
+Teacher Service recovery mechanism and are retired only after their pod and
+volume consumers are detached and verified absent.
 
-The runner independently records public-page retrieval, configured web search, a direct OmniRoute completion, and an integrated MCP contextual generation. It does not impose any product quotas; each invocation is an explicit smoke-check run. Inspect the generated `report.json` and artifacts before removing the evidence directory.
+## Teacher access and MCP
 
-## Product domains and migration boundary
+- Cloudflare Access assertion validation and teacher identity mapping are
+  enforced in the application; an authenticated identity without an explicit
+  teacher mapping is not a teacher.
+- `/api/*` and `/mcp` share the same fail-closed teacher authorization. Do not
+  add role headers/query parameters or share a non-teacher bearer token.
+- The plugin endpoint remains `https://mcp-teacher.simogatti.it/mcp`.
+  Local protocol tests are not evidence of authenticated ChatGPT connectivity;
+  report remote ChatGPT as verified only after a real authenticated client
+  session succeeds.
 
-`class.simogatti.it` is the planned domain for the complete Teacher Service web interface and will replace the current `portale-classi` portal. This is a separate migration: inventory and verify the existing portal's functionality, then cut over only with a continuity plan; do not replace or interrupt the current service as part of MCP publication. The MCP endpoint and future web interface will share the same Teacher Service backend and persistence, with authorization appropriate to each audience.
+## Local development
 
-The current remote publication is limited to the Teacher Service MCP endpoint at `/mcp`; the dashboard and REST API are not intended as remote surfaces on `mcp-teacher.simogatti.it`.
-
-## ChatGPT remote connection — not yet provisioned or verified
-
-`plugin/mcp.json` names the intended Streamable HTTP endpoint but is only a connection descriptor; it is not evidence that DNS, ingress, Cloudflare Access, or ChatGPT authentication is working. The local implementation is ready to be exposed only after the operator supplies the teacher email mapping and verifies the Cloudflare Access audience/issuer and identity policy.
-
-Before any remote connection:
-
-1. Keep the origin bound to loopback and route only through an explicitly approved protected tunnel/connector. Do not open host ports or change DNS/Cloudflare configuration without separate infrastructure authorization.
-2. Ensure Cloudflare Access injects its signed `Cf-Access-Jwt-Assertion`; the origin verifies RS256, issuer, audience, and validity, then separately checks the signed email against `TEACHER_SERVICE_TEACHER_EMAILS`.
-3. Verify non-teacher identities and shared bearer tokens receive `403` for both `/mcp` and `/api/*`.
-4. Test initialize, tool discovery, read/write, and session isolation through the deployed protected path using a synthetic isolated data store before connecting the ChatGPT client.
-5. Distinguish a successful local protocol test from an authenticated remote ChatGPT test. Do not state remote readiness until the latter is completed.
-
-The current remote endpoint in the plugin descriptor has **not** been tested in this checkpoint. No live/public ingress, DNS, Access, Tunnel, or production service was changed; only the local declarative Terraform manifest was prepared for review.
-
-## Architettura e Deployment Definitivo (K3s)
-
-In conformità con le decisioni vincolanti del Domain Owner:
-- **Web UI & Portale**: `https://class.simogatti.it` è il dominio dell'interfaccia web completa, in sostituzione immediata dell'inutilizzato `portale-classi`.
-- **MCP Endpoint**: `https://mcp-teacher.simogatti.it/mcp` per il collegamento di ChatGPT con Cloudflare Access Managed OAuth e autorizzazione docente.
-- **Backend Unificato**: Una sola istanza logica di Teacher Service in esecuzione su K3s (cluster `<backup-host>`), che serve sia l'interfaccia Web sia l'endpoint MCP. Non è prevista una seconda istanza produttiva su MacMini.
-- **Storage & Persistenza**:
-  - SQLite persistente con WAL (`PRAGMA journal_mode = WAL; PRAGMA synchronous = NORMAL;`) sul PVC `class-teacher-db` montato in `/app/storage/db`.
-  - FileStore persistente per gli allegati/documenti sul PVC `class-teacher-files` montato in `/app/storage/files`.
-  - Dati legacy di `portale-classi` (PostgreSQL e upload storici) preservati per rollback in `/srv/class/backup_before_teacher_service_20261014.sql` e volume mounts dedicati.
-- **Connettività AI OmniRoute**: Raggiungibile tramite rete interna al cluster Kubernetes all'indirizzo `http://omniroute.omniroute.svc.cluster.local:20128/v1` con chiave gestita tramite Infisical ExternalSecret.
-
-## Architettura e Deployment Definitivo (K3s)
-
-In conformità con le decisioni vincolanti del Domain Owner:
-- **Web UI & Portale**: `https://class.simogatti.it` è il dominio dell'interfaccia web completa, in sostituzione immediata dell'inutilizzato `portale-classi`.
-- **MCP Endpoint**: `https://mcp-teacher.simogatti.it/mcp` per il collegamento di ChatGPT con Cloudflare Access Managed OAuth e autorizzazione docente.
-- **Backend Unificato**: Una sola istanza logica di Teacher Service in esecuzione su K3s (cluster `<backup-host>`), che serve sia l'interfaccia Web sia l'endpoint MCP. Non è prevista una seconda istanza produttiva su MacMini.
-- **Storage & Persistenza**:
-  - SQLite persistente con WAL (`PRAGMA journal_mode = WAL; PRAGMA synchronous = NORMAL;`) sul PVC `class-teacher-db` montato in `/app/storage/db`.
-  - FileStore persistente per gli allegati/documenti sul PVC `class-teacher-files` montato in `/app/storage/files`.
-  - Dati legacy di `portale-classi` (PostgreSQL e upload storici) preservati per rollback in `/srv/class/backup_before_teacher_service_20261014.sql` e volume mounts dedicati.
-- **Connettività AI OmniRoute**: Raggiungibile tramite rete interna al cluster Kubernetes all'indirizzo `http://omniroute.omniroute.svc.cluster.local:20128/v1` con chiave gestita tramite Infisical ExternalSecret.
+The production runbook remains K3s-only. For local development, use the pinned
+project Node/pnpm versions, `.env.local` (owner-only and ignored), and the
+commands in `README.md`. Local SQLite and FileStore are separate development
+state; never copy production data into local tests.

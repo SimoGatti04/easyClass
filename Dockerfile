@@ -1,4 +1,4 @@
-FROM node:22-bookworm-slim AS base
+FROM node:22.23.2-bookworm-slim AS base
 
 # Install runtime tools: pdftotext (poppler-utils) and pandoc
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -10,11 +10,15 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 WORKDIR /app
 
 # Ensure storage directories exist and are owned by node user
-RUN mkdir -p /app/storage/files /app/storage/db && chown -R node:node /app/storage
+RUN mkdir -p /app/storage/files /app/storage/db && chown -R node:node /app
 
-# Install dependencies
-COPY --chown=node:node package.json pnpm-lock.yaml* package-lock.json* ./
-RUN npm install --omit=dev && node -e "const { DatabaseSync } = require('node:sqlite'); new DatabaseSync(':memory:');"
+# Use the package manager and exact version declared by package.json. The
+# committed pnpm lockfile is the only dependency-resolution source of truth.
+RUN corepack enable && corepack prepare pnpm@10.32.1 --activate
+COPY --chown=node:node package.json pnpm-lock.yaml ./
+USER node
+RUN pnpm install --prod --frozen-lockfile \
+    && node -e "const { DatabaseSync } = require('node:sqlite'); new DatabaseSync(':memory:');"
 
 # Copy application sources
 COPY --chown=node:node . .
@@ -25,8 +29,6 @@ ENV NODE_ENV=production \
     HOST=0.0.0.0 \
     TEACHER_SERVICE_DB_PATH=/app/storage/db/teacher_service.db \
     TEACHER_SERVICE_STORAGE_DIR=/app/storage/files
-
-USER node
 
 EXPOSE 80
 

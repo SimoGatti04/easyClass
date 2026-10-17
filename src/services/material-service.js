@@ -9,6 +9,7 @@
  * - Provenance tracking & Assessable authorization
  */
 import crypto from 'node:crypto';
+import path from 'node:path';
 import { NotFoundError, ValidationError } from '../core/errors.js';
 import { PedagogicalRoles, ResourceTypes, ContentFormats, ProvenanceKinds } from '../core/contracts.js';
 
@@ -502,7 +503,7 @@ export class MaterialService {
   }
 
   deleteMaterial(id, { permanent = false } = {}) {
-    const current = this.getMaterial(id);
+    this.getMaterial(id);
     if (!permanent) {
       // Soft-delete to trash
       const now = new Date().toISOString();
@@ -513,16 +514,56 @@ export class MaterialService {
       return { success: true, id, status: 'trashed' };
     }
 
-    // Permanent deletion
-    return this.dbManager.transaction(() => {
-      const stmtFts = this.dbManager.prepare(`DELETE FROM resources_fts WHERE resource_id = ?`);
-      stmtFts.run(id);
+    // Plan FileStore cleanup before changing authoritative database state.
+    // Raw attachment blobs can be shared, so delete only when no other
+    // material's provenance still references the same normalized path.
+    const versionRows = this.dbManager.prepare(`
+      SELECT file_path FROM resource_versions WHERE resource_id = ? AND file_path IS NOT NULL
+    `).all(id);
+    const ownProvenance = this.dbManager.prepare(`
+      SELECT telemetry_json FROM provenance WHERE resource_id = ?
+    `).all(id);
+    const otherProvenance = this.dbManager.prepare(`
+      SELECT telemetry_json FROM provenance WHERE resource_id != ?
+    `).all(id);
+    const storedPath = (row) => {
+      try {
+        const telemetry = JSON.parse(row.telemetry_json || 'null');
+        return typeof telemetry?.storedPath === 'string' ? path.resolve(telemetry.storedPath) : null;
+      } catch {
+        return null;
+      }
+    };
+    const otherRawPaths = new Set(otherProvenance.map(storedPath).filter(Boolean));
+    const ownRawPaths = ownProvenance.map(storedPath).filter(Boolean)
+      .filter((filePath) => !otherRawPaths.has(filePath));
+    const cleanupPlan = this.fileStore.prepareMaterialDeletion(id, [
+      ...versionRows.map((row) => row.file_path),
+      ...ownRawPaths
+    ]);
 
-      const stmt = this.dbManager.prepare(`DELETE FROM resources WHERE id = ?`);
-      stmt.run(id);
+    // Resource versions, provenance, collections, publication/authorization
+    // rows and assessment source links are handled by explicit deletion and
+    // declared FK actions; the FTS index is maintained as a derived projection.
+    const result = this.dbManager.transaction(() => {
+      this.dbManager.prepare(`DELETE FROM resources_fts WHERE resource_id = ?`).run(id);
 
+      // Internal source records cache snippets and version references. External
+      // source snapshots are independent and remain available after unlinking.
+      this.dbManager.prepare(`
+        DELETE FROM sources WHERE source_type = 'internal_material' AND resource_id = ?
+      `).run(id);
+
+      const deletion = this.dbManager.prepare(`DELETE FROM resources WHERE id = ?`).run(id);
+      if (Number(deletion.changes) !== 1) throw new NotFoundError('Material', id);
       return { success: true, id, status: 'deleted_permanently' };
     });
+
+    // SQLite and the filesystem cannot share a transaction. The database
+    // delete is authoritative; surface any post-commit cleanup failure instead
+    // of claiming that the complete permanent deletion succeeded.
+    const cleanup = this.fileStore.deletePreparedMaterialFiles(cleanupPlan);
+    return { ...result, cleanup };
   }
 
   /* -------------------------------------------------------------------------- */

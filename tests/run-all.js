@@ -6,6 +6,7 @@ import path from 'node:path';
 
 const testFiles = [
   'tests/unit/materials.test.js',
+  'tests/unit/permanent-delete.test.js',
   'tests/unit/generation.test.js',
   'tests/unit/omniroute-client.test.js',
   'tests/unit/web-research-client.test.js',

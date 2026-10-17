@@ -1,53 +1,63 @@
 # Teacher Service
 
-Teacher Service is a teacher-centric, modular service and MCP server designed to minimize extra-classroom preparation workload while preserving complete pedagogical control, traceability, and material quality.
+Teacher Service is a teacher-focused application and MCP server for managing
+teaching context, versioned materials, grounded generation, assessments, and
+grading while preserving teacher control and provenance.
 
-The project has transitioned from AI feasibility validation (C0–C13) into active product MVP implementation under Domain Owner direction.
+## Runtime status
 
-Runtime configuration is loaded from the inherited process environment and the private `.env.local` file by the `mcp` and `start:http` scripts; inherited environment variables take precedence. For deployment through PM2, provide those variables through the process manager/secret mechanism rather than committing `.env.local`. See [docs/operations.md](docs/operations.md).
+- **CURRENT — production:** one Teacher Service workload on K3s in namespace
+  `class`; the web app uses `https://class.simogatti.it` and MCP uses
+  `https://mcp-teacher.simogatti.it/mcp` behind the existing protected route.
+- **CURRENT — persistence:** SQLite and FileStore use the distinct
+  `class-teacher-db` and `class-teacher-files` PVCs. They are production data.
+- **DEPRECATED:** the previous Mac mini/PM2 production runtime and
+  portale-classi PostgreSQL/uploads. Do not restart or reconnect those runtimes.
+  The repository's local `.env.local` and local SQLite remain for development
+  only.
+- **PLANNED — C2:** a fuller teacher management dashboard. The current minimal
+  web interface remains available; C1 does not expand it.
 
-## Core Capabilities (MVP)
+## Current capabilities
 
-1. **Teaching Context & Organization**:
-   - Academic Classes, Subjects, Lessons, Collections, and context associations.
-2. **Knowledge & Materials Management**:
-   - Approved pedagogical roles: `Teacher Material`, `Student Material`, `Support Material`, and explicit `Assessable Material`.
-   - Comprehensive CRUD, search (SQLite FTS5), import, duplicate, archive, restore, and safe deletion.
-   - Immutable versioning, diffs, rollbacks, and multi-format exports (Markdown, HTML, JSON).
-3. **AI Generation & Iterative Workflows**:
-   - Lesson Plans, full detailed Teacher Scripts, canonical Student Materials, Exercises, and Assessment drafts with reserved teacher solutions.
-   - Iterative revisions, expansion, and selective section regeneration with full provenance tracking.
-   - OmniRoute provider adapter with configurable models and resilient fallback generator.
-4. **Teacher Interface**:
-   - Lightweight, responsive built-in web UI to inspect classes, navigate lessons, edit materials, trigger generations, and export deliverables.
-5. **Model Context Protocol (MCP) Integration**:
-   - Stdio transport for local clients (ChatGPT Desktop, Claude Desktop, CLI).
-   - Streamable HTTP transport for remote ChatGPT connection with Cloudflare Access / Bearer token authentication.
-   - ChatGPT plugin manifests and schemas.
+- Classes, subjects, lessons, collections, and versioned materials.
+- Teacher/Student/Support material roles, publication and explicit assessment
+  grounding protections.
+- Context-aware AI rules and source selection, generation, revision, and
+  provenance through the OmniRoute adapter.
+- Assessment blueprints, protected teacher solutions, student submissions,
+  grading proposals, teacher review, and exports.
+- MCP stdio and Streamable HTTP transports with Cloudflare Access identity
+  verification and a separate explicit teacher allowlist.
 
-## Quick Start
+The feature surface is broader than the verified production integration
+surface. See [STATUS.md](STATUS.md) for exact test and live-integration
+results. Mock transports are test/development-only and are not reported as
+successful live AI generation.
+
+## Local development
+
+Use Node.js 26.5.0 and pnpm 10.32.1 as pinned in `.mise.toml`. The declared
+minimum runtime is Node.js 22.5.0 because the application uses the built-in
+`node:sqlite` API.
 
 ```bash
-# Install dependencies
-pnpm install
-
-# Create the ignored, private local runtime configuration (then fill approved values)
+pnpm install --frozen-lockfile
 cp .env.example .env.local
 chmod 600 .env.local
-
-# Run automated tests
 pnpm test
-
-# Run MCP server (stdio)
 pnpm mcp
-
-# Start HTTP server (MCP Streamable HTTP + Teacher Web UI)
 pnpm start:http
 ```
 
-## Architectural Documentation
+Local secrets and generated data are ignored. Never use production records as
+test fixtures. Production operations and rollback are documented in
+[docs/operations.md](docs/operations.md).
 
-- [STATUS.md](STATUS.md) — Operational status, gate resolutions, and checkpoint progression.
-- [docs/00-design-method.md](docs/00-design-method.md) — Design principles and modular architecture.
-- [docs/dossiers/](docs/dossiers/) — Approved domain dossiers (Teacher Experience, Knowledge & Materials, Assessment, AI Architecture).
-- [validation/](validation/) — Preserved technical evidence and historical benchmark reports (C0–C13).
+## Architecture and evidence
+
+- [AGENTS.md](AGENTS.md) — project entry point and invariants.
+- [STATUS.md](STATUS.md) — current checkpoint and historical progress.
+- [docs/operations.md](docs/operations.md) — production K3s operations.
+- [docs/dossiers/](docs/dossiers/) — approved domain rules.
+- [validation/](validation/) — preserved C0–C13 historical evidence.

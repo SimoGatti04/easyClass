@@ -301,3 +301,48 @@ Dossier 04 §§46–47 e Dossier 05 §§56–57 (2026-10): separazione **Teacher
     2. Aggiunta regola di ingress tunnel per `mcp-teacher` verso `http://127.0.0.1:8770` con applicazione Access `mcp`.
     3. Aggiunta destinazione `mcp-teacher` nell'applicazione Access `mcp`.
   - In conformità con le istruzioni, nessuna modifica è stata applicata a `infra` o DNS condivisi senza autorizzazione specifica.
+
+## Checkpoint C1 — Cleanup completo portale-classi e allineamento development-environment (16 ottobre 2026)
+
+### 1. Correzioni applicative e robustezza eliminazione
+- **Application Facade (TeacherService):**
+  - Esposto esplicitamente il metodo deleteMaterial(id, options) a livello di facade applicativa (src/services/teacher-service.js), risolvendo l'errore service.deleteMaterial is not a function riscontrato nelle chiamate MCP delete_material.
+  - Instradamento chiaro tra soft-delete (trashMaterial) ed eliminazione permanente (deleteMaterialPermanently).
+- **Eliminazione permanente e FileStore (MaterialService):**
+  - Implementata la rimozione coordinata dei file su FileStore contestualmente alla cancellazione del record su database.
+  - Rimozione sicura dei file di versione e dei blob raw importati non piu referenziati da altri materiali, con protezione dei blob condivisi per evitare file orfani e riferimenti inconsistenti.
+  - Transazione atomica per rimozione record relazionali, versioni, correlazioni e sincronizzazione dell'indice full-text FTS5.
+- **Suite di regressione:**
+  - Aggiunto tests/unit/permanent-delete.test.js che verifica la cancellazione permanente tramite facade e handler MCP, la corretta eliminazione dei file da disco e la pulizia dei record DB e FTS5.
+  - Suite completa: 18 test suite passate con successo (0 fallimenti).
+
+### 2. Allineamento development-environment e ritiro runtime legacy
+- **Package Manager e Versioni:**
+  - Aggiunto packageManager: pnpm@10.32.1 in package.json e specificato engines: { node: >=22.5.0 } per il supporto nativo a node:sqlite.
+  - Creato .mise.toml locale con versioni bloccate: node = 26.5.0 e pnpm = 10.32.1.
+- **Dockerfile riproducibile:**
+  - Pinned a FROM node:22.23.2-bookworm-slim.
+  - Abilitazione di corepack e installazione dipendenze tramite pnpm install --prod --frozen-lockfile.
+- **Ritiro runtime Mac mini e pulizia:**
+  - Eliminato ecosystem.config.cjs (il runtime Mac mini / PM2 e definitivamente ritirato; l'unico runtime produttivo e K3s).
+  - Rimosse directory e file temporanei di test dal workspace locale.
+  - Verificata l'assenza di processi orfani, agenti launchd o container attivi sul Mac mini.
+- **Source of truth e documentazione:**
+  - Creato AGENTS.md come entry point di repository per vincoli e perimetri.
+  - Riscritto docs/operations.md descrivendo esclusivamente l'architettura K3s di produzione, distinguendo gli stati CURRENT, DEPRECATED e PLANNED.
+  - Aggiornato README.md allineando comandi, configurazione e architettura.
+
+### 3. Configurazione K3s e manifest Infra (infra)
+- **Manifest aggiornati (k3s/apps/class/ su branch codex/teacher-service-c1-cleanup):**
+  - app.yaml: rimosso il volume mount di rollback /srv/legacy-class-uploads.
+  - configmap.yaml: rimosse tutte le variabili legacy PostgreSQL (DB_*, POSTGRES_*).
+  - postgres.yaml: rimosso il manifest dello StatefulSet e del Service legacy.
+  - storage.yaml: rimossi i PV/PVC legacy class-postgres-data e class-uploads. Preservati con retention Retain i volumi class-teacher-db (2Gi) e class-teacher-files (5Gi) su <backup-host>.
+  - external-secret.yaml: ripulite le chiavi segrete legacy portale-classi, mantenendo solo TEACHER_SERVICE_OMNIROUTE_API_KEY.
+  - kustomization.yaml: rimossa l'inclusione di postgres.yaml.
+  - README.md: aggiornato per documentare esclusivamente Teacher Service.
+  - Creato tasks/teacher-service-c1-cleanup-2026-10-16.md per tracciare la sequenza operativa di transizione.
+
+### 4. Rischio residuo SQLite/FileStore e Backup
+- Come espressamente confermato dal Domain Owner, **non** e introdotto alcun sistema indipendente di backup verso NAS o storage esterno in C1.
+- Resta documentato in docs/operations.md il rischio residuo di perdita dati dovuto al single-node hostPath su <backup-host>.

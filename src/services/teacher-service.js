@@ -102,8 +102,9 @@ export class TeacherService {
   duplicateMaterial(id, options) { return this.materials.duplicateMaterial(id, options); }
   archiveMaterial(id) { return this.materials.archiveMaterial(id); }
   restoreMaterial(id) { return this.materials.restoreMaterial(id); }
-  trashMaterial(id) { return this.materials.trashMaterial(id); }
-  deleteMaterialPermanently(id) { return this.materials.deleteMaterialPermanently(id); }
+  trashMaterial(id) { return this.materials.deleteMaterial(id, { permanent: false }); }
+  deleteMaterial(id, options) { return this.materials.deleteMaterial(id, options); }
+  deleteMaterialPermanently(id) { return this.materials.deleteMaterial(id, { permanent: true }); }
   publishMaterial(id, options) { return this.materials.publishMaterial(id, options); }
   unpublishMaterial(id, options) { return this.materials.unpublishMaterial(id, options); }
   getVersionPublication(id, version, options) { return this.materials.getVersionPublication(id, version, options); }
