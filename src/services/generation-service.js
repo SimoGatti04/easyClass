@@ -71,7 +71,7 @@ export class GenerationService {
   }
 
   async generateLessonPlan({
-    lessonId = null, topic = null, classId = null, subjectId = null, courseId = null,
+    existingMaterialId = null, lessonId = null, topic = null, classId = null, subjectId = null, courseId = null,
     durationMinutes = 60, objectives = [], prerequisites = [], additionalInstructions = '',
     requiredSources = [], excludedSources = [], includePreviousLessons = true,
     previousLessonLimit = 2, searchInternal = true, searchWeb = false, sourceQuery = null,
@@ -92,24 +92,35 @@ export class GenerationService {
     const requestMessages = this._attachContext(messages, resolvedRules, sources, 'lesson_plan');
     const completion = await this.omniRouteClient.complete({ messages: requestMessages, model, signal });
     const sourceSet = mapSourceSet(sources, completion.content);
-    const material = this.materialService.createMaterial({
-      title: `Piano Lezione: ${context.topic}`,
-      contentText: completion.content,
-      description: `Piano di lezione strutturato per ${context.className || 'la classe'} (${context.subjectName || 'Materia'})`,
-      pedagogicalRole: PedagogicalRoles.TEACHER_MATERIAL,
-      resourceType: ResourceTypes.LESSON_PLAN,
-      classId: context.classId, subjectId: context.subjectId, lessonId,
-      tags: ['ai_generated', 'lesson_plan', context.topic.toLowerCase()],
-      originType: 'ai_generated', createdBy: 'omniroute',
-      changeSummary: 'Initial AI generation of Lesson Plan',
-      provenance: this._provenance(completion, `Generate lesson plan for ${context.topic}`, resolvedRules, sourceSet, context)
-    });
+    let material;
+    if (existingMaterialId) {
+      material = this.materialService.updateMaterial(existingMaterialId, {
+        title: `Piano Lezione: ${context.topic}`,
+        contentText: completion.content,
+        changeSummary: 'Rigenerazione AI Lesson Pack',
+        updatedBy: 'omniroute',
+        provenance: this._provenance(completion, `Regenerate lesson plan for ${context.topic}`, resolvedRules, sourceSet, context)
+      });
+    } else {
+      material = this.materialService.createMaterial({
+        title: `Piano Lezione: ${context.topic}`,
+        contentText: completion.content,
+        description: `Piano di lezione strutturato per ${context.className || 'la classe'} (${context.subjectName || 'Materia'})`,
+        pedagogicalRole: PedagogicalRoles.TEACHER_MATERIAL,
+        resourceType: ResourceTypes.LESSON_PLAN,
+        classId: context.classId, subjectId: context.subjectId, lessonId,
+        tags: ['ai_generated', 'lesson_plan', context.topic.toLowerCase()],
+        originType: 'ai_generated', createdBy: 'omniroute',
+        changeSummary: 'Initial AI generation of Lesson Plan',
+        provenance: this._provenance(completion, `Generate lesson plan for ${context.topic}`, resolvedRules, sourceSet, context)
+      });
+    }
     this._markSourcesUsed(sourceSet);
     return this._result(material, completion, sourceSet, resolvedRules);
   }
 
   async generateTeacherScript({
-    lessonPlanId = null, lessonPlanVersionNumber = null, topic = null,
+    existingMaterialId = null, lessonPlanId = null, lessonPlanVersionNumber = null, topic = null,
     sourceMaterialIds = [], classId = null, subjectId = null, courseId = null, lessonId = null,
     durationMinutes = 60, additionalInstructions = '', requiredSources = [], excludedSources = [],
     includePreviousLessons = true, previousLessonLimit = 2, searchInternal = true,
@@ -159,7 +170,7 @@ export class GenerationService {
   }
 
   async generateStudentMaterial({
-    lessonId = null, topic = null, courseId = null, teacherScriptId = null, teacherScriptVersionNumber = null,
+    existingMaterialId = null, lessonId = null, topic = null, courseId = null, teacherScriptId = null, teacherScriptVersionNumber = null,
     sourceMaterialIds = [], requiredSources = [], excludedSources = [], targetLevel = 'Scuola Secondaria di II Grado',
     additionalInstructions = '', includePreviousLessons = true, previousLessonLimit = 2,
     searchInternal = true, searchWeb = false, sourceQuery = null, internalSourceLimit = 5,
@@ -200,25 +211,40 @@ export class GenerationService {
       messages: this._attachContext(messages, resolvedRules, sources, 'student_material'), model, signal
     });
     const sourceSet = mapSourceSet(sources, completion.content);
-    const material = this.materialService.createMaterial({
-      title: `Dispensa di Studio: ${effectiveTopic}`, contentText: stripTeacherOnly(completion.content),
-      description: 'Materiale canonico per gli studenti',
-      pedagogicalRole: PedagogicalRoles.STUDENT_MATERIAL, resourceType: ResourceTypes.STUDENT_NOTE,
-      classId: context.classId, subjectId: context.subjectId, lessonId,
-      tags: ['ai_generated', 'student_material', effectiveTopic.toLowerCase()],
-      originType: 'ai_generated', createdBy: 'omniroute', changeSummary: 'Initial AI generation of canonical Student Material',
-      provenance: {
-        ...this._provenance(completion, `Generate student material for ${effectiveTopic}`, resolvedRules, sourceSet, context),
-        baseResourceId: teacherScriptId || null,
-        baseVersionNumber: pinned.find((source) => source.resourceId === teacherScriptId)?.versionNumber || null
-      }
-    });
+    let material;
+    if (existingMaterialId) {
+      material = this.materialService.updateMaterial(existingMaterialId, {
+        title: `Dispensa di Studio: ${effectiveTopic}`,
+        contentText: stripTeacherOnly(completion.content),
+        changeSummary: 'Rigenerazione AI Lesson Pack',
+        updatedBy: 'omniroute',
+        provenance: {
+          ...this._provenance(completion, `Regenerate student material for ${effectiveTopic}`, resolvedRules, sourceSet, context),
+          baseResourceId: teacherScriptId || null,
+          baseVersionNumber: pinned.find((source) => source.resourceId === teacherScriptId)?.versionNumber || null
+        }
+      });
+    } else {
+      material = this.materialService.createMaterial({
+        title: `Dispensa di Studio: ${effectiveTopic}`, contentText: stripTeacherOnly(completion.content),
+        description: 'Materiale canonico per gli studenti',
+        pedagogicalRole: PedagogicalRoles.STUDENT_MATERIAL, resourceType: ResourceTypes.STUDENT_NOTE,
+        classId: context.classId, subjectId: context.subjectId, lessonId,
+        tags: ['ai_generated', 'student_material', effectiveTopic.toLowerCase()],
+        originType: 'ai_generated', createdBy: 'omniroute', changeSummary: 'Initial AI generation of canonical Student Material',
+        provenance: {
+          ...this._provenance(completion, `Generate student material for ${effectiveTopic}`, resolvedRules, sourceSet, context),
+          baseResourceId: teacherScriptId || null,
+          baseVersionNumber: pinned.find((source) => source.resourceId === teacherScriptId)?.versionNumber || null
+        }
+      });
+    }
     this._markSourcesUsed(sourceSet);
     return { ...this._result(material, completion, sourceSet, resolvedRules), sourcesUsed: sourceSet };
   }
 
   async generateExercises({
-    topic, difficulty = 'graduata (base, intermedio, avanzato)', count = 3,
+    existingMaterialId = null, topic, difficulty = 'graduata (base, intermedio, avanzato)', count = 3,
     withSolutions = true, studentMaterialId = null, studentMaterialVersionNumber = null,
     classId = null, subjectId = null, courseId = null, lessonId = null,
     requiredSources = [], excludedSources = [], includePreviousLessons = true, previousLessonLimit = 2,
@@ -252,7 +278,21 @@ export class GenerationService {
       messages: this._attachContext(messages, resolvedRules, sources, 'exercises', additionalInstructions), model, signal
     });
     const sourceSet = mapSourceSet(sources, completion.content);
-    const material = this.materialService.createMaterial({
+    let material;
+    if (existingMaterialId) {
+      material = this.materialService.updateMaterial(existingMaterialId, {
+        title: `Esercizi Graduati: ${effectiveTopic}`,
+        contentText: completion.content,
+        changeSummary: 'Rigenerazione AI Lesson Pack',
+        updatedBy: 'omniroute',
+        provenance: {
+          ...this._provenance(completion, `Regenerate exercises for ${effectiveTopic}`, resolvedRules, sourceSet, context),
+          baseResourceId: studentMaterialId || null,
+          baseVersionNumber: pinned[0]?.versionNumber || null
+        }
+      });
+    } else {
+      material = this.materialService.createMaterial({
       title: `Esercizi Graduati: ${effectiveTopic}`, contentText: completion.content,
       description: `Scheda di ${count} esercizi con difficoltà ${difficulty}`,
       pedagogicalRole: PedagogicalRoles.SUPPORT_MATERIAL, resourceType: ResourceTypes.EXERCISE_SHEET,
@@ -265,6 +305,7 @@ export class GenerationService {
         baseVersionNumber: pinned[0]?.versionNumber || null
       }
     });
+    }
     this._markSourcesUsed(sourceSet);
     return this._result(material, completion, sourceSet, resolvedRules);
   }

@@ -13,7 +13,10 @@ import crypto from 'node:crypto';
 import { WebStandardStreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/webStandardStreamableHttp.js';
 import { isInitializeRequest } from '@modelcontextprotocol/sdk/types.js';
 import { createMcpServer } from '../mcp/server.js';
-import { authenticateRequest, SessionPrincipalRegistry } from './auth.js';
+import { authenticateRequest, SessionPrincipalRegistry, validateCsrf } from './auth.js';
+import { parseMultipartFormData } from './multipart.js';
+import { createStaticFileHandler } from './static.js';
+import path from 'node:path';
 import { createTeacherPrincipalAuthorizer } from './teacher-authorization.js';
 import { TeacherService } from '../services/teacher-service.js';
 import { PedagogicalRoles } from '../core/contracts.js';
@@ -66,8 +69,11 @@ export async function createHttpApp(options = {}) {
       ? options.isProduction
       : process.env.NODE_ENV === 'production';
 
-  const defaultAuthMode = isProduction ? 'strict' : 'strict';
+  const defaultAuthMode = 'strict';
   const authMode = options.authMode || process.env.TEACHER_SERVICE_AUTH_MODE || defaultAuthMode;
+  if (isProduction && authMode !== 'strict') {
+    throw new Error(`Security violation: authMode "${authMode}" is strictly forbidden in production`);
+  }
 
   const service = options.service || new TeacherService({ mockAi: options.mockAi });
   // Authentication establishes identity only. Teacher membership is a distinct
@@ -101,13 +107,36 @@ export async function createHttpApp(options = {}) {
       : DEFAULT_ALLOWED_ORIGINS
   );
 
-  const authConfig = {
-    expectedAud: options.authConfig?.expectedAud || process.env.TEACHER_SERVICE_CF_ACCESS_AUD || '',
+  const mcpAud = options.authConfig?.mcpAud
+    || (options.authConfig?.webAud ? null : options.authConfig?.expectedAud)
+    || process.env.TEACHER_SERVICE_CF_ACCESS_AUD
+    || '';
+
+  const webAud = options.authConfig?.webAud
+    || (options.authConfig?.mcpAud ? null : options.authConfig?.expectedAud)
+    || process.env.TEACHER_SERVICE_WEB_CF_ACCESS_AUD
+    || '';
+
+  const baseAuthConfig = {
+    isProduction,
+    allowSyntheticAuth: isProduction ? false : (options.authConfig?.allowSyntheticAuth ?? (process.env.NODE_ENV !== 'production')),
     expectedIss: options.authConfig?.expectedIss ?? process.env.TEACHER_SERVICE_CF_ACCESS_ISS,
     certsUrl: options.authConfig?.certsUrl,
     authMode,
     bearerToken: options.authConfig?.bearerToken || process.env.TEACHER_SERVICE_BEARER_TOKEN
   };
+
+  const mcpAuthConfig = {
+    ...baseAuthConfig,
+    expectedAud: mcpAud
+  };
+
+  const webAuthConfig = {
+    ...baseAuthConfig,
+    expectedAud: webAud
+  };
+
+  const staticHandler = createStaticFileHandler({ rootDir: options.staticDir || path.resolve(process.cwd(), 'client') });
 
   const handleHttpRequest = async (req, res) => {
     pruneInactive();
@@ -153,11 +182,10 @@ export async function createHttpApp(options = {}) {
       return;
     }
 
-    // 2. Web UI Dashboard (HTML)
-    if (pathname === '/' && req.method === 'GET') {
-      res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
-      res.end(getTeacherWebUIHtml());
-      return;
+    // 2. Web UI Dashboard & Static Assets (SPA)
+    if (pathname === '/' || pathname.startsWith('/client/') || (!pathname.startsWith('/api/') && !pathname.startsWith('/mcp') && pathname !== '/health')) {
+      const handled = staticHandler(req, res, pathname);
+      if (handled) return;
     }
 
     // 3. REST API endpoint (/api/*) — Strict authentication & authorization
@@ -165,7 +193,17 @@ export async function createHttpApp(options = {}) {
       // Origin check if present
       const originHeader = req.headers['origin'];
       if (originHeader && typeof originHeader === 'string') {
-        if (!configuredAllowedOrigins.includes(originHeader)) {
+        let isOriginAllowed = configuredAllowedOrigins.includes(originHeader);
+        if (!isOriginAllowed) {
+          try {
+            const parsed = new URL(originHeader);
+            const reqHost = (req.headers['host'] || '').trim().toLowerCase();
+            if (parsed.host.toLowerCase() === reqHost) {
+              isOriginAllowed = true;
+            }
+          } catch {}
+        }
+        if (!isOriginAllowed) {
           res.writeHead(403, { 'Content-Type': 'application/json' });
           res.end(JSON.stringify({ error: 'Forbidden', message: `Invalid Origin "${originHeader}"` }));
           return;
@@ -183,17 +221,38 @@ export async function createHttpApp(options = {}) {
         }
       }
 
+      // CSRF validation for non-safe methods (Dossier 01, Web security)
+      const csrfCheck = validateCsrf(req, configuredAllowedOrigins);
+      if (!csrfCheck.valid) {
+        res.writeHead(403, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: 'Forbidden', message: csrfCheck.error }));
+        return;
+      }
+
       // Authenticate request consistently
-      const authResult = await authenticateRequest(req, authConfig);
+      const authResult = await authenticateRequest(req, webAuthConfig);
       if (!authResult.authenticated) {
-        res.writeHead(401, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ error: 'Unauthorized', message: authResult.error || 'Authentication required for Teacher Service REST API' }));
+        const sc = authResult.statusCode || 401;
+        const errType = sc === 500 ? 'Internal Server Error' : (sc === 403 ? 'Forbidden' : 'Unauthorized');
+        res.writeHead(sc, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: errType, message: authResult.error || 'Authentication required for Teacher Service REST API' }));
         return;
       }
 
       let teacherGrant = false;
       try { teacherGrant = isTeacherGrant(await authorizeTeacher(authResult)); } catch { teacherGrant = false; }
       if (!teacherGrant) {
+        if (pathname === '/api/auth/me' && req.method === 'GET') {
+          res.writeHead(200, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({
+            authenticated: true,
+            principal: authResult.principal,
+            user: authResult.user || null,
+            teacherAuthorized: false,
+            role: 'unauthorized'
+          }));
+          return;
+        }
         res.writeHead(403, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({ error: 'Forbidden', message: 'Authenticated principal is not authorized as a teacher' }));
         return;
@@ -202,10 +261,14 @@ export async function createHttpApp(options = {}) {
 
       let bodyBuffer = Buffer.alloc(0);
       let parsedBody = null;
+      let multipartData = null;
       if (req.method !== 'GET' && req.method !== 'HEAD') {
         try {
           bodyBuffer = await readRequestBody(req, MAX_PAYLOAD_BYTES);
-          if (bodyBuffer.length > 0) {
+          const ctype = req.headers['content-type'] || '';
+          if (ctype.includes('multipart/form-data')) {
+            multipartData = parseMultipartFormData(bodyBuffer, ctype);
+          } else if (bodyBuffer.length > 0) {
             try {
               parsedBody = JSON.parse(bodyBuffer.toString('utf8'));
             } catch {
@@ -219,7 +282,7 @@ export async function createHttpApp(options = {}) {
         }
       }
 
-      return handleRestApi(req, res, pathname, parsedUrl, service, authResult, parsedBody);
+      return handleRestApi(req, res, pathname, parsedUrl, service, authResult, parsedBody, multipartData);
     }
 
     // 4. MCP Streamable HTTP endpoint (/mcp)
@@ -261,7 +324,7 @@ export async function createHttpApp(options = {}) {
       }
 
       // Authenticate
-      const authResult = await authenticateRequest(req, authConfig);
+      const authResult = await authenticateRequest(req, mcpAuthConfig);
       if (!authResult.authenticated) {
         res.writeHead(401, { 'Content-Type': 'application/json' });
         res.end(
@@ -489,7 +552,7 @@ export async function createHttpApp(options = {}) {
   };
 }
 
-async function handleRestApi(req, res, pathname, parsedUrl, service, authResult, parsedBody) {
+async function handleRestApi(req, res, pathname, parsedUrl, service, authResult, parsedBody, multipartData) {
   res.setHeader('Content-Type', 'application/json');
 
   // Never derive roles from request parameters. The route is reached only after
@@ -503,6 +566,154 @@ async function handleRestApi(req, res, pathname, parsedUrl, service, authResult,
   const isStudent = callerRole === 'student';
 
   try {
+    // GET /api/auth/me
+    if (pathname === '/api/auth/me' && req.method === 'GET') {
+      res.writeHead(200);
+      res.end(JSON.stringify({
+        authenticated: true,
+        principal: authResult.principal,
+        user: authResult.user || null,
+        teacherAuthorized: true,
+        role: callerRole
+      }));
+      return;
+    }
+
+    // POST /api/classes
+    if (pathname === '/api/classes' && req.method === 'POST') {
+      const cls = service.createClass(parsedBody || {});
+      res.writeHead(201);
+      res.end(JSON.stringify({ class: cls }));
+      return;
+    }
+
+    // POST /api/subjects
+    if (pathname === '/api/subjects' && req.method === 'POST') {
+      const sub = service.createSubject(parsedBody || {});
+      res.writeHead(201);
+      res.end(JSON.stringify({ subject: sub }));
+      return;
+    }
+
+    // POST /api/lessons
+    if (pathname === '/api/lessons' && req.method === 'POST') {
+      const les = service.createLesson(parsedBody || {});
+      res.writeHead(201);
+      res.end(JSON.stringify({ lesson: les }));
+      return;
+    }
+
+    // GET /api/lessons/:id/pack
+    if (pathname.match(/^\/api\/lessons\/([^/]+)\/pack$/) && req.method === 'GET') {
+      const id = pathname.split('/')[3];
+      const pack = service.getLessonPack(id, { role: callerRole, includeTeacherSolutions: !isStudent });
+      res.writeHead(200);
+      res.end(JSON.stringify({ pack }));
+      return;
+    }
+
+    // POST /api/lessons/:id/generate-pack
+    if (pathname.match(/^\/api\/lessons\/([^/]+)\/generate-pack$/) && req.method === 'POST') {
+      const id = pathname.split('/')[3];
+      const pack = await service.generateLessonPack({
+        lessonId: id,
+        ...(parsedBody || {})
+      });
+      res.writeHead(200);
+      res.end(JSON.stringify({ pack }));
+      return;
+    }
+
+    // POST /api/lessons/:id/confirm-preparation
+    if (pathname.match(/^\/api\/lessons\/([^/]+)\/confirm-preparation$/) && req.method === 'POST') {
+      const id = pathname.split('/')[3];
+      const confirmation = service.confirmLessonPreparation({
+        lessonId: id,
+        notes: parsedBody?.notes || '',
+        actorId: authResult.principal
+      });
+      res.writeHead(200);
+      res.end(JSON.stringify({ confirmation }));
+      return;
+    }
+
+    // GET /api/lessons/:id
+    if (pathname.match(/^\/api\/lessons\/([^/]+)$/) && req.method === 'GET') {
+      const id = pathname.split('/')[3];
+      const lesson = service.getLesson(id);
+      res.writeHead(200);
+      res.end(JSON.stringify({ lesson }));
+      return;
+    }
+
+    // PUT /api/lessons/:id
+    if (pathname.match(/^\/api\/lessons\/([^/]+)$/) && req.method === 'PUT') {
+      const id = pathname.split('/')[3];
+      const lesson = service.updateLesson(id, parsedBody || {});
+      res.writeHead(200);
+      res.end(JSON.stringify({ lesson }));
+      return;
+    }
+
+    // POST /api/materials/upload
+    if (pathname === '/api/materials/upload' && req.method === 'POST') {
+      if (!multipartData || !multipartData.file) {
+        res.writeHead(400);
+        res.end(JSON.stringify({ error: 'ValidationError', message: 'No file uploaded in multipart request' }));
+        return;
+      }
+      const { file, fields } = multipartData;
+      const result = await service.importFile({
+        fileBuffer: file.buffer,
+        filename: file.filename,
+        title: fields.title || file.filename,
+        classId: fields.classId || null,
+        subjectId: fields.subjectId || null,
+        lessonId: fields.lessonId || null,
+        pedagogicalRole: fields.pedagogicalRole || 'support_material',
+        tags: fields.tags ? fields.tags.split(',').map(t => t.trim()).filter(Boolean) : []
+      });
+      res.writeHead(201);
+      res.end(JSON.stringify(result));
+      return;
+    }
+
+    // PUT /api/materials/:id
+    if (pathname.match(/^\/api\/materials\/([^/]+)$/) && req.method === 'PUT') {
+      const id = pathname.split('/')[3];
+      const mat = service.updateMaterial(id, {
+        ...(parsedBody || {}),
+        updatedBy: authResult.principal
+      });
+      res.writeHead(200);
+      res.end(JSON.stringify({ material: mat }));
+      return;
+    }
+
+    // POST /api/materials/:id/revise
+    if (pathname.match(/^\/api\/materials\/([^/]+)\/revise$/) && req.method === 'POST') {
+      const id = pathname.split('/')[3];
+      const result = await service.reviseMaterial({
+        materialId: id,
+        ...(parsedBody || {})
+      });
+      res.writeHead(200);
+      res.end(JSON.stringify({ result }));
+      return;
+    }
+
+    // POST /api/materials/:id/regenerate-section
+    if (pathname.match(/^\/api\/materials\/([^/]+)\/regenerate-section$/) && req.method === 'POST') {
+      const id = pathname.split('/')[3];
+      const result = await service.regenerateSection({
+        materialId: id,
+        ...(parsedBody || {})
+      });
+      res.writeHead(200);
+      res.end(JSON.stringify({ result }));
+      return;
+    }
+
     // GET /api/classes
     if (pathname === '/api/classes' && req.method === 'GET') {
       const classes = service.listClasses();
@@ -711,251 +922,8 @@ async function handleRestApi(req, res, pathname, parsedUrl, service, authResult,
     res.writeHead(404);
     res.end(JSON.stringify({ error: 'Endpoint not found', path: pathname }));
   } catch (err) {
-    const statusCode = err.name === 'NotFoundError' ? 404 : (err.name === 'ValidationError' ? 400 : 500);
+    const statusCode = err.name === 'NotFoundError' ? 404 : (err.name === 'ValidationError' ? 400 : (err.name === 'ConflictError' ? 409 : 500));
     res.writeHead(statusCode);
     res.end(JSON.stringify({ error: err.name || 'Error', message: err.message }));
   }
-}
-
-function getTeacherWebUIHtml() {
-  return `<!DOCTYPE html>
-<html lang="it">
-<head>
-  <meta charset="UTF-8">
-  <title>Teacher Service — Dashboard Docente</title>
-  <style>
-    :root {
-      --primary: #2563eb;
-      --primary-dark: #1d4ed8;
-      --bg: #f8fafc;
-      --card-bg: #ffffff;
-      --text: #0f172a;
-      --text-muted: #64748b;
-      --border: #e2e8f0;
-    }
-    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 1.5rem; }
-    header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; padding-bottom: 1rem; border-bottom: 1px solid var(--border); }
-    h1 { font-size: 1.6rem; margin: 0; }
-    .badge { display: inline-block; padding: 0.2rem 0.5rem; border-radius: 4px; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; }
-    .badge-teacher { background: #e0f2fe; color: #0369a1; }
-    .badge-student { background: #dcfce7; color: #15803d; }
-    .badge-support { background: #f1f5f9; color: #475569; }
-    .badge-assessable { background: #fef08a; color: #854d0e; }
-    .tabs { display: flex; gap: 0.5rem; margin-bottom: 1.5rem; border-bottom: 1px solid var(--border); }
-    .tab-btn { background: none; border: none; padding: 0.75rem 1.25rem; font-size: 0.95rem; font-weight: 500; cursor: pointer; color: var(--text-muted); border-bottom: 2px solid transparent; }
-    .tab-btn.active { color: var(--primary); border-bottom-color: var(--primary); font-weight: 600; }
-    .card { background: var(--card-bg); border: 1px solid var(--border); border-radius: 8px; padding: 1.25rem; margin-bottom: 1.25rem; box-shadow: 0 1px 3px rgba(0,0,0,0.03); }
-    table { width: 100%; border-collapse: collapse; margin-top: 0.5rem; }
-    th, td { text-align: left; padding: 0.6rem; border-bottom: 1px solid var(--border); font-size: 0.9rem; }
-    th { font-weight: 600; color: var(--text-muted); }
-    input, select, textarea, button { font-family: inherit; font-size: 0.9rem; padding: 0.5rem 0.75rem; border: 1px solid var(--border); border-radius: 6px; }
-    button.btn-primary { background: var(--primary); color: white; border: none; cursor: pointer; font-weight: 500; }
-    button.btn-primary:hover { background: var(--primary-dark); }
-    .auth-bar { display: flex; align-items: center; gap: 0.5rem; font-size: 0.85rem; }
-  </style>
-</head>
-<body>
-  <header>
-    <div>
-      <h1>Teacher Service</h1>
-      <p style="margin: 0.2rem 0 0; color: var(--text-muted); font-size: 0.85rem;">Piattaforma di Gestione Materiali Didattici, Curricolo e Valutazione con Assistenza AI</p>
-    </div>
-    <div class="auth-bar">
-      <span style="color: var(--text-muted);">Autenticazione:</span>
-      <input type="password" id="token-input" placeholder="Bearer Token (opzionale)" style="width: 200px;" />
-      <button class="btn-primary" onclick="saveAuthToken()">Salva</button>
-    </div>
-  </header>
-
-  <nav class="tabs">
-    <button class="tab-btn active" onclick="switchTab('tab-materials')">Materiali Didattici</button>
-    <button class="tab-btn" onclick="switchTab('tab-classes')">Classi e Lezioni</button>
-    <button class="tab-btn" onclick="switchTab('tab-rules')">Regole Operative AI</button>
-    <button class="tab-btn" onclick="switchTab('tab-assessments')">Verifiche e Valutazione</button>
-  </nav>
-
-  <main>
-    <!-- TAB MATERIALI -->
-    <section id="tab-materials" class="tab-content">
-      <div class="card">
-        <div style="display: flex; justify-content: space-between; align-items: center;">
-          <h2 style="font-size: 1.1rem; margin: 0;">Materiali Disponibili</h2>
-          <button class="btn-primary" onclick="loadMaterials()">Aggiorna</button>
-        </div>
-        <div id="materials-table-wrap" style="margin-top: 1rem;">Caricamento...</div>
-      </div>
-    </section>
-
-    <!-- TAB CLASSI -->
-    <section id="tab-classes" class="tab-content" style="display: none;">
-      <div class="card">
-        <h2 style="font-size: 1.1rem; margin: 0 0 1rem;">Struttura Classi e Corsi</h2>
-        <div id="classes-list-wrap">Caricamento...</div>
-      </div>
-    </section>
-
-    <!-- TAB REGOLE AI -->
-    <section id="tab-rules" class="tab-content" style="display: none;">
-      <div class="card">
-        <h2 style="font-size: 1.1rem; margin: 0 0 1rem;">Regole Operative AI Configurate (Dossier 09)</h2>
-        <div id="rules-list-wrap">Caricamento...</div>
-      </div>
-    </section>
-
-    <!-- TAB ASSESSMENTS -->
-    <section id="tab-assessments" class="tab-content" style="display: none;">
-      <div class="card">
-        <h2 style="font-size: 1.1rem; margin: 0 0 1rem;">Verifiche e Valutazione</h2>
-        <div id="assessments-list-wrap">Caricamento...</div>
-      </div>
-    </section>
-  </main>
-
-  <script>
-    // XSS Sanitizer: Escape user-controlled strings before inserting into DOM
-    function escapeHtml(str) {
-      if (str === null || str === undefined) return '';
-      return String(str)
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;')
-        .replace(/'/g, '&#039;');
-    }
-
-    function getAuthHeaders() {
-      const headers = { 'Accept': 'application/json' };
-      const token = localStorage.getItem('ts_bearer_token');
-      if (token) headers['Authorization'] = 'Bearer ' + token;
-      return headers;
-    }
-
-    function saveAuthToken() {
-      const val = document.getElementById('token-input').value.trim();
-      if (val) {
-        localStorage.setItem('ts_bearer_token', val);
-        alert('Token salvato.');
-      } else {
-        localStorage.removeItem('ts_bearer_token');
-        alert('Token rimosso.');
-      }
-      loadMaterials();
-    }
-
-    function switchTab(tabId) {
-      document.querySelectorAll('.tab-content').forEach(el => el.style.display = 'none');
-      document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
-      const activeTab = document.getElementById(tabId);
-      if (activeTab) activeTab.style.display = 'block';
-      event.target.classList.add('active');
-
-      if (tabId === 'tab-materials') loadMaterials();
-      if (tabId === 'tab-classes') loadClasses();
-      if (tabId === 'tab-rules') loadRules();
-      if (tabId === 'tab-assessments') loadAssessments();
-    }
-
-    async function loadMaterials() {
-      const wrap = document.getElementById('materials-table-wrap');
-      try {
-        const res = await fetch('/api/materials', { headers: getAuthHeaders() });
-        if (!res.ok) {
-          wrap.innerHTML = '<p style="color: red;">Errore caricamento (' + res.status + '): ' + escapeHtml(res.statusText) + '</p>';
-          return;
-        }
-        const data = await res.json();
-        const mats = data.materials || [];
-        if (mats.length === 0) {
-          wrap.innerHTML = '<p>Nessun materiale presente.</p>';
-          return;
-        }
-
-        let html = '<table><thead><tr><th>Titolo</th><th>Ruolo</th><th>Versione</th><th>Tipo</th><th>Azioni</th></tr></thead><tbody>';
-        for (const m of mats) {
-          const roleBadgeClass = 'badge-' + (m.pedagogical_role === 'teacher_material' ? 'teacher' : (m.pedagogical_role === 'student_material' ? 'student' : (m.pedagogical_role === 'assessable_material' ? 'assessable' : 'support')));
-          html += '<tr>' +
-            '<td><strong>' + escapeHtml(m.title) + '</strong></td>' +
-            '<td><span class="badge ' + roleBadgeClass + '">' + escapeHtml(m.pedagogical_role) + '</span></td>' +
-            '<td>v' + escapeHtml(m.current_version) + '</td>' +
-            '<td>' + escapeHtml(m.resource_type) + '</td>' +
-            '<td><a href="/api/materials/' + encodeURIComponent(m.id) + '/export?format=markdown" target="_blank">Export MD</a> | <a href="/api/materials/' + encodeURIComponent(m.id) + '/export?format=html" target="_blank">HTML</a></td>' +
-            '</tr>';
-        }
-        html += '</tbody></table>';
-        wrap.innerHTML = html;
-      } catch (err) {
-        wrap.innerHTML = '<p style="color: red;">Errore di rete: ' + escapeHtml(err.message) + '</p>';
-      }
-    }
-
-    async function loadClasses() {
-      const wrap = document.getElementById('classes-list-wrap');
-      try {
-        const res = await fetch('/api/classes', { headers: getAuthHeaders() });
-        const data = await res.json();
-        const list = data.classes || [];
-        if (list.length === 0) {
-          wrap.innerHTML = '<p>Nessuna classe registrata.</p>';
-          return;
-        }
-        let html = '<ul>';
-        for (const c of list) {
-          html += '<li><strong>' + escapeHtml(c.name) + '</strong> (' + escapeHtml(c.academic_year) + ') - ' + escapeHtml(c.description || '') + '</li>';
-        }
-        html += '</ul>';
-        wrap.innerHTML = html;
-      } catch (err) {
-        wrap.innerHTML = '<p style="color: red;">Errore: ' + escapeHtml(err.message) + '</p>';
-      }
-    }
-
-    async function loadRules() {
-      const wrap = document.getElementById('rules-list-wrap');
-      try {
-        const res = await fetch('/api/ai-rules', { headers: getAuthHeaders() });
-        const data = await res.json();
-        const rules = data.rules || [];
-        if (rules.length === 0) {
-          wrap.innerHTML = '<p>Nessuna regola AI definita.</p>';
-          return;
-        }
-        let html = '<ul>';
-        for (const r of rules) {
-          html += '<li><strong>' + escapeHtml(r.title) + '</strong> [Scope: ' + escapeHtml(r.scope) + ']: <em>' + escapeHtml(r.instruction_text) + '</em></li>';
-        }
-        html += '</ul>';
-        wrap.innerHTML = html;
-      } catch (err) {
-        wrap.innerHTML = '<p style="color: red;">Errore: ' + escapeHtml(err.message) + '</p>';
-      }
-    }
-
-    async function loadAssessments() {
-      const wrap = document.getElementById('assessments-list-wrap');
-      try {
-        const res = await fetch('/api/assessments', { headers: getAuthHeaders() });
-        const data = await res.json();
-        const list = data.assessments || [];
-        if (list.length === 0) {
-          wrap.innerHTML = '<p>Nessuna verifica registrata.</p>';
-          return;
-        }
-        let html = '<ul>';
-        for (const a of list) {
-          html += '<li><strong>' + escapeHtml(a.title) + '</strong> (' + escapeHtml(a.duration_minutes) + ' min, max ' + escapeHtml(a.max_score) + ' pt) - Stato: ' + escapeHtml(a.status) + ' | <a href="/api/assessments/' + encodeURIComponent(a.id) + '/export?format=report" target="_blank">Report</a></li>';
-        }
-        html += '</ul>';
-        wrap.innerHTML = html;
-      } catch (err) {
-        wrap.innerHTML = '<p style="color: red;">Errore: ' + escapeHtml(err.message) + '</p>';
-      }
-    }
-
-    // Auto-load token & initial tab
-    const savedToken = localStorage.getItem('ts_bearer_token');
-    if (savedToken) document.getElementById('token-input').value = savedToken;
-    loadMaterials();
-  </script>
-</body>
-</html>`;
 }

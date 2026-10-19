@@ -98,7 +98,8 @@ export class OrganizationService {
     return this.getSubject(id);
   }
 
-  listSubjects(classId = null) {
+  listSubjects(filter = null) {
+    const classId = typeof filter === 'object' && filter !== null ? filter.classId : filter;
     if (classId) {
       const stmt = this.dbManager.prepare(`
         SELECT * FROM subjects WHERE class_id = ? ORDER BY name ASC
@@ -156,6 +157,7 @@ export class OrganizationService {
     title,
     description = null,
     date = null,
+    durationMinutes = 60,
     orderIndex = 0,
     status = 'planned'
   }) {
@@ -169,10 +171,10 @@ export class OrganizationService {
     const now = new Date().toISOString();
 
     const stmt = this.dbManager.prepare(`
-      INSERT INTO lessons (id, class_id, subject_id, title, description, date, order_index, status, created_at, updated_at)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      INSERT INTO lessons (id, class_id, subject_id, title, description, date, duration_minutes, order_index, status, created_at, updated_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `);
-    stmt.run(id, classId, subjectId, title, description, date, orderIndex, status, now, now);
+    stmt.run(id, classId, subjectId, title, description, date, durationMinutes, orderIndex, status, now, now);
 
     return this.getLesson(id);
   }
@@ -210,21 +212,22 @@ export class OrganizationService {
     return row;
   }
 
-  updateLesson(id, { title, description, date, orderIndex, status }) {
+  updateLesson(id, { title, description, date, durationMinutes, orderIndex, status }) {
     const current = this.getLesson(id);
     const updatedTitle = title !== undefined ? title : current.title;
     const updatedDesc = description !== undefined ? description : current.description;
     const updatedDate = date !== undefined ? date : current.date;
+    const updatedDuration = durationMinutes !== undefined ? durationMinutes : (current.duration_minutes || 60);
     const updatedOrder = orderIndex !== undefined ? orderIndex : current.order_index;
     const updatedStatus = status !== undefined ? status : current.status;
     const now = new Date().toISOString();
 
     const stmt = this.dbManager.prepare(`
       UPDATE lessons
-      SET title = ?, description = ?, date = ?, order_index = ?, status = ?, updated_at = ?
+      SET title = ?, description = ?, date = ?, duration_minutes = ?, order_index = ?, status = ?, updated_at = ?
       WHERE id = ?
     `);
-    stmt.run(updatedTitle, updatedDesc, updatedDate, updatedOrder, updatedStatus, now, id);
+    stmt.run(updatedTitle, updatedDesc, updatedDate, updatedDuration, updatedOrder, updatedStatus, now, id);
 
     return this.getLesson(id);
   }

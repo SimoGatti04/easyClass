@@ -30,7 +30,7 @@ export function createTeacherPrincipalAuthorizer({
   const allowedEmails = parseTeacherEmailAllowlist(teacherEmails);
 
   return async (authResult) => {
-    if (authResult?.authenticated !== true || authResult.authMethod !== 'cloudflare_access') return false;
+    if (authResult?.authenticated !== true || authResult.authMethod !== 'cloudflare_access' && authResult.authMethod !== 'synthetic') return false;
 
     const email = normalizeEmail(authResult.user?.email);
     if (!email || !allowedEmails.has(email)) return false;

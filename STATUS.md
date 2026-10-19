@@ -346,3 +346,126 @@ Dossier 04 §§46–47 e Dossier 05 §§56–57 (2026-10): separazione **Teacher
 ### 4. Rischio residuo SQLite/FileStore e Backup
 - Come espressamente confermato dal Domain Owner, **non** e introdotto alcun sistema indipendente di backup verso NAS o storage esterno in C1.
 - Resta documentato in docs/operations.md il rischio residuo di perdita dati dovuto al single-node hostPath su <backup-host>.
+
+### 4. Finalizzazione operativa C1 completata (17 ottobre 2026)
+- **Container image e build policy:**
+  - Compilata immagine immutabile `ghcr.io/simogatti04/class:20261017-64d3030` (architettura `linux/amd64`, utente non-root `node:node`, `pdftotext` e `pandoc` verificati).
+  - Immagine importata con successo nel containerd di entrambi i nodi K3s (`<backup-host>`, `<backup-host>`).
+- **Deploy K3s e continuità del servizio:**
+  - Manifest applicati via `make k-apply APP=class` da repository Infra.
+  - Pod `class-5d84544d68-dtk6b` 1/1 Running su `<backup-host>`.
+  - Verificato probe e healthcheck HTTP 200 su `https://class.simogatti.it/health` (`{"status":"ok","service":"teacher-service","transport":"streamable-http","version":"0.1.0"}`).
+  - Verificato endpoint MCP su Cloudflare Access `https://mcp-teacher.simogatti.it/mcp` (HTTP 401 Bearer OAuth discovery verso `simogatti.cloudflareaccess.com`).
+  - Nessun mount di rollback `/srv/legacy-class-uploads` attivo nel container.
+- **Ritiro completo e permanente del vecchio portale-classi:**
+  - `StatefulSet/class-postgres` e `Service/class-postgres` eliminati da K3s.
+  - PVC legacy `class-postgres-data` e `class-uploads` eliminati dopo verifica assenza consumatori.
+  - PV legacy `class-postgres-data` e `class-uploads` (Released) rimossi dal cluster.
+  - Volumi persistenti `class-teacher-db` (2Gi) e `class-teacher-files` (5Gi) confermati Bound con StorageClass `class-local` e reclaim policy `Retain`.
+- **Bonifica storage fisico su <backup-host>:**
+  - Rimossi i percorsi legacy `/srv/class/postgres` (67 MB) e `/srv/class/uploads` (1015 MB).
+  - Rimosso il dump SQL storico `/srv/class/backup_before_teacher_service_20261014.sql` (2.8 MB) e script SQL correlati.
+  - Reclamati oltre 1.08 GB di spazio disco su `<backup-host>`.
+  - Preservati intatti e operativi `/srv/class/teacher-service/db` e `/srv/class/teacher-service/files`.
+- **Bonifica credenziali legacy su Infisical:**
+  - Rimosse dal path `/class` le 5 chiavi legacy: `POSTGRES_PASSWORD`, `DB_PASSWORD`, `ADMIN_USERNAME`, `ADMIN_PASSWORD`, `SESSION_SECRET`.
+  - Mantenuta unicamente `TEACHER_SERVICE_OMNIROUTE_API_KEY`.
+  - Verificato che il pod `class` riceva solo le variabili di configurazione di Teacher Service, senza variabili PostgreSQL.
+- **Validazione coerenza configurazione:**
+  - `make domain-check`: PASS.
+  - `make exposure-check`: PASS.
+
+## 5. Checkpoint C2: T1 "Tomorrow is ready" — Implementazione, Supervisione e Revisione Pre-release (17 ottobre 2026)
+
+Conformemente alle direttive vincolanti del Supervisore e ai Dossier approvati (Dossier 01 §§5–8, 26–31; Dossier 03; Dossier 04; Dossier 09; Dossier 10), è stato completato e validato con successo il primo vertical slice UX/UI: **T1 ("Tomorrow is ready")**, integrando tutte le correzioni pre-release richieste dalla supervisione.
+
+### 1. Frontend React Modulare e Immunizzazione XSS
+- **Architettura Componenti React (`client/src/components/`):**
+  - Allineata l'interfaccia alla struttura a componenti React modulari ed estendibili: `Header.js`, `ContextBar.js`, `LessonHeader.js`, `SourceManager.js`, `StepProgressCard.js`, `ArtifactWorkspace.js`, `Modals.js`.
+  - Servita in modo nativo da `src/server/static.js` senza toolchain di build esterna né dipendenze runtime non necessarie.
+- **Rendering Sicuro & Zero innerHTML (`client/src/components/MarkdownViewer.js`):**
+  - Parsing e rendering Markdown convertito direttamente in Virtual DOM React (`h1`, `h2`, `h3`, `p`, `pre/code`, `ul/ol`, `blockquote`, `table`, `strong`, `em`).
+  - **Zero innerHTML e Zero dangerouslySetInnerHTML**: immunizzazione completa contro payload malevoli (`<script>`, `<img onerror>`, `<iframe src>`).
+  - Blocchi `[TEACHER_ONLY_SOLUTION]` incapsulati in container protetti con banner esplicito di riservatezza didattica.
+- **Parametri Didattici e Fonti Esplicite:**
+  - Durata lezione (`durationMinutes`) configurabile dal docente e propagata al contesto di generazione.
+  - Selezione esplicita delle fonti (`selectedSourceIds`) per vincolare il materiale di riferimento usato dall'AI.
+
+### 2. Autenticazione Multi-Audience e Sicurezza di Rete
+- **Separazione Rigorosa degli Audience Cloudflare Access:**
+  - Applicazione Web (`/api/*`): vincolata ad audience dedicato `TEACHER_SERVICE_WEB_CF_ACCESS_AUD`.
+  - Applicazione MCP (`/mcp`): vincolata ad audience Managed OAuth `TEACHER_SERVICE_CF_ACCESS_AUD`.
+  - Cross-token rejection fail-closed verificata (un token Web inviato all'MCP riceve 401 Audience mismatch; un token MCP inviato alle API Web riceve 401 Audience mismatch).
+- **Protezione CSRF per Sessioni Browser Cookie-Based:**
+  - Validazione `Host` contro header poisoning.
+  - Blocco fail-closed delle richieste con `Sec-Fetch-Site: cross-site`.
+  - Obbligo di `Origin` o `Referer` verificato per mutazioni (`POST`, `PUT`, `DELETE`, `PATCH`) basate su cookie `CF_Authorization`.
+  - Nessun token manuale né persistenza in `localStorage`.
+
+### 3. Orchestrazione Lesson Pack & Persistenza Version-Bound
+- **Generazione e Ripresa Step-by-Step Verificabile:**
+  - Pipeline sequenziale dei 4 artefatti didattici: Lesson Plan → Teacher Script → Esercizi con soluzioni riservate → Dispensa Studente.
+  - Persistenza atomica immediata su SQLite e FileStore al completamento di ogni singolo step.
+  - Nessuna simulazione o fake progress: stato reale emesso per ciascun passaggio (`idle`, `running`, `completed`, `failed`).
+- **Rigenerazione Selettiva Senza Duplicati:**
+  - Parametro `existingMaterialId` per aggiornare in-place l'artefatto esistente, incrementando la versione immutabile (es. v1 → v2) e conservando l'ID e i collegamenti di provenienza.
+  - Nessun record orfano o duplicato generato nel database.
+- **Macchina a Stati della Conferma Preparazione (`lesson_preparation_confirmations`):**
+  - Distinzione a tre stati verificata:
+    1. `confirmed`: tutte le versioni correnti del pack corrispondono allo snapshot congelato nella conferma.
+    2. `modified_since_confirmation`: uno o più materiali sono stati modificati o rigenerati dopo l'ultima conferma.
+    3. `incomplete`: preparazione incompleta (uno o più artefatti del pack non ancora generati; rifiuto fail-closed del congelamento).
+  - Netta separazione tra conferma preparazione, svolgimento della lezione e pubblicazione agli studenti.
+
+### 4. Gestione Fonti e Multipart Upload
+- **Tracking di Provenienza:**
+  - Il source set selezionato dal docente viene verificato (risoluzione id e versionNumber esatto) e memorizzato in `provenance.sourceSet` dell'artefatto generato.
+- **Bufferizzazione Multipart Sicura (RFC 2046):**
+  - Implementato `parseBufferedMultipartFormData` con validazione sintattica del boundary RFC 2046.
+  - Limite rigoroso di dimensione a 25MB.
+  - Sanitizzazione dei percorsi file contro directory traversal (`../../../`).
+  - Allowlist estensioni consentite (`.pdf`, `.docx`, `.md`, `.txt`, `.html`).
+  - Validazione magic bytes (`%PDF-`, `PK`) per impedire l'upload di file camuffati.
+
+### 5. Suite di Test e Verifiche Superate (100% Pass)
+- Esecuzione completa di tutte le **21 suite di test** (`pnpm test` / `node tests/run-all.js`):
+  - 12 unit test suite (materiali, permanent delete, generation, omniroute client, rules, sources, file-service, attachment).
+  - 5 MCP test suite (mcp-server, attachment-mcp, context-aware-generation, http-loopback, http-transport).
+  - 2 server test suite (`api-t1.test.js` e la nuova suite `pre-release-corrections.test.js` con 8 test di sicurezza e ciclo di vita superati).
+  - 2 integration test suite (`e2e.test.js` e `t1-workflow.test.js` con test E2E completi).
+- Nessuna regressione sui contratti MCP o sulle funzionalità approvate in C1.
+
+
+### 6. Ultimo Gate Pre-release C2/T1 Completato (19 ottobre 2026)
+Conformemente alle direttive vincolanti dell'Ultimo Gate Pre-release, sono stati completati, verificati ed integrati tutti gli 8 punti operativi:
+
+1. **Divieto Assoluto di `authMode != 'strict'` in Produzione**:
+   - In `src/server/auth.js` (`authenticateRequest`) e `src/server/http.js`: fail-closed con eccezione bloccante / HTTP 500 se `isProduction && mode !== 'strict'`.
+   - Blocco assoluto di identità sintetiche in produzione (`statusCode: 403`).
+   - Verificato con suite dedicata in `tests/server/pre-release-corrections.test.js` (Test 8).
+
+2. **Contratto Selezione Fonti e Dipendenze Interne**:
+   - Supporto modalità `selected_only` (default) e `contextual` in `TeacherService.generateLessonPack`.
+   - Nessuna preselezione automatica indiscriminata; gli artefatti didattici interni sono esclusi dalle fonti esterne.
+   - Tracciamento della provenienza con esatto `sourceSet` (ID e versione). Preservate le dipendenze interne della generazione didattica.
+
+3. **Frontend React + Vite & Rimozione Bundle Vendorizzati**:
+   - Componenti React allineati a standard ESM (`react`, `react-dom/client`). Rimossa la directory legacy `client/vendor/`.
+   - Build di produzione Vite configurata e verificata (`pnpm run build:client` genera `client/dist/` con asset digest immutabili).
+   - Static file handler (`src/server/static.js`) serve `client/dist` con caching immutabile per `/assets/` e fallback SPA.
+
+4. **Robustezza Runtime e Lock Concorrenza**:
+   - In `TeacherService`, introdotto mutex/lock `_activeArtifactLocks` per impedire richieste concorrenti duplicate sullo stesso artefatto della medesima lezione (HTTP 409 Conflict).
+   - In caso di timeout, refresh o disconnessione, `GET /api/lessons/:id/pack` recupera gli artefatti persistiti permettendo la ripresa selettiva.
+
+5. **Build Container Reale e Browser Test E2E**:
+   - Container image compilata con successo (`docker build -t teacher-service:test .`) e collaudata a runtime.
+   - Suite browser reale Chromium (`tests/browser/t1-browser.test.js`) passata con successo al 100% (9 step completi: navigazione, creazione classe/materia/lezione, selettore fonti, generazione step progressiva, ispezione workspace, conferma e congelamento versioni, export).
+
+6. **Migrazione Additiva Database & Non-Regressione MCP**:
+   - Migrazione additiva (`duration_minutes` e tabella `lesson_preparation_confirmations`) verificata su database preesistente (`tests/unit/migration-additive.test.js`).
+   - Suite completa unit & integration (`pnpm test`: 22 test files) e suite MCP (`pnpm run test:mcp`: 11 protocol tools + 4 attachment tools) passate con successo (0 fallimenti).
+
+7. **Predisposizione Cloudflare Access Web & K3s (Nessuna mutazione applicata)**:
+   - Specificato piano dichiarativo per Cloudflare Access Application per `class.simogatti.it` (distinta dall'OAuth MCP `mcp-teacher.simogatti.it`).
+   - Configurazione variabile `TEACHER_SERVICE_WEB_CF_ACCESS_AUD` per Infisical e K3s.

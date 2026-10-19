@@ -1,3 +1,4 @@
+import crypto from 'node:crypto';
 /**
  * Teacher Service — Unified Application Facade
  *
@@ -16,7 +17,7 @@ import { OrganizationService } from './organization-service.js';
 import { MaterialService } from './material-service.js';
 import { OmniRouteClient } from '../ai/omniroute-client.js';
 import { WebResearchClient } from '../ai/web-research-client.js';
-import { ValidationError } from '../core/errors.js';
+import { ValidationError, ConflictError } from '../core/errors.js';
 import { AiRuleService } from './ai-rule-service.js';
 import { SourceService } from './source-service.js';
 import { FileService } from './file-service.js';
@@ -54,6 +55,7 @@ export class TeacherService {
     this.fileService = new FileService(this.materials, this.fileStore, fileServiceOptions);
     this.assessments = new AssessmentService(this.dbManager, this.materials, this.ai, this.aiRules);
     this.generation = new GenerationService(this.ai, this.materials, this.org, this.aiRules, this.assessments, this.sources);
+    this._activeArtifactLocks = new Set();
   }
 
   /* -------------------------------------------------------------------------- */
@@ -196,9 +198,318 @@ export class TeacherService {
   regenerateSection(options) { return this.generation.regenerateSection(options); }
   listAiModels(options) { return this.ai.listModels(options); }
 
+
   /* -------------------------------------------------------------------------- */
-  /* TEARDOWN                                                                   */
+  /* T1 LESSON PACK & PREPARATION WORKFLOW (Dossier 01 §5-8, §26-31)           */
   /* -------------------------------------------------------------------------- */
+
+  getLessonPack(lessonId, { role = 'teacher', includeTeacherSolutions = true } = {}) {
+    const lesson = this.org.getLesson(lessonId);
+    const materials = this.materials.listMaterials({ lessonId, status: 'all' });
+
+    let lessonPlan = null;
+    let teacherScript = null;
+    let exercises = null;
+    let studentMaterial = null;
+    const supportMaterials = [];
+    const otherMaterials = [];
+
+    const activeMaterials = materials.filter(m => m.status !== 'trashed');
+    activeMaterials.sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime());
+
+    for (const m of activeMaterials) {
+      if (m.resource_type === 'lesson_plan' && !lessonPlan) {
+        lessonPlan = this.materials.getMaterial(m.id, null, { role, includeTeacherSolutions });
+      } else if (m.resource_type === 'teacher_script' && !teacherScript) {
+        teacherScript = this.materials.getMaterial(m.id, null, { role, includeTeacherSolutions });
+      } else if (m.resource_type === 'exercise_sheet' && !exercises) {
+        exercises = this.materials.getMaterial(m.id, null, { role, includeTeacherSolutions });
+      } else if (m.resource_type === 'student_note' && !studentMaterial) {
+        studentMaterial = this.materials.getMaterial(m.id, null, { role, includeTeacherSolutions });
+      } else if (m.pedagogical_role === 'support_material') {
+        supportMaterials.push(m);
+      } else {
+        otherMaterials.push(m);
+      }
+    }
+
+    const isComplete = Boolean(lessonPlan && teacherScript && exercises && studentMaterial);
+
+    let confirmation = null;
+    let preparationStatus = isComplete ? 'draft_ready' : 'incomplete';
+
+    try {
+      const stmt = this.dbManager.prepare(`
+        SELECT * FROM lesson_preparation_confirmations
+        WHERE lesson_id = ?
+        ORDER BY confirmed_at DESC
+        LIMIT 1
+      `);
+      const row = stmt.get(lessonId);
+      if (row) {
+        let artifactVersions = {};
+        try {
+          artifactVersions = JSON.parse(row.artifact_versions_json);
+        } catch {}
+
+        confirmation = {
+          id: row.id,
+          lessonId: row.lesson_id,
+          confirmedAt: row.confirmed_at,
+          confirmedBy: row.confirmed_by,
+          notes: row.notes,
+          artifactVersions
+        };
+
+        if (!isComplete) {
+          preparationStatus = 'incomplete';
+        } else {
+          const matches =
+            artifactVersions.lessonPlan?.id === lessonPlan.id &&
+            artifactVersions.lessonPlan?.version === lessonPlan.current_version &&
+            artifactVersions.teacherScript?.id === teacherScript.id &&
+            artifactVersions.teacherScript?.version === teacherScript.current_version &&
+            artifactVersions.exercises?.id === exercises.id &&
+            artifactVersions.exercises?.version === exercises.current_version &&
+            artifactVersions.studentMaterial?.id === studentMaterial.id &&
+            artifactVersions.studentMaterial?.version === studentMaterial.current_version;
+
+          if (matches) {
+            preparationStatus = 'confirmed';
+          } else {
+            preparationStatus = 'modified_since_confirmation';
+          }
+        }
+      }
+    } catch {}
+
+    return {
+      lesson,
+      artifacts: {
+        lessonPlan,
+        teacherScript,
+        exercises,
+        studentMaterial
+      },
+      supportMaterials,
+      otherMaterials,
+      confirmation,
+      preparationStatus,
+      isComplete
+    };
+  }
+
+    async generateLessonPack({
+    lessonId,
+    topic = null,
+    durationMinutes = null,
+    additionalInstructions = '',
+    selectedSourceIds = [],
+    sourceSelectionMode = 'selected_only',
+    targetArtifacts = null,
+    model = undefined,
+    signal = null
+  }) {
+    if (!lessonId) throw new ValidationError('lessonId is required to generate a Lesson Pack');
+    const lesson = this.org.getLesson(lessonId);
+    const effectiveTopic = (topic || lesson.title || '').trim();
+    if (!effectiveTopic) throw new ValidationError('Topic or lesson title is required');
+
+    const effectiveDuration = durationMinutes || lesson.duration_minutes || 60;
+
+    // Keep lesson record in sync with edited topic/duration
+    if (topic && topic !== lesson.title || durationMinutes && durationMinutes !== lesson.duration_minutes) {
+      this.org.updateLesson(lessonId, {
+        title: effectiveTopic,
+        durationMinutes: effectiveDuration
+      });
+    }
+
+    const artifactsToRun = (targetArtifacts && Array.isArray(targetArtifacts) && targetArtifacts.length > 0)
+      ? targetArtifacts
+      : ['lessonPlan', 'teacherScript', 'exercises', 'studentMaterial'];
+
+    for (const art of artifactsToRun) {
+      const lockKey = `${lessonId}:${art}`;
+      if (this._activeArtifactLocks.has(lockKey)) {
+        throw new ConflictError(`Artifact "${art}" is currently being generated for lesson "${lessonId}". Concurrent duplicate requests are rejected.`);
+      }
+    }
+    for (const art of artifactsToRun) {
+      this._activeArtifactLocks.add(`${lessonId}:${art}`);
+    }
+
+    try {
+      const shouldRun = (name) => artifactsToRun.includes(name);
+
+      let pack = this.getLessonPack(lessonId);
+
+      const isSelectedOnly = sourceSelectionMode === 'selected_only';
+      const includePreviousLessons = !isSelectedOnly;
+      const searchInternal = !isSelectedOnly;
+      const searchWeb = false;
+
+      // Filter out pack artifacts from candidate external support sources
+      const requiredSources = [];
+      for (const item of (selectedSourceIds || [])) {
+        if (!item) continue;
+        if (typeof item === 'object') {
+          requiredSources.push(item);
+          continue;
+        }
+        try {
+          const mat = this.materials.getMaterial(item);
+          const isPackArtifact = [
+            'lesson_plan',
+            'teacher_script',
+            'exercise_sheet',
+            'student_material'
+          ].includes(mat.resource_type) && mat.lesson_id === lessonId;
+
+          if (!isPackArtifact) {
+            requiredSources.push({
+              resourceId: item,
+              versionNumber: mat.current_version || 1
+            });
+          }
+        } catch {
+          requiredSources.push({ resourceId: item, versionNumber: 1 });
+        }
+      }
+
+      // Step 1: Lesson Plan
+      if (shouldRun('lessonPlan')) {
+        await this.generation.generateLessonPlan({
+          lessonId,
+          topic: effectiveTopic,
+          durationMinutes: effectiveDuration,
+          additionalInstructions,
+          classId: lesson.class_id,
+          subjectId: lesson.subject_id,
+          requiredSources,
+          includePreviousLessons,
+          searchInternal,
+          searchWeb,
+          model,
+          signal,
+          existingMaterialId: pack.artifacts.lessonPlan?.id || null,
+          sourceSelectionMode
+        });
+        pack = this.getLessonPack(lessonId);
+      }
+
+      // Step 2: Teacher Script (conduzione riga per riga con timecodes)
+      if (shouldRun('teacherScript')) {
+        const plan = pack.artifacts.lessonPlan;
+        await this.generation.generateTeacherScript({
+          lessonPlanId: plan?.id || null,
+          lessonPlanVersionNumber: plan?.current_version || null,
+          lessonId,
+          topic: effectiveTopic,
+          durationMinutes: effectiveDuration,
+          additionalInstructions,
+          classId: lesson.class_id,
+          subjectId: lesson.subject_id,
+          requiredSources,
+          includePreviousLessons,
+          searchInternal,
+          searchWeb,
+          model,
+          signal,
+          existingMaterialId: pack.artifacts.teacherScript?.id || null,
+          sourceSelectionMode
+        });
+        pack = this.getLessonPack(lessonId);
+      }
+
+      // Step 3: Exercises
+      if (shouldRun('exercises')) {
+        await this.generation.generateExercises({
+          topic: effectiveTopic,
+          count: 3,
+          withSolutions: true,
+          lessonId,
+          classId: lesson.class_id,
+          subjectId: lesson.subject_id,
+          additionalInstructions,
+          requiredSources,
+          includePreviousLessons,
+          searchInternal,
+          searchWeb,
+          model,
+          signal,
+          existingMaterialId: pack.artifacts.exercises?.id || null,
+          sourceSelectionMode
+        });
+        pack = this.getLessonPack(lessonId);
+      }
+
+      // Step 4: Student Material (dispensa canonica priva di soluzioni)
+      if (shouldRun('studentMaterial')) {
+        const script = pack.artifacts.teacherScript;
+        await this.generation.generateStudentMaterial({
+          teacherScriptId: script?.id || null,
+          teacherScriptVersionNumber: script?.current_version || null,
+          lessonId,
+          topic: effectiveTopic,
+          additionalInstructions,
+          classId: lesson.class_id,
+          subjectId: lesson.subject_id,
+          requiredSources,
+          includePreviousLessons,
+          searchInternal,
+          searchWeb,
+          model,
+          signal,
+          existingMaterialId: pack.artifacts.studentMaterial?.id || null,
+          sourceSelectionMode
+        });
+        pack = this.getLessonPack(lessonId);
+      }
+
+      return pack;
+    } finally {
+      for (const art of artifactsToRun) {
+        this._activeArtifactLocks.delete(lessonId + ":" + art);
+      }
+    }
+  }
+
+  confirmLessonPreparation({ lessonId, notes = '', actorId = 'teacher' }) {
+    if (!lessonId) throw new ValidationError('lessonId is required');
+    const pack = this.getLessonPack(lessonId);
+    if (!pack.isComplete) {
+      throw new ValidationError(
+        'Cannot confirm preparation: Lesson Pack is incomplete. All 4 artifacts (Lesson Plan, Teacher Script, Exercises, Student Material) must be present.'
+      );
+    }
+
+    const artifactVersions = {
+      lessonPlan: { id: pack.artifacts.lessonPlan.id, version: pack.artifacts.lessonPlan.current_version },
+      teacherScript: { id: pack.artifacts.teacherScript.id, version: pack.artifacts.teacherScript.current_version },
+      exercises: { id: pack.artifacts.exercises.id, version: pack.artifacts.exercises.current_version },
+      studentMaterial: { id: pack.artifacts.studentMaterial.id, version: pack.artifacts.studentMaterial.current_version }
+    };
+
+    const id = `lpc-${crypto.randomUUID()}`;
+    const confirmedAt = new Date().toISOString();
+    const stmt = this.dbManager.prepare(`
+      INSERT INTO lesson_preparation_confirmations (
+        id, lesson_id, confirmed_at, confirmed_by, notes, artifact_versions_json
+      ) VALUES (?, ?, ?, ?, ?, ?)
+    `);
+    stmt.run(id, lessonId, confirmedAt, actorId, notes, JSON.stringify(artifactVersions));
+
+    return {
+      id,
+      lessonId,
+      confirmedAt,
+      confirmedBy: actorId,
+      notes,
+      artifactVersions,
+      preparationStatus: 'confirmed'
+    };
+  }
 
   close() {
     this.dbManager.close();

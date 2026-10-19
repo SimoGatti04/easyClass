@@ -2,7 +2,7 @@
   "name": "teacher-service",
   "version": "0.1.0",
   "packageManager": "pnpm@10.32.1",
-  "description": "Teacher Service \u2014 Domain Core, Materials Management, and MCP Service",
+  "description": "Teacher Service — Domain Core, Materials Management, and MCP Service",
   "type": "module",
   "main": "src/index.js",
   "bin": {
@@ -16,14 +16,21 @@
     "test:integration": "node tests/integration/run-integration.js",
     "test:mcp": "node tests/mcp/run-mcp.js",
     "mcp": "node --env-file=.env.local bin/teacher-service-mcp.js",
-    "start:http": "node --env-file=.env.local bin/teacher-service-http.js"
+    "start:http": "node --env-file=.env.local bin/teacher-service-http.js",
+    "build:client": "vite build"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "1.29.0",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1",
     "zod": "3.25.76"
   },
   "engines": {
     "node": ">=22.5.0"
   },
-  "license": "MIT"
+  "license": "MIT",
+  "devDependencies": {
+    "@vitejs/plugin-react": "^6.1.2",
+    "vite": "^8.3.4"
+  }
 }

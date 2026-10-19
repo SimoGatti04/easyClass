@@ -55,6 +55,7 @@ export class DatabaseManager {
     ensureColumn('sources', 'content_hash', 'TEXT');
     ensureColumn('sources', 'accessed_at', 'TEXT');
     ensureColumn('sources', 'authority_basis', 'TEXT');
+    ensureColumn('lessons', 'duration_minutes', 'INTEGER DEFAULT 60');
 
     // Backfill one truthful baseline snapshot for rules that predate history.
     // This is a state snapshot, not an assertion about older edits.

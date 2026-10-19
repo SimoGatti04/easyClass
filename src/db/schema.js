@@ -42,6 +42,7 @@ CREATE TABLE IF NOT EXISTS lessons (
   title TEXT NOT NULL,
   description TEXT,
   date TEXT,
+  duration_minutes INTEGER DEFAULT 60,
   order_index INTEGER DEFAULT 0,
   status TEXT NOT NULL DEFAULT 'planned',
   created_at TEXT NOT NULL,
@@ -362,4 +363,16 @@ CREATE TABLE IF NOT EXISTS evaluations (
 );
 
 CREATE INDEX IF NOT EXISTS idx_evaluations_submission_round ON evaluations(submission_id, evaluation_round);
+
+-- 18. Lesson Preparation Confirmations (Dossier 01 §7, §20, §30)
+CREATE TABLE IF NOT EXISTS lesson_preparation_confirmations (
+  id TEXT PRIMARY KEY,
+  lesson_id TEXT NOT NULL REFERENCES lessons(id) ON DELETE CASCADE,
+  confirmed_at TEXT NOT NULL,
+  confirmed_by TEXT NOT NULL DEFAULT 'teacher',
+  notes TEXT,
+  artifact_versions_json TEXT NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_lesson_prep_confirmations ON lesson_preparation_confirmations(lesson_id);
 `;

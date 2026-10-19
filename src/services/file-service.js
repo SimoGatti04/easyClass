@@ -1,3 +1,4 @@
+import { markdownToHtml } from "../core/markdown.js";
 /**
  * Teacher Service — Real File Import & Export Service
  *
@@ -514,31 +515,51 @@ export class FileService {
     }
 
     if (format === 'html') {
+      const renderedBody = markdownToHtml(material.content || '');
       const htmlContent = `<!DOCTYPE html>
 <html lang="it">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>${escapeHtmlText(material.title)}</title>
   <style>
-    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; line-height: 1.6; max-width: 800px; margin: 2rem auto; padding: 1rem; color: #1e293b; }
-    h1, h2, h3 { color: #0f172a; }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; line-height: 1.6; max-width: 860px; margin: 2rem auto; padding: 1.5rem; color: #1e293b; background: #fff; }
     header { border-bottom: 2px solid #e2e8f0; margin-bottom: 2rem; padding-bottom: 1rem; }
-    .badge { display: inline-block; padding: 0.25rem 0.5rem; border-radius: 4px; background: #e0f2fe; color: #0369a1; font-size: 0.875rem; }
-    pre { background: #f1f5f9; padding: 1rem; border-radius: 6px; overflow-x: auto; }
-    .teacher-box { border-left: 4px solid #ef4444; background: #fef2f2; padding: 1rem; margin: 1rem 0; }
+    h1 { font-size: 2rem; color: #0f172a; margin-top: 0; }
+    h2 { font-size: 1.5rem; color: #1e293b; border-bottom: 1px solid #f1f5f9; padding-bottom: 0.3rem; margin-top: 1.8rem; }
+    h3 { font-size: 1.2rem; color: #334155; margin-top: 1.4rem; }
+    .meta-badges { display: flex; gap: 0.5rem; align-items: center; margin-top: 0.5rem; font-size: 0.875rem; }
+    .badge { display: inline-block; padding: 0.2rem 0.5rem; border-radius: 4px; font-weight: 600; text-transform: uppercase; font-size: 0.75rem; }
+    .badge-role { background: #e0f2fe; color: #0369a1; }
+    .badge-format { background: #f1f5f9; color: #475569; }
+    .prose { font-size: 1rem; color: #334155; }
+    .prose p { margin: 1rem 0; }
+    .prose ul, .prose ol { padding-left: 1.5rem; margin: 1rem 0; }
+    .prose li { margin: 0.4rem 0; }
+    .prose blockquote { border-left: 4px solid #3b82f6; background: #f8fafc; margin: 1.2rem 0; padding: 0.8rem 1.2rem; font-style: italic; }
+    .prose code { background: #f1f5f9; padding: 0.2rem 0.4rem; border-radius: 4px; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-size: 0.9em; }
+    .prose pre { background: #0f172a; color: #f8fafc; padding: 1rem; border-radius: 6px; overflow-x: auto; }
+    .prose pre code { background: transparent; color: inherit; padding: 0; }
+    .prose table { width: 100%; border-collapse: collapse; margin: 1.5rem 0; font-size: 0.95rem; }
+    .prose th, .prose td { border: 1px solid #cbd5e1; padding: 0.6rem 0.8rem; text-align: left; }
+    .prose th { background: #f8fafc; font-weight: 600; }
+    @media print {
+      body { max-width: 100%; margin: 0; padding: 0; }
+      header { border-bottom: 1px solid #000; }
+    }
   </style>
 </head>
 <body>
   <header>
     <h1>${escapeHtmlText(material.title)}</h1>
-    <div>
-      <span class="badge">${escapeHtmlText(material.pedagogical_role)}</span>
-      <span class="badge">${escapeHtmlText(material.format)}</span>
-      <span>v${material.version_number}</span>
+    <div class="meta-badges">
+      <span class="badge badge-role">${escapeHtmlText(material.pedagogical_role)}</span>
+      <span class="badge badge-format">${escapeHtmlText(material.format)}</span>
+      <span>Versione ${material.version_number}</span>
     </div>
   </header>
-  <main>
-    <pre>${escapeHtmlText(material.content)}</pre>
+  <main class="prose">
+    ${renderedBody}
   </main>
 </body>
 </html>`;

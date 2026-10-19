@@ -77,13 +77,13 @@ export class SessionPrincipalRegistry {
 }
 
 export function parseJwt(token) {
-  if (typeof token !== 'string') {
-    throw new Error('JWT token must be a string');
+  if (!token || typeof token !== 'string') {
+    throw new Error('JWT must be a non-empty string');
   }
 
   const parts = token.trim().split('.');
   if (parts.length !== 3) {
-    throw new Error('Invalid JWT format: expected 3 dot-separated segments');
+    throw new Error('Invalid JWT format: expected 3 dot-separated parts');
   }
 
   const [headerB64, payloadB64, signatureB64] = parts;
@@ -91,67 +91,66 @@ export function parseJwt(token) {
   let header;
   let payload;
   try {
-    header = JSON.parse(Buffer.from(headerB64, 'base64url').toString('utf8'));
+    header = JSON.parse(Buffer.from(headerB64, 'base64url').toString('utf-8'));
   } catch (err) {
     throw new Error(`Invalid JWT header: ${err.message}`);
   }
 
   try {
-    payload = JSON.parse(Buffer.from(payloadB64, 'base64url').toString('utf8'));
+    payload = JSON.parse(Buffer.from(payloadB64, 'base64url').toString('utf-8'));
   } catch (err) {
     throw new Error(`Invalid JWT payload: ${err.message}`);
   }
 
-  return {
-    header,
-    payload,
-    headerB64,
-    payloadB64,
-    signatureB64
-  };
+  return { header, payload, headerB64, payloadB64, signatureB64 };
 }
 
-export async function getCloudflarePublicKeys(certsUrl = DEFAULT_CF_ACCESS_CERTS_URL) {
-  const now = Date.now();
-  if (jwksCache.keys.size > 0 && now - jwksCache.fetchedAt < jwksCache.ttlMs) {
-    return jwksCache.keys;
+export async function fetchJwks(certsUrl = DEFAULT_CF_ACCESS_CERTS_URL) {
+  if (testAuthKeys) {
+    return testAuthKeys;
   }
 
-  try {
-    const res = await fetch(certsUrl, {
-      headers: { Accept: 'application/json' },
-      signal: AbortSignal.timeout(5000)
-    });
+  const now = Date.now();
+  if (jwksCache.keys.size > 0 && (now - jwksCache.fetchedAt) < jwksCache.ttlMs) {
+    return jwksCache;
+  }
 
-    if (!res.ok) {
-      throw new Error(`Failed to fetch JWKS from ${certsUrl}: status ${res.status}`);
-    }
+  const response = await fetch(certsUrl, {
+    headers: { 'Accept': 'application/json' },
+    signal: AbortSignal.timeout(5000)
+  });
 
-    const data = await res.json();
-    const newKeys = new Map();
+  if (!response.ok) {
+    throw new Error(`Failed to fetch Cloudflare Access JWKS from ${certsUrl}: ${response.status} ${response.statusText}`);
+  }
 
-    if (Array.isArray(data.keys)) {
-      for (const jwk of data.keys) {
-        if (jwk.kid && jwk.kty === 'RSA') {
-          try {
-            const keyObject = crypto.createPublicKey({ key: jwk, format: 'jwk' });
-            newKeys.set(jwk.kid, keyObject);
-          } catch {}
-        }
+  const data = await response.json();
+  if (!data || !Array.isArray(data.keys)) {
+    throw new Error('Invalid JWKS response: expected keys array');
+  }
+
+  const newKeys = new Map();
+  for (const jwk of data.keys) {
+    if (jwk.kid && jwk.kty === 'RSA') {
+      try {
+        const keyObject = crypto.createPublicKey({
+          key: jwk,
+          format: 'jwk'
+        });
+        newKeys.set(jwk.kid, keyObject);
+      } catch (err) {
+        // Skip unparseable keys
       }
     }
-    jwksCache = {
-      keys: newKeys,
-      fetchedAt: now,
-      ttlMs: 60 * 60 * 1000
-    };
-    return newKeys;
-  } catch (err) {
-    if (jwksCache.keys.size > 0) {
-      return jwksCache.keys;
-    }
-    throw new Error(`Cloudflare Access JWKS fetch failed: ${err.message}`);
   }
+
+  if (newKeys.size === 0) {
+    throw new Error('JWKS response contained no valid RSA keys');
+  }
+
+  jwksCache.keys = newKeys;
+  jwksCache.fetchedAt = now;
+  return jwksCache;
 }
 
 export async function verifyAssertion(token, {
@@ -160,41 +159,37 @@ export async function verifyAssertion(token, {
   certsUrl = DEFAULT_CF_ACCESS_CERTS_URL,
   nowSec = Math.floor(Date.now() / 1000)
 } = {}) {
-  if (!expectedAud || typeof expectedAud !== 'string' || !expectedAud.trim()) {
+  const expectedAuds = (Array.isArray(expectedAud) ? expectedAud : String(expectedAud || '').split(','))
+    .map(a => typeof a === 'string' ? a.trim() : '')
+    .filter(Boolean);
+  if (expectedAuds.length === 0) {
     throw new Error('Security misconfiguration: expectedAud is strictly required');
   }
 
   const { header, payload, headerB64, payloadB64, signatureB64 } = parseJwt(token);
 
   if (header.alg !== 'RS256') {
-    throw new Error(`Unsupported algorithm: ${header.alg}`);
+    throw new Error(`Unsupported JWT algorithm: expected RS256, got "${header.alg}"`);
   }
+
   if (!header.kid) {
     throw new Error('JWT header missing key ID (kid)');
   }
 
-  let publicKey;
+  let key = null;
   if (testAuthKeys) {
     if (testAuthKeys.keys && testAuthKeys.keys.has(header.kid)) {
-      publicKey = testAuthKeys.keys.get(header.kid);
+      key = testAuthKeys.keys.get(header.kid);
     } else if (testAuthKeys.publicKey && (!testAuthKeys.kid || testAuthKeys.kid === header.kid)) {
-      publicKey = testAuthKeys.publicKey;
+      key = testAuthKeys.publicKey;
     }
   }
-
-  if (!publicKey) {
-    const keys = await getCloudflarePublicKeys(certsUrl);
-    publicKey = keys.get(header.kid);
-    if (!publicKey) {
-      // Clear cache and retry once in case keys were rotated
-      clearJwksCache();
-      const refreshedKeys = await getCloudflarePublicKeys(certsUrl);
-      publicKey = refreshedKeys.get(header.kid);
-    }
+  if (!key) {
+    const jwks = await fetchJwks(certsUrl);
+    key = jwks.keys?.get(header.kid);
   }
-
-  if (!publicKey) {
-    throw new Error(`Public key not found for kid: ${header.kid}`);
+  if (!key) {
+    throw new Error(`Public key not found for kid: "${header.kid}"`);
   }
 
   const signedContent = `${headerB64}.${payloadB64}`;
@@ -202,9 +197,10 @@ export async function verifyAssertion(token, {
 
   const verifier = crypto.createVerify('RSA-SHA256');
   verifier.update(signedContent);
-  const isValid = verifier.verify(publicKey, signature);
+  const isValid = verifier.verify(key, signature);
+
   if (!isValid) {
-    throw new Error('Cryptographic signature verification failed');
+    throw new Error('Invalid JWT signature: verification failed against Cloudflare public cert');
   }
 
   const tokenIss = String(payload.iss || '').replace(/\/+$/, '');
@@ -213,47 +209,68 @@ export async function verifyAssertion(token, {
     throw new Error(`Issuer mismatch: expected "${cleanExpectedIss}", got "${tokenIss}"`);
   }
 
-  const cleanExpectedAud = expectedAud.trim();
   const tokenAud = Array.isArray(payload.aud) ? payload.aud : [payload.aud];
-  if (!tokenAud.includes(cleanExpectedAud)) {
-    throw new Error(`Audience mismatch: expected "${cleanExpectedAud}"`);
+  const audMatched = tokenAud.some(a => expectedAuds.includes(a));
+  if (!audMatched) {
+    throw new Error(`Audience mismatch: expected one of [${expectedAuds.join(', ')}]`);
   }
 
   const clockSkewSec = 60;
   if (typeof payload.exp !== 'number' || !Number.isFinite(payload.exp)) {
     throw new Error('JWT is missing a valid numeric expiration (exp)');
   }
-  if (payload.exp < nowSec - clockSkewSec) {
-    throw new Error(`Token expired at ${payload.exp}, current time ${nowSec}`);
-  }
-  if (payload.nbf !== undefined && (typeof payload.nbf !== 'number' || !Number.isFinite(payload.nbf))) {
-    throw new Error('JWT has an invalid numeric not-before claim (nbf)');
-  }
-  if (payload.nbf !== undefined && payload.nbf > nowSec + clockSkewSec) {
-    throw new Error(`Token not active until ${payload.nbf}`);
+  if (payload.exp < (nowSec - clockSkewSec)) {
+    throw new Error(`JWT expired at ${new Date(payload.exp * 1000).toISOString()}`);
   }
 
-  const sub = payload.sub || payload.email || 'anonymous';
-  const principal = computePrincipalHash(payload.iss, sub);
+  if (payload.nbf && typeof payload.nbf === 'number' && payload.nbf > (nowSec + clockSkewSec)) {
+    throw new Error(`JWT not valid before ${new Date(payload.nbf * 1000).toISOString()}`);
+  }
+
+  if (!payload.sub || typeof payload.sub !== 'string') {
+    throw new Error('JWT missing sub claim');
+  }
+
+  const principal = computePrincipalHash(payload.iss, payload.sub);
 
   return {
-    verified: true,
+    valid: true,
     principal,
-    sub,
-    email: payload.email || null,
-    identity: payload.identity_nonce || null
+    sub: payload.sub,
+    email: payload.email || payload.sub,
+    payload
   };
 }
 
 export async function authenticateRequest(req, options = {}) {
+  const isProduction = options.isProduction !== undefined
+    ? Boolean(options.isProduction)
+    : process.env.NODE_ENV === 'production';
   const mode = options.authMode || process.env.TEACHER_SERVICE_AUTH_MODE || 'strict';
-  const isProduction = process.env.NODE_ENV === 'production';
 
-  if (isProduction && mode !== 'strict') {
+  if (isProduction) {
+    if (mode !== 'strict') {
+      return {
+        authenticated: false,
+        statusCode: 500,
+        error: `Security violation: authMode "${mode}" is strictly forbidden in production`
+      };
+    }
+    if (options.allowSyntheticAuth || (req.headers && req.headers['x-test-synthetic-user'])) {
+      return {
+        authenticated: false,
+        statusCode: 403,
+        error: 'Forbidden: Synthetic authentication is strictly forbidden in production'
+      };
+    }
+  }
+
+  if (mode === 'permissive') {
     return {
-      authenticated: false,
-      statusCode: 500,
-      error: 'Security violation: Authentication cannot be disabled in production environment'
+      authenticated: true,
+      authMethod: 'permissive_fallback',
+      principal: 'sha256:permissive_fallback_principal',
+      user: { sub: 'permissive-user', email: 'permissive@local' }
     };
   }
 
@@ -266,8 +283,22 @@ export async function authenticateRequest(req, options = {}) {
     };
   }
 
-  const expectedAud = options.expectedAud || process.env.TEACHER_SERVICE_CF_ACCESS_AUD || '';
-  if (mode === 'strict' && (!expectedAud || !expectedAud.trim())) {
+  if (!isProduction && options.allowSyntheticAuth && req.headers && req.headers['x-test-synthetic-user']) {
+    const syntheticEmail = String(req.headers['x-test-synthetic-user']).trim();
+    return {
+      authenticated: true,
+      authMethod: 'synthetic',
+      principal: `sha256:synthetic_${syntheticEmail}`,
+      user: { sub: syntheticEmail, email: syntheticEmail }
+    };
+  }
+
+  const rawExpectedAud = options.expectedAud;
+  const expectedAudList = (Array.isArray(rawExpectedAud) ? rawExpectedAud : String(rawExpectedAud || '').split(','))
+    .map(a => typeof a === 'string' ? a.trim() : '')
+    .filter(Boolean);
+
+  if (mode === 'strict' && expectedAudList.length === 0) {
     return {
       authenticated: false,
       statusCode: 500,
@@ -275,12 +306,19 @@ export async function authenticateRequest(req, options = {}) {
     };
   }
 
-  // 1. Check Cf-Access-Jwt-Assertion header
+  // 1. Check Cf-Access-Jwt-Assertion header or CF_Authorization cookie
   const rawCf = req.headers['cf-access-jwt-assertion'];
-  const cfAssertion = Array.isArray(rawCf) ? rawCf[0] : rawCf;
+  let cfAssertion = Array.isArray(rawCf) ? rawCf[0] : rawCf;
+  if (!cfAssertion && req.headers['cookie']) {
+    const cookieMatch = req.headers['cookie'].match(/(?:^|;\s*)CF_Authorization=([^;]*)/);
+    if (cookieMatch) {
+      cfAssertion = decodeURIComponent(cookieMatch[1].trim());
+    }
+  }
+
   if (cfAssertion && typeof cfAssertion === 'string') {
     try {
-      const verified = await verifyAssertion(cfAssertion.trim(), options);
+      const verified = await verifyAssertion(cfAssertion.trim(), { ...options, expectedAud: expectedAudList });
       return {
         authenticated: true,
         authMethod: 'cloudflare_access',
@@ -317,7 +355,7 @@ export async function authenticateRequest(req, options = {}) {
 
       // Check if it's a JWT assertion
       try {
-        const verified = await verifyAssertion(token, options);
+        const verified = await verifyAssertion(token, { ...options, expectedAud: expectedAudList });
         return {
           authenticated: true,
           authMethod: 'cloudflare_access',
@@ -339,4 +377,89 @@ export async function authenticateRequest(req, options = {}) {
     statusCode: 401,
     error: 'Authentication credentials missing (expected Cf-Access-Jwt-Assertion or Bearer token)'
   };
+}
+
+export function validateCsrf(req, configuredAllowedOrigins = []) {
+  const method = (req.method || 'GET').toUpperCase();
+  if (['GET', 'HEAD', 'OPTIONS'].includes(method)) {
+    return { valid: true };
+  }
+
+  // 1. Host header validation (guard against host header poisoning)
+  const host = req.headers['host'];
+  if (!host || typeof host !== 'string' || !host.trim()) {
+    return { valid: false, error: 'Missing or empty Host header' };
+  }
+  const cleanHost = host.trim().toLowerCase();
+
+  const allowedHosts = new Set(
+    configuredAllowedOrigins.map(origin => {
+      try {
+        return new URL(origin).host.toLowerCase();
+      } catch {
+        return null;
+      }
+    }).filter(Boolean)
+  );
+
+  const isLocalHost = cleanHost.startsWith('localhost') || cleanHost.startsWith('127.0.0.1');
+  if (allowedHosts.size > 0 && !allowedHosts.has(cleanHost) && !isLocalHost) {
+    return { valid: false, error: `Untrusted Host header: "${host}"` };
+  }
+
+  // 2. Sec-Fetch-Site validation
+  const secFetchSite = req.headers['sec-fetch-site'];
+  if (secFetchSite === 'cross-site') {
+    return { valid: false, error: 'Cross-site request blocked by Sec-Fetch-Site policy' };
+  }
+
+  const origin = req.headers['origin'];
+  const referer = req.headers['referer'];
+  const cookieHeader = req.headers['cookie'];
+  const hasCookieAuth = typeof cookieHeader === 'string' && cookieHeader.includes('CF_Authorization');
+
+  // 3. Origin validation
+  if (origin && typeof origin === 'string') {
+    const cleanOrigin = origin.trim();
+    let originAllowed = configuredAllowedOrigins.includes(cleanOrigin);
+    if (!originAllowed) {
+      try {
+        const parsedOrigin = new URL(cleanOrigin);
+        if (parsedOrigin.host.toLowerCase() === cleanHost) {
+          originAllowed = true;
+        }
+      } catch {}
+    }
+    if (!originAllowed) {
+      return { valid: false, error: `Invalid or untrusted Origin "${origin}"` };
+    }
+    return { valid: true };
+  }
+
+  // 4. Referer validation when Origin is omitted (e.g. same-origin navigations/forms)
+  if (referer && typeof referer === 'string') {
+    let refererAllowed = false;
+    try {
+      const parsedReferer = new URL(referer);
+      if (parsedReferer.host.toLowerCase() === cleanHost || allowedHosts.has(parsedReferer.host.toLowerCase())) {
+        refererAllowed = true;
+      }
+    } catch {}
+    if (!refererAllowed) {
+      return { valid: false, error: `Invalid or untrusted Referer "${referer}"` };
+    }
+    return { valid: true };
+  }
+
+  // 5. Fail-closed: If request uses browser cookie-based session, Origin or Referer is mandatory
+  const isBrowserClient = Boolean(hasCookieAuth || req.headers['sec-fetch-mode'] || (cookieHeader && cookieHeader.trim().length > 0));
+  if (isBrowserClient) {
+    return {
+      valid: false,
+      error: 'CSRF check failed: cookie-authenticated state mutation requires Origin or Referer header'
+    };
+  }
+
+  // Programmatic non-browser clients using Bearer/assertion headers without cookies are allowed if Host is verified
+  return { valid: true };
 }
