@@ -469,3 +469,45 @@ Conformemente alle direttive vincolanti dell'Ultimo Gate Pre-release, sono stati
 7. **Predisposizione Cloudflare Access Web & K3s (Nessuna mutazione applicata)**:
    - Specificato piano dichiarativo per Cloudflare Access Application per `class.simogatti.it` (distinta dall'OAuth MCP `mcp-teacher.simogatti.it`).
    - Configurazione variabile `TEACHER_SERVICE_WEB_CF_ACCESS_AUD` per Infisical e K3s.
+### 7. Rilascio Produttivo C2/T1 & Collaudo Reale K3s Completato (20 ottobre 2026)
+Conformemente alle autorizzazioni del Domain Owner e del Supervisore, il rilascio in produzione del vertical slice C2/T1 ('Tomorrow is ready') è stato eseguito, collaudato e completato con successo su cluster K3s:
+
+1. **Cloudflare Access Web (`class.simogatti.it`) Applicato via IaC**:
+   - Saved plan `make cf-save-access-plan` e verifica bundle `make cf-verify-access-plan`.
+   - Token unificato `CLOUDFLARE_TERRAFORM_API_TOKEN` caricato da Infisical (`/cloudflare/terraform`).
+   - `make cf-apply-access-plan` eseguito con successo (**1 added, 0 changed, 0 destroyed**).
+   - Creata risorsa `cloudflare_zero_trust_access_application.k3s["class"]` (ID: `61b7861a-3587-479d-91d3-063b66a6ef96`).
+   - **AUD Web Estratto**: `efba3266e210f6077d0e86f50721d7a3896e0deb1b9e60a5acc325af39b1e21d`.
+   - Cookie `CF_AppSession` protetto con flag `Secure; HttpOnly` e durata sessione 24h.
+   - Nessuna alterazione a DNS, Tunnel, policy condivise o all'applicazione MCP `mcp-teacher.simogatti.it` (AUD MCP invariato: `3a2781b1...`).
+
+2. **Container Build & Push GHCR**:
+   - Dockerfile multi-stage autonomo (`linux/amd64`) con compilazione React/Vite integrata nello stage di build e runner pnpm con lockfile frozen.
+   - Immagine: `ghcr.io/simogatti04/class:20261020-f962706` (digest: `sha256:79d7c084233c60049c18e24459fde84160178cdf58b9e52461c97906180b455c`).
+   - Push eseguito con successo su GitHub Container Registry.
+
+3. **Manifest K3s e Rollout Operativo**:
+   - `infra/k3s/apps/class/configmap.yaml` aggiornato con `TEACHER_SERVICE_WEB_CF_ACCESS_AUD`.
+   - `infra/k3s/apps/class/app.yaml` allineato al tag immutabile `20261020-f962706`.
+   - Commit Git `infra`: `e0ae514` (`feat(class): deploy teacher service 20261020-f962706 with web cf access aud`).
+   - Rollout completato: Pod `class-5744fcfb8-97v8f` (1/1 Running su `<backup-host>`). Volumi SQLite (`class-teacher-db`) e FileStore (`class-teacher-files`) preservati integri con dati di produzione intatti.
+
+4. **Verifiche di Rete e Sicurezza Runtime**:
+   - `https://class.simogatti.it/`: reindirizzamento HTTP 302 verso Cloudflare Access login con `kid=efba3266...` e cookie `HttpOnly`.
+   - `https://mcp-teacher.simogatti.it/mcp`: risposta HTTP 401 Bearer realm="OAuth" Cloudflare Access Managed OAuth (invariato e protetto).
+   - Rifiuto chiamate non autenticate (401), identità sintetiche (403) e modalità permissive (500) in produzione (`NODE_ENV=production`).
+
+5. **Collaudo Reale End-to-End con OmniRoute (`agy/gemini-3.8-flash-tiered`)**:
+   - Connessione live al gateway OmniRoute (`http://omniroute.omniroute.svc.cluster.local:20128/v1`): OK (50 modelli disponibili).
+   - Generazione 4-step reale del Lesson Pack per la lezione `[TEST-E2E-T1] Introduzione a NoSQL`:
+     - Step 1: Lesson Plan generato e persistito.
+     - Step 2: Teacher Script generato con timecode e note alla lavagna.
+     - Step 3: Esercizi graduati generati con marker `[TEACHER_ONLY_SOLUTION]`.
+     - Step 4: Dispensa studenti generata con rimozione lato server delle soluzioni riservate.
+   - Conferma preparazione lezione con congelamento esatto delle versioni (`pack.preparationStatus === "confirmed"`).
+   - Revisione AI con OmniRoute del Lesson Plan: transizione corretta dello stato di preparazione a `"modified_since_confirmation"`.
+   - Export multi-formato verificato: Markdown, HTML strutturato e DOCX nativo tramite pandoc.
+
+6. **Bonifica e Cleanup Completo dei Dati Sintetici di Test**:
+   - Eliminazione permanente di tutti i materiali, lezioni, materie e classi con prefisso `[TEST-E2E-T1]`.
+   - Verifica di stato pulito: 0 materiali sintetici residui in database, indice FTS5 e FileStore.
