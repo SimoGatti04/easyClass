@@ -85,7 +85,7 @@ test('Browser End-to-End Test: T1 "Tomorrow is ready" Workflow on Compiled React
 
   let browser;
   try {
-    const { chromium } = await import('~/Workspace/uniGrades/apps/pwa/node_modules/playwright/index.mjs');
+    const { chromium } = await import('playwright');
     browser = await chromium.launch({
       headless: true,
       executablePath: '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
