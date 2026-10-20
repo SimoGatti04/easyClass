@@ -1,4 +1,26 @@
-FROM node:22.23.2-bookworm-slim AS base
+# Stage 1: Client Build
+FROM node:22.23.2-bookworm-slim AS build
+
+WORKDIR /app
+
+# Enable pnpm with exact version
+RUN corepack enable && corepack prepare pnpm@10.32.1 --activate
+
+# Copy dependency manifests
+COPY package.json pnpm-lock.yaml ./
+
+# Install full dependencies (including devDependencies needed for Vite build)
+RUN pnpm install --frozen-lockfile
+
+# Copy sources needed for build
+COPY client ./client
+COPY vite.config.js ./
+
+# Build the client bundle to client/dist
+RUN pnpm run build:client
+
+# Stage 2: Production Runtime
+FROM node:22.23.2-bookworm-slim AS runtime
 
 # Install runtime tools: pdftotext (poppler-utils) and pandoc
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -12,16 +34,23 @@ WORKDIR /app
 # Ensure storage directories exist and are owned by node user
 RUN mkdir -p /app/storage/files /app/storage/db && chown -R node:node /app
 
-# Use the package manager and exact version declared by package.json. The
-# committed pnpm lockfile is the only dependency-resolution source of truth.
+# Enable pnpm for production install
 RUN corepack enable && corepack prepare pnpm@10.32.1 --activate
+
 COPY --chown=node:node package.json pnpm-lock.yaml ./
+
 USER node
+
+# Install only production dependencies
 RUN pnpm install --prod --frozen-lockfile \
     && node -e "const { DatabaseSync } = require('node:sqlite'); new DatabaseSync(':memory:');"
 
-# Copy application sources
-COPY --chown=node:node . .
+# Copy application backend sources
+COPY --chown=node:node src ./src
+COPY --chown=node:node bin ./bin
+
+# Copy compiled client bundle from build stage into client/dist
+COPY --from=build --chown=node:node /app/client/dist ./client/dist
 
 # Set default production environment
 ENV NODE_ENV=production \

@@ -5,3 +5,4 @@ storage
 .tmp
 .env*
 .DS_Store
+client/dist
