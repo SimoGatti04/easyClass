@@ -1242,6 +1242,119 @@ export function createMcpServer(service = new TeacherService(), { authorizeTeach
         required: ["assessmentId"],
         additionalProperties: false
       }
+    },
+    {
+      name: "update_assessment",
+      description: "Updates an existing assessment blueprint metadata, duration, or score.",
+      annotations: { readOnlyHint: false, destructiveHint: false, openWorldHint: false },
+      inputSchema: {
+        type: "object",
+        properties: {
+          id: { type: "string", description: "Assessment ID" },
+          title: { type: "string" },
+          description: { type: "string" },
+          durationMinutes: { type: "number" },
+          maxScore: { type: "number" },
+          activityType: { type: "string", enum: ["test", "exercise"] },
+          status: { type: "string", enum: ["draft", "ready", "active", "closed"] }
+        },
+        required: ["id"],
+        additionalProperties: false
+      }
+    },
+    {
+      name: "set_assessment_status",
+      description: "Transitions an assessment through its lifecycle: draft -> ready -> active -> closed.",
+      annotations: { readOnlyHint: false, destructiveHint: false, openWorldHint: false },
+      inputSchema: {
+        type: "object",
+        properties: {
+          id: { type: "string", description: "Assessment ID" },
+          status: { type: "string", enum: ["draft", "ready", "active", "closed"], description: "New lifecycle status" }
+        },
+        required: ["id", "status"],
+        additionalProperties: false
+      }
+    },
+    {
+      name: "update_assessment_item",
+      description: "Updates an item/question in an assessment blueprint preserving teacher solutions.",
+      annotations: { readOnlyHint: false, destructiveHint: false, openWorldHint: false },
+      inputSchema: {
+        type: "object",
+        properties: {
+          assessmentId: { type: "string", description: "Assessment ID" },
+          itemId: { type: "string", description: "Assessment item ID" },
+          questionText: { type: "string" },
+          maxScore: { type: "number" },
+          type: { type: "string", enum: ["multiple_choice", "open_question", "open_short", "open_extended", "code", "attachment", "problem_case"] },
+          teacherSolution: { type: "string" },
+          starterCode: { type: "string" },
+          language: { type: "string" },
+          options: { type: "array" },
+          rubric: { type: "object" },
+          isSelfCorrecting: { type: "boolean" },
+          assessableSourceId: { type: "string" },
+          assessableSourceVersion: { type: "number" }
+        },
+        required: ["assessmentId", "itemId"],
+        additionalProperties: false
+      }
+    },
+    {
+      name: "delete_assessment_item",
+      description: "Deletes an item/question from an assessment blueprint.",
+      annotations: { readOnlyHint: false, destructiveHint: true, openWorldHint: false },
+      inputSchema: {
+        type: "object",
+        properties: {
+          assessmentId: { type: "string", description: "Assessment ID" },
+          itemId: { type: "string", description: "Assessment item ID" }
+        },
+        required: ["assessmentId", "itemId"],
+        additionalProperties: false
+      }
+    },
+    {
+      name: "reopen_submission",
+      description: "Reopens a finalized student submission allowing the student to resume work with full teacher audit trail.",
+      annotations: { readOnlyHint: false, destructiveHint: false, openWorldHint: false },
+      inputSchema: {
+        type: "object",
+        properties: {
+          submissionId: { type: "string", description: "Submission ID to reopen" },
+          reason: { type: "string", description: "Pedagogical or technical reason for reopening" }
+        },
+        required: ["submissionId"],
+        additionalProperties: false
+      }
+    },
+    {
+      name: "list_activity_credentials",
+      description: "Lists temporary student access codes for an activity (teacher only). Strips all session tokens for privacy.",
+      annotations: { readOnlyHint: true, destructiveHint: false, openWorldHint: false },
+      inputSchema: {
+        type: "object",
+        properties: {
+          assessmentId: { type: "string", description: "Assessment ID" }
+        },
+        required: ["assessmentId"],
+        additionalProperties: false
+      }
+    },
+    {
+      name: "reissue_student_credential",
+      description: "Reissues a fresh temporary access code for an authorized student session that was lost, interrupted, or compromised (teacher only).",
+      annotations: { readOnlyHint: false, destructiveHint: false, openWorldHint: false },
+      inputSchema: {
+        type: "object",
+        properties: {
+          credentialId: { type: "string", description: "Credential ID to reissue" },
+          reason: { type: "string", description: "Reason for reissuing the credential" }
+        },
+        required: ["credentialId"],
+        additionalProperties: false
+      }
     }
   ];
 
@@ -1509,6 +1622,32 @@ export function createMcpServer(service = new TeacherService(), { authorizeTeach
           break;
         case "export_assessment_results":
           result = service.exportAssessmentResults(args.assessmentId, args.format);
+          break;
+        case "update_assessment":
+          result = service.updateAssessment(args.id, args);
+          break;
+        case "set_assessment_status":
+          result = service.setAssessmentStatus(args.id, args.status);
+          break;
+        case "update_assessment_item":
+          result = service.updateAssessmentItem(args.assessmentId, args.itemId, args);
+          break;
+        case "delete_assessment_item":
+          result = service.deleteAssessmentItem(args.assessmentId, args.itemId);
+          break;
+        case "reopen_submission":
+          result = service.reopenSubmission(args.submissionId, {
+            reason: args.reason,
+            teacherPrincipal: actor.actorId || "teacher"
+          });
+          break;
+        case "list_activity_credentials":
+          result = service.listActivityCredentials(args.assessmentId);
+          break;
+        case "reissue_student_credential":
+          result = service.reissueActivityCredential(args.credentialId, {
+            reason: args.reason
+          });
           break;
 
         default:

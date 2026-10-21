@@ -407,6 +407,58 @@ test('MCP Server Protocol & Tool Integration Tests', async (t) => {
     const csvContent = JSON.parse(expRes.content[0].text);
     assert.match(csvContent, /Luca Verdi/);
     assert.match(csvContent, /9\/10/);
+
+    // 6. C3.1 Assessment Lifecycle, Item Management & Reopening via MCP
+    const updAsmRes = await callTool("update_assessment", {
+      id: asm.id,
+      title: "Verifica Aggiornata via MCP",
+      durationMinutes: 75
+    });
+    const updAsm = JSON.parse(updAsmRes.content[0].text);
+    assert.equal(updAsm.title, "Verifica Aggiornata via MCP");
+    assert.equal(updAsm.duration_minutes, 75);
+
+    const statusRes = await callTool("set_assessment_status", {
+      id: asm.id,
+      status: "ready"
+    });
+    const statusAsm = JSON.parse(statusRes.content[0].text);
+    assert.equal(statusAsm.status, "ready");
+
+    const addItRes = await callTool("add_assessment_item", {
+      assessmentId: asm.id,
+      type: "code",
+      questionText: "Funzione MCP",
+      maxScore: 10,
+      teacherSolution: "return 1",
+      assessableSourceId: assessmentSource.id,
+      assessableSourceVersion: 1
+    });
+    const addIt = JSON.parse(addItRes.content[0].text);
+    assert.ok(addIt.id);
+
+    const updItRes = await callTool("update_assessment_item", {
+      assessmentId: asm.id,
+      itemId: addIt.id,
+      maxScore: 12
+    });
+    const updIt = JSON.parse(updItRes.content[0].text);
+    assert.equal(updIt.maxScore, 12);
+
+    const delItRes = await callTool("delete_assessment_item", {
+      assessmentId: asm.id,
+      itemId: addIt.id
+    });
+    const delIt = JSON.parse(delItRes.content[0].text);
+    assert.equal(delIt.success, true);
+
+    const reopenRes = await callTool("reopen_submission", {
+      submissionId: sub.id,
+      reason: "Integrazione codice richiesta dal docente"
+    });
+    const reopened = JSON.parse(reopenRes.content[0].text);
+    assert.equal(reopened.attempt_status, "in_progress");
+    assert.equal(reopened.reopen_reason, "Integrazione codice richiesta dal docente");
   });
 
   await t.test('MCP resources protocol inspection and read', async () => {

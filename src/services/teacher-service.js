@@ -178,6 +178,17 @@ export class TeacherService {
   getAssessment(id, options) { return this.assessments.getAssessment(id, options); }
   listAssessments(filter) { return this.assessments.listAssessments(filter); }
   addAssessmentItem(assessmentId, itemData) { return this.assessments.addItem(assessmentId, itemData); }
+  updateAssessment(id, updates) { return this.assessments.updateAssessment(id, updates); }
+  setAssessmentStatus(id, newStatus) { return this.assessments.setAssessmentStatus(id, newStatus); }
+  updateAssessmentItem(assessmentId, itemId, updates) { return this.assessments.updateItem(assessmentId, itemId, updates); }
+  deleteAssessmentItem(assessmentId, itemId) { return this.assessments.deleteItem(assessmentId, itemId); }
+  generateActivityCredentials(assessmentId, options) { return this.assessments.generateActivityCredentials(assessmentId, options); }
+  listActivityCredentials(assessmentId) { return this.assessments.listActivityCredentials(assessmentId); }
+  revokeActivityCredential(credentialId) { return this.assessments.revokeActivityCredential(credentialId); }
+  reissueActivityCredential(credentialId, options) { return this.assessments.reissueActivityCredential(credentialId, options); }
+  claimStudentSession(accessCode) { return this.assessments.claimStudentSession(accessCode); }
+  validateStudentSession(token, assessmentId) { return this.assessments.validateStudentSession(token, assessmentId); }
+  reopenSubmission(submissionId, options) { return this.assessments.reopenSubmission(submissionId, options); }
   importSubmission(data) { return this.assessments.importSubmission(data); }
   getSubmission(id) { return this.assessments.getSubmission(id); }
   listSubmissions(assessmentId) { return this.assessments.listSubmissions(assessmentId); }
@@ -514,4 +525,24 @@ export class TeacherService {
   close() {
     this.dbManager.close();
   }
+
+  /* -------------------------------------------------------------------------- */
+  /* STUDENTS FACADE (Dossier 02, Dossier 05)                                   */
+  /* -------------------------------------------------------------------------- */
+
+  addStudent(params) { return this.org.addStudent(params); }
+  getStudent(id) { return this.org.getStudent(id); }
+  listStudents(classId) { return this.org.listStudents(classId); }
+  importStudents(classId, list) { return this.org.importStudents(classId, list); }
+  deleteStudent(id) { return this.org.deleteStudent(id); }
+
+  /* -------------------------------------------------------------------------- */
+  /* ASSESSMENT & LIVE MONITORING FACADE (Dossier 05, Dossier 06)              */
+  /* -------------------------------------------------------------------------- */
+
+  getStudentSubmission(assessmentId, studentId) { return this.assessments.getStudentSubmission(assessmentId, studentId); }
+  saveDraftSubmission(params) { return this.assessments.saveDraftSubmission(params); }
+  getLiveMonitoringData(assessmentId) { return this.assessments.getLiveMonitoringData(assessmentId); }
+  getIntegrityPreviewData(assessmentId) { return this.assessments.getIntegrityPreviewData(assessmentId); }
+
 }

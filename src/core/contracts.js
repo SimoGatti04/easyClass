@@ -85,17 +85,46 @@ export const SourceStates = Object.freeze({
 export const ItemTypes = Object.freeze({
   MULTIPLE_CHOICE: 'multiple_choice',
   OPEN_QUESTION: 'open_question',
-  PRACTICAL_PROBLEM: 'practical_problem'
+  PRACTICAL_PROBLEM: 'practical_problem',
+  CODE: 'code',
+  ATTACHMENT: 'attachment'
 });
 
 /**
  * Assessment Statuses (Dossier 05 §19)
  */
+
+/**
+ * Activity Types (Dossier 05 §1 - Single domain for tests and exercises)
+ */
+export const ActivityTypes = Object.freeze({
+  TEST: 'test',         // Verifica sommativa
+  EXERCISE: 'exercise'  // Esercitazione formativa
+});
+
 export const AssessmentStatuses = Object.freeze({
   DRAFT: 'draft',
-  APPROVED: 'approved',
-  PUBLISHED: 'published',
-  ARCHIVED: 'archived'
+  READY: 'ready',
+  ACTIVE: 'active',
+  CLOSED: 'closed',
+  // Backward-compatibility aliases
+  APPROVED: 'ready',
+  PUBLISHED: 'active',
+  ARCHIVED: 'closed'
+});
+
+export const AttemptStatuses = Object.freeze({
+  IN_PROGRESS: 'in_progress',
+  SUBMITTED: 'submitted',
+  REOPENED: 'reopened'
+});
+
+export const CredentialStatuses = Object.freeze({
+  ISSUED: 'issued',
+  ACTIVE: 'active',
+  SUBMITTED: 'submitted',
+  EXPIRED: 'expired',
+  REVOKED: 'revoked'
 });
 
 /**

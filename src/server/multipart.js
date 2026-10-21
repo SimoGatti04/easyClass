@@ -140,15 +140,17 @@ export function parseBufferedMultipartFormData(buffer, contentType) {
         fieldName: fieldName || 'file',
         filename: safeFilename,
         buffer: bodyBuffer,
+        data: bodyBuffer,
         size: bodyBuffer.length,
-        mimeType
+        mimeType,
+        contentType: mimeType
       };
     } else if (fieldName) {
       fields[fieldName] = bodyBuffer.toString('utf-8').trim();
     }
   }
 
-  return { fields, file };
+  return { fields, file, files: file ? [file] : [] };
 }
 
 // Backward-compatible alias

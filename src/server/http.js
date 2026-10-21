@@ -20,6 +20,7 @@ import path from 'node:path';
 import { createTeacherPrincipalAuthorizer } from './teacher-authorization.js';
 import { TeacherService } from '../services/teacher-service.js';
 import { PedagogicalRoles } from '../core/contracts.js';
+import { NotFoundError, ValidationError, AuthorizationError, SecurityError, ConflictError } from '../core/errors.js';
 
 export const DEFAULT_HOST = '127.0.0.1';
 export const DEFAULT_PORT = 8770;
@@ -229,7 +230,35 @@ export async function createHttpApp(options = {}) {
         return;
       }
 
-      // Authenticate request consistently
+      let bodyBuffer = Buffer.alloc(0);
+      let parsedBody = null;
+      let multipartData = null;
+      if (req.method !== 'GET' && req.method !== 'HEAD') {
+        try {
+          bodyBuffer = await readRequestBody(req, MAX_PAYLOAD_BYTES);
+          const ctype = req.headers['content-type'] || '';
+          if (ctype.includes('multipart/form-data')) {
+            multipartData = parseMultipartFormData(bodyBuffer, ctype);
+          } else if (bodyBuffer.length > 0) {
+            try {
+              parsedBody = JSON.parse(bodyBuffer.toString('utf8'));
+            } catch {
+              parsedBody = null;
+            }
+          }
+        } catch (err) {
+          res.writeHead(err.statusCode || 400, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ error: 'Bad Request', message: err.message }));
+          return;
+        }
+      }
+
+      // Branch 3a: Student API (/api/student/*) — Public Student Space, zero teacher privilege
+      if (pathname.startsWith('/api/student/')) {
+        return handleStudentApi(req, res, pathname, parsedUrl, service, parsedBody, multipartData);
+      }
+
+      // Branch 3b: Protected Teacher REST API (/api/*) — Strict authentication & teacher authorization
       const authResult = await authenticateRequest(req, webAuthConfig);
       if (!authResult.authenticated) {
         const sc = authResult.statusCode || 401;
@@ -258,29 +287,6 @@ export async function createHttpApp(options = {}) {
         return;
       }
       authResult.teacherAuthorized = true;
-
-      let bodyBuffer = Buffer.alloc(0);
-      let parsedBody = null;
-      let multipartData = null;
-      if (req.method !== 'GET' && req.method !== 'HEAD') {
-        try {
-          bodyBuffer = await readRequestBody(req, MAX_PAYLOAD_BYTES);
-          const ctype = req.headers['content-type'] || '';
-          if (ctype.includes('multipart/form-data')) {
-            multipartData = parseMultipartFormData(bodyBuffer, ctype);
-          } else if (bodyBuffer.length > 0) {
-            try {
-              parsedBody = JSON.parse(bodyBuffer.toString('utf8'));
-            } catch {
-              parsedBody = null;
-            }
-          }
-        } catch (err) {
-          res.writeHead(err.statusCode || 400, { 'Content-Type': 'application/json' });
-          res.end(JSON.stringify({ error: 'Bad Request', message: err.message }));
-          return;
-        }
-      }
 
       return handleRestApi(req, res, pathname, parsedUrl, service, authResult, parsedBody, multipartData);
     }
@@ -552,6 +558,349 @@ export async function createHttpApp(options = {}) {
   };
 }
 
+/**
+ * Student Public API Handler (/api/student/*)
+ * Lightweight student access without account/password.
+ * ZERO access to teacher scripts, rubrics, solutions, or management endpoints.
+ */
+const claimRateLimitMap = new Map();
+const MAX_FAILED_CLAIM_ATTEMPTS = 5;
+const CLAIM_BLOCK_WINDOW_MS = 5 * 60 * 1000;
+
+export async function handleStudentApi(req, res, pathname, parsedUrl, service, parsedBody, multipartData) {
+  res.setHeader('Content-Type', 'application/json');
+
+  const getStudentSession = (assessmentId = null) => {
+    const authHeader = req.headers['authorization'] || "";
+    let token = null;
+    if (authHeader.startsWith("Bearer ")) {
+      token = authHeader.slice(7).trim();
+    } else if (req.headers['x-student-token']) {
+      token = String(req.headers['x-student-token']).trim();
+    }
+    if (!token) {
+      const err = new AuthorizationError("Autenticazione studente richiesta: token di sessione mancante");
+      err.statusCode = 401;
+      throw err;
+    }
+    return service.validateStudentSession(token, assessmentId);
+  };
+
+  try {
+    // POST /api/student/claim-code (Access via 6-char code / QR)
+    if (pathname === '/api/student/claim-code' && req.method === 'POST') {
+      const clientIp = (
+        req.headers['cf-connecting-ip'] ||
+        req.headers['x-forwarded-for']?.split(',')[0].trim() ||
+        req.socket?.remoteAddress ||
+        'unknown'
+      );
+
+      const now = Date.now();
+      const ipRecord = claimRateLimitMap.get(clientIp);
+      if (ipRecord && ipRecord.blockedUntil && ipRecord.blockedUntil > now) {
+        const remainingSec = Math.ceil((ipRecord.blockedUntil - now) / 1000);
+        res.writeHead(429, {
+          'Content-Type': 'application/json',
+          'Retry-After': String(remainingSec)
+        });
+        res.end(JSON.stringify({
+          error: 'TooManyRequests',
+          message: 'Troppi tentativi falliti di riscatto codice. Riprova tra qualche minuto.'
+        }));
+        return;
+      }
+
+      const accessCode = parsedBody?.accessCode;
+      try {
+        const session = service.claimStudentSession(accessCode);
+        claimRateLimitMap.delete(clientIp);
+        res.writeHead(200);
+        res.end(JSON.stringify({ status: "ok", session }));
+        return;
+      } catch (err) {
+        const rec = claimRateLimitMap.get(clientIp) || { count: 0, firstAttempt: now };
+        if (now - rec.firstAttempt > CLAIM_BLOCK_WINDOW_MS) {
+          rec.count = 0;
+          rec.firstAttempt = now;
+        }
+        rec.count += 1;
+        if (rec.count >= MAX_FAILED_CLAIM_ATTEMPTS) {
+          rec.blockedUntil = now + CLAIM_BLOCK_WINDOW_MS;
+        }
+        claimRateLimitMap.set(clientIp, rec);
+        throw err;
+      }
+    }
+
+    // GET /api/student/session (Verify existing token on reload / resume)
+    if (pathname === '/api/student/session' && req.method === 'GET') {
+      const session = getStudentSession();
+      res.writeHead(200);
+      res.end(JSON.stringify({ status: "ok", session }));
+      return;
+    }
+
+    // GET /api/student/classes
+    if (pathname === '/api/student/classes' && req.method === 'GET') {
+      const classes = service.listClasses().map(c => ({
+        id: c.id,
+        name: c.name,
+        section: c.section,
+        academicYear: c.academic_year
+      }));
+      res.writeHead(200);
+      res.end(JSON.stringify({ classes }));
+      return;
+    }
+
+    // GET /api/student/classes/:id/students (Privacy-preserving roster)
+    if (pathname.match(/^\/api\/student\/classes\/([^/]+)\/students$/) && req.method === 'GET') {
+      const classId = pathname.split('/')[4];
+      const students = service.listStudents(classId).map(s => ({
+        id: s.id,
+        firstName: s.first_name,
+        lastName: s.last_name ? (s.last_name.charAt(0) + '.') : '',
+        fullName: `${s.first_name} ${s.last_name ? (s.last_name.charAt(0) + '.') : ''}`.trim()
+      }));
+      res.writeHead(200);
+      res.end(JSON.stringify({ students }));
+      return;
+    }
+
+    // GET /api/student/classes/:id/activities (Only ready and active, NEVER drafts)
+    if (pathname.match(/^\/api\/student\/classes\/([^/]+)\/activities$/) && req.method === 'GET') {
+      const classId = pathname.split('/')[4];
+      const all = service.listAssessments({ classId });
+      const activities = all
+        .filter(a => a.is_active !== 0 && (a.status === 'ready' || a.status === 'active'))
+        .map(a => ({
+          id: a.id,
+          title: a.title,
+          description: a.description,
+          activityType: a.activity_type || 'test',
+          durationMinutes: a.duration_minutes,
+          maxScore: a.max_score,
+          status: a.status
+        }));
+      res.writeHead(200);
+      res.end(JSON.stringify({ activities }));
+      return;
+    }
+
+    // GET /api/student/activities/:id (Protected questions view, teacher solutions stripped)
+    if (pathname.match(/^\/api\/student\/activities\/([^/]+)$/) && req.method === 'GET') {
+      const id = pathname.split('/')[4];
+      const session = getStudentSession(id);
+      const activity = service.getAssessment(id, { role: 'student', includeTeacherSolutions: false });
+      if (activity.status === 'draft') {
+        res.writeHead(404, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: 'NotFoundError', message: `Attività '${id}' non trovata o in bozza` }));
+        return;
+      }
+      if (activity.status === 'ready') {
+        res.writeHead(200);
+        res.end(JSON.stringify({
+          activity: {
+            id: activity.id,
+            title: activity.title,
+            description: activity.description,
+            activityType: activity.activity_type || 'test',
+            durationMinutes: activity.duration_minutes,
+            maxScore: activity.max_score,
+            status: 'ready',
+            items: [],
+            message: 'La verifica è pronta ma non è ancora stata avviata dal docente. I quesiti saranno visibili non appena il docente attiverà la prova.'
+          }
+        }));
+        return;
+      }
+      if (activity && activity.items) {
+        activity.items = activity.items.map(item => ({
+          ...item,
+          teacher_solution: null,
+          rubric: null,
+          rubric_json: null
+        }));
+      }
+      res.writeHead(200);
+      res.end(JSON.stringify({ activity }));
+      return;
+    }
+
+    // GET /api/student/activities/:id/neighbors (For Seat Map declaration with session)
+    if (pathname.match(/^\/api\/student\/activities\/([^/]+)\/neighbors$/) && req.method === 'GET') {
+      const id = pathname.split('/')[4];
+      const session = getStudentSession(id);
+      const classmates = service.listStudents(session.classId)
+        .filter(s => s.id !== session.studentId)
+        .map(s => ({
+          id: s.id,
+          fullName: `${s.first_name} ${s.last_name ? (s.last_name.charAt(0) + '.') : ''}`.trim()
+        }));
+      res.writeHead(200);
+      res.end(JSON.stringify({
+        neighbors: [
+          { id: 'none', fullName: 'Nessuno' },
+          ...classmates
+        ]
+      }));
+      return;
+    }
+
+    // GET /api/student/activities/:id/submission (Strictly bound to authenticated student session)
+    if (pathname.match(/^\/api\/student\/activities\/([^/]+)\/submission$/) && req.method === 'GET') {
+      const id = pathname.split('/')[4];
+      const session = getStudentSession(id);
+      const submission = service.getStudentSubmission(id, session.studentId);
+      res.writeHead(200);
+      res.end(JSON.stringify({ submission }));
+      return;
+    }
+
+    // POST /api/student/activities/:id/start
+    if (pathname.match(/^\/api\/student\/activities\/([^/]+)\/start$/) && req.method === 'POST') {
+      const id = pathname.split('/')[4];
+      const session = getStudentSession(id);
+      const payload = {
+        assessmentId: id,
+        studentId: session.studentId,
+        studentName: session.studentName,
+        seatRow: parsedBody?.seatRow || null,
+        seatDesk: parsedBody?.seatDesk || null,
+        leftNeighborId: parsedBody?.leftNeighborId || null,
+        leftNeighborName: parsedBody?.leftNeighborName || null,
+        rightNeighborId: parsedBody?.rightNeighborId || null,
+        rightNeighborName: parsedBody?.rightNeighborName || null,
+        responses: parsedBody?.responses || [],
+        isFinal: false,
+        attemptStatus: "in_progress"
+      };
+      const submission = service.saveDraftSubmission(payload);
+      res.writeHead(200);
+      res.end(JSON.stringify({ status: 'started', submission }));
+      return;
+    }
+
+    // POST /api/student/activities/:id/autosave
+    if (pathname.match(/^\/api\/student\/activities\/([^/]+)\/autosave$/) && req.method === 'POST') {
+      const id = pathname.split('/')[4];
+      const session = getStudentSession(id);
+      const payload = {
+        assessmentId: id,
+        studentId: session.studentId,
+        studentName: session.studentName,
+        seatRow: parsedBody?.seatRow || null,
+        seatDesk: parsedBody?.seatDesk || null,
+        leftNeighborId: parsedBody?.leftNeighborId || null,
+        leftNeighborName: parsedBody?.leftNeighborName || null,
+        rightNeighborId: parsedBody?.rightNeighborId || null,
+        rightNeighborName: parsedBody?.rightNeighborName || null,
+        responses: parsedBody?.responses || [],
+        revision: parsedBody?.revision,
+        isFinal: false,
+        attemptStatus: "in_progress"
+      };
+      const submission = service.saveDraftSubmission(payload);
+      res.writeHead(200);
+      res.end(JSON.stringify({ status: 'saved', lastSavedAt: submission.last_saved_at, revision: submission.revision }));
+      return;
+    }
+
+    // POST /api/student/activities/:id/submit
+    if (pathname.match(/^\/api\/student\/activities\/([^/]+)\/submit$/) && req.method === 'POST') {
+      const id = pathname.split('/')[4];
+      const session = getStudentSession(id);
+      const payload = {
+        assessmentId: id,
+        studentId: session.studentId,
+        studentName: session.studentName,
+        seatRow: parsedBody?.seatRow || null,
+        seatDesk: parsedBody?.seatDesk || null,
+        leftNeighborId: parsedBody?.leftNeighborId || null,
+        leftNeighborName: parsedBody?.leftNeighborName || null,
+        rightNeighborId: parsedBody?.rightNeighborId || null,
+        rightNeighborName: parsedBody?.rightNeighborName || null,
+        responses: parsedBody?.responses || [],
+        revision: parsedBody?.revision,
+        isFinal: true,
+        attemptStatus: "submitted"
+      };
+      const submission = service.saveDraftSubmission(payload);
+      res.writeHead(200);
+      res.end(JSON.stringify({ status: 'submitted', submission, revision: submission.revision }));
+      return;
+    }
+
+    // POST /api/student/upload
+    if (pathname === '/api/student/upload' && req.method === 'POST') {
+      const session = getStudentSession();
+      const file = (multipartData?.files && multipartData.files[0]) || multipartData?.file;
+      if (!file) {
+        res.writeHead(400);
+        res.end(JSON.stringify({ error: 'ValidationError', message: 'Nessun file caricato' }));
+        return;
+      }
+      const fileBuffer = file.data || file.buffer;
+      if (!fileBuffer || fileBuffer.length === 0) {
+        res.writeHead(400);
+        res.end(JSON.stringify({ error: 'ValidationError', message: 'Nessun file caricato o file vuoto' }));
+        return;
+      }
+      const MAX_FILE_BYTES = 10 * 1024 * 1024; // 10 MB
+      if (fileBuffer.length > MAX_FILE_BYTES) {
+        res.writeHead(400);
+        res.end(JSON.stringify({ error: 'ValidationError', message: 'Dimensione file eccedente il limite di 10MB' }));
+        return;
+      }
+      const ext = path.extname(file.filename || '').toLowerCase();
+      const blockedExtensions = ['.exe', '.sh', '.bat', '.cmd', '.msi', '.bin', '.vbs', '.ps1', '.com', '.scr'];
+      if (blockedExtensions.includes(ext)) {
+        res.writeHead(400);
+        res.end(JSON.stringify({ error: 'SecurityError', message: 'Tipo di file non consentito per ragioni di sicurezza' }));
+        return;
+      }
+
+      const targetAssessmentId = multipartData.fields?.assessmentId || parsedUrl.searchParams.get('assessmentId') || session.assessmentId;
+      if (targetAssessmentId) {
+        service.validateStudentSession(session.token, targetAssessmentId);
+        const existingSub = service.getStudentSubmission(targetAssessmentId, session.studentId);
+        if (existingSub && (existingSub.attempt_status === 'submitted' || existingSub.status === 'submitted')) {
+          res.writeHead(409, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ error: 'ConflictError', message: 'Impossibile caricare allegati: prova già consegnata definitivamente' }));
+          return;
+        }
+      }
+
+      const safeBase = path.basename(file.filename || 'attachment').replace(/[^a-zA-Z0-9._-]/g, '_');
+      const storedFileName = Date.now() + "-" + safeBase;
+      const storedPath = service.fileStore.saveFile(storedFileName, fileBuffer);
+      const relativeKey = path.relative(service.fileStore.baseDir, storedPath).replaceAll('\\', '/');
+      res.writeHead(200);
+      res.end(JSON.stringify({
+        success: true,
+        attachmentPath: relativeKey,
+        attachmentName: file.filename,
+        size: fileBuffer.length
+      }));
+      return;
+    }
+
+    res.writeHead(404);
+    res.end(JSON.stringify({ error: 'Not Found', message: `Route studente non trovata: ${pathname}` }));
+  } catch (err) {
+    const statusCode = err.statusCode || (
+      err instanceof ValidationError ? 400 :
+      err instanceof NotFoundError ? 404 :
+      err instanceof ConflictError ? 409 :
+      err instanceof AuthorizationError ? (err.statusCode || 403) :
+      err instanceof SecurityError ? 400 : 500
+    );
+    res.writeHead(statusCode);
+    res.end(JSON.stringify({ error: err.name || 'Error', message: err.message }));
+  }
+}
+
 async function handleRestApi(req, res, pathname, parsedUrl, service, authResult, parsedBody, multipartData) {
   res.setHeader('Content-Type', 'application/json');
 
@@ -722,6 +1071,48 @@ async function handleRestApi(req, res, pathname, parsedUrl, service, authResult,
       return;
     }
 
+    // GET /api/classes/:id/students (Teacher view of class roster)
+    if (pathname.match(/^\/api\/classes\/([^/]+)\/students$/) && req.method === 'GET') {
+      const classId = pathname.split('/')[3];
+      const students = service.listStudents(classId);
+      res.writeHead(200);
+      res.end(JSON.stringify({ students }));
+      return;
+    }
+
+    // POST /api/classes/:id/students (Teacher adds student or imports roster)
+    if (pathname.match(/^\/api\/classes\/([^/]+)\/students$/) && req.method === 'POST') {
+      const classId = pathname.split('/')[3];
+      if (parsedBody && Array.isArray(parsedBody.students)) {
+        const imported = service.importStudents(classId, parsedBody.students);
+        res.writeHead(201);
+        res.end(JSON.stringify({ count: imported.length, students: imported }));
+        return;
+      }
+      const student = service.addStudent({ classId, ...(parsedBody || {}) });
+      res.writeHead(201);
+      res.end(JSON.stringify({ student }));
+      return;
+    }
+
+    // DELETE /api/classes/:classId/students/:id (Teacher removes student)
+    if (pathname.match(/^\/api\/classes\/([^/]+)\/students\/([^/]+)$/) && req.method === 'DELETE') {
+      const studentId = pathname.split('/')[5];
+      service.deleteStudent(studentId);
+      res.writeHead(200);
+      res.end(JSON.stringify({ success: true, deletedId: studentId }));
+      return;
+    }
+
+    // DELETE /api/students/:id (Alternative direct delete)
+    if (pathname.match(/^\/api\/students\/([^/]+)$/) && req.method === 'DELETE') {
+      const studentId = pathname.split('/')[3];
+      service.deleteStudent(studentId);
+      res.writeHead(200);
+      res.end(JSON.stringify({ success: true, deletedId: studentId }));
+      return;
+    }
+
     // GET /api/subjects
     if (pathname === '/api/subjects' && req.method === 'GET') {
       const classId = parsedUrl.searchParams.get('classId');
@@ -844,6 +1235,24 @@ async function handleRestApi(req, res, pathname, parsedUrl, service, authResult,
       return;
     }
 
+    // GET /api/assessments/:id/live-monitor (Live monitoring: answers saved, seat map, attendance)
+    if (pathname.match(/^\/api\/assessments\/([^/]+)\/live-monitor$/) && req.method === 'GET') {
+      const id = pathname.split('/')[3];
+      const liveData = service.getLiveMonitoringData(id);
+      res.writeHead(200);
+      res.end(JSON.stringify({ liveMonitoring: liveData }));
+      return;
+    }
+
+    // GET /api/assessments/:id/integrity-preview (Preview of integrity signals / seat adjacency)
+    if (pathname.match(/^\/api\/assessments\/([^/]+)\/integrity-preview$/) && req.method === 'GET') {
+      const id = pathname.split('/')[3];
+      const integrityData = service.getIntegrityPreviewData(id);
+      res.writeHead(200);
+      res.end(JSON.stringify({ integrityPreview: integrityData }));
+      return;
+    }
+
     // POST /api/assessments
     if (pathname === '/api/assessments' && req.method === 'POST') {
       if (isStudent) {
@@ -854,6 +1263,127 @@ async function handleRestApi(req, res, pathname, parsedUrl, service, authResult,
       const asm = service.createAssessment(parsedBody || {});
       res.writeHead(201);
       res.end(JSON.stringify({ assessment: asm }));
+      return;
+    }
+
+    // PUT /api/assessments/:id (Update metadata)
+    if (pathname.match(/^\/api\/assessments\/([^/]+)$/) && req.method === 'PUT') {
+      const id = pathname.split('/')[3];
+      const updated = service.updateAssessment(id, parsedBody || {});
+      res.writeHead(200);
+      res.end(JSON.stringify({ assessment: updated }));
+      return;
+    }
+
+    // PUT /api/assessments/:id/status (Set status draft/ready/active/closed)
+    if (pathname.match(/^\/api\/assessments\/([^/]+)\/status$/) && req.method === 'PUT') {
+      const id = pathname.split('/')[3];
+      const updated = service.setAssessmentStatus(id, parsedBody?.status);
+      res.writeHead(200);
+      res.end(JSON.stringify({ assessment: updated }));
+      return;
+    }
+
+    // POST /api/assessments/:id/items (Add question item)
+    if (pathname.match(/^\/api\/assessments\/([^/]+)\/items$/) && req.method === 'POST') {
+      const id = pathname.split('/')[3];
+      const item = service.addAssessmentItem(id, parsedBody || {});
+      res.writeHead(201);
+      res.end(JSON.stringify({ item }));
+      return;
+    }
+
+    // PUT /api/assessments/:id/items/:itemId (Update question item)
+    if (pathname.match(/^\/api\/assessments\/([^/]+)\/items\/([^/]+)$/) && req.method === 'PUT') {
+      const parts = pathname.split('/');
+      const assessmentId = parts[3];
+      const itemId = parts[5];
+      const item = service.updateAssessmentItem(assessmentId, itemId, parsedBody || {});
+      res.writeHead(200);
+      res.end(JSON.stringify({ item }));
+      return;
+    }
+
+    // DELETE /api/assessments/:id/items/:itemId (Delete question item)
+    if (pathname.match(/^\/api\/assessments\/([^/]+)\/items\/([^/]+)$/) && req.method === 'DELETE') {
+      const parts = pathname.split('/');
+      const assessmentId = parts[3];
+      const itemId = parts[5];
+      const result = service.deleteAssessmentItem(assessmentId, itemId);
+      res.writeHead(200);
+      res.end(JSON.stringify(result));
+      return;
+    }
+
+    // GET /api/assessments/:id/credentials (List student access codes)
+    if (pathname.match(/^\/api\/assessments\/([^/]+)\/credentials$/) && req.method === 'GET') {
+      const id = pathname.split('/')[3];
+      const credentials = service.listActivityCredentials(id);
+      res.writeHead(200);
+      res.end(JSON.stringify({ credentials }));
+      return;
+    }
+
+    // POST /api/assessments/:id/credentials/generate (Generate/refresh student access codes)
+    if (pathname.match(/^\/api\/assessments\/([^/]+)\/credentials\/generate$/) && req.method === 'POST') {
+      const id = pathname.split('/')[3];
+      const credentials = service.generateActivityCredentials(id, parsedBody || {});
+      res.writeHead(200);
+      res.end(JSON.stringify({ credentials }));
+      return;
+    }
+
+    // POST /api/assessments/:id/credentials/:credId/revoke (Revoke student access code/session)
+    if (pathname.match(/^\/api\/assessments\/([^/]+)\/credentials\/([^/]+)\/revoke$/) && req.method === 'POST') {
+      const parts = pathname.split('/');
+      const credId = parts[5];
+      const result = service.revokeActivityCredential(credId);
+      res.writeHead(200);
+      res.end(JSON.stringify(result));
+      return;
+    }
+
+    // POST /api/assessments/:id/credentials/:credId/reissue (Reissue lost access code/session)
+    if (pathname.match(/^\/api\/assessments\/([^/]+)\/credentials\/([^/]+)\/reissue$/) && req.method === 'POST') {
+      const parts = pathname.split('/');
+      const credId = parts[5];
+      const result = service.reissueActivityCredential(credId, parsedBody || {});
+      res.writeHead(200);
+      res.end(JSON.stringify(result));
+      return;
+    }
+
+    // POST /api/assessments/:id/submissions/:subId/reopen (Reopen student attempt)
+    if (pathname.match(/^\/api\/assessments\/([^/]+)\/submissions\/([^/]+)\/reopen$/) && req.method === 'POST') {
+      const parts = pathname.split('/');
+      const subId = parts[5];
+      const sub = service.reopenSubmission(subId, {
+        reason: parsedBody?.reason,
+        teacherPrincipal: authResult.principal
+      });
+      res.writeHead(200);
+      res.end(JSON.stringify({ submission: sub }));
+      return;
+    }
+
+    // POST /api/submissions/:id/reopen (Direct reopen submission)
+    if (pathname.match(/^\/api\/submissions\/([^/]+)\/reopen$/) && req.method === 'POST') {
+      const subId = pathname.split('/')[3];
+      const sub = service.reopenSubmission(subId, {
+        reason: parsedBody?.reason,
+        teacherPrincipal: authResult.principal
+      });
+      res.writeHead(200);
+      res.end(JSON.stringify({ submission: sub }));
+      return;
+    }
+
+    // GET /api/submissions/:id
+    if (pathname.match(/^\/api\/submissions\/([^/]+)$/) && req.method === 'GET') {
+      const submissionId = pathname.split('/')[3];
+      const submission = service.getSubmission(submissionId);
+      res.writeHead(200);
+      res.end(JSON.stringify({ submission }));
       return;
     }
 

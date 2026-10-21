@@ -17,7 +17,9 @@
     "test:mcp": "node tests/mcp/run-mcp.js",
     "mcp": "node --env-file=.env.local bin/teacher-service-mcp.js",
     "start:http": "node --env-file=.env.local bin/teacher-service-http.js",
-    "build:client": "vite build"
+    "build:client": "vite build",
+    "dev:preview": "node bin/teacher-service-preview.js",
+    "dev:preview:clean": "node bin/teacher-service-preview-clean.js"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "1.29.0",

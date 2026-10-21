@@ -265,6 +265,15 @@ export async function authenticateRequest(req, options = {}) {
     }
   }
 
+  if (mode === 'preview' && !isProduction) {
+    return {
+      authenticated: true,
+      authMethod: 'synthetic',
+      principal: 'sha256:preview_teacher_synthetic',
+      user: { sub: 'teacher@school.example', email: 'teacher@school.example', name: 'Synthetic Teacher' }
+    };
+  }
+
   if (mode === 'permissive') {
     return {
       authenticated: true,
@@ -463,3 +472,6 @@ export function validateCsrf(req, configuredAllowedOrigins = []) {
   // Programmatic non-browser clients using Bearer/assertion headers without cookies are allowed if Host is verified
   return { valid: true };
 }
+
+
+  

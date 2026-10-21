@@ -286,6 +286,9 @@ CREATE TABLE IF NOT EXISTS assessments (
   status TEXT NOT NULL DEFAULT 'draft', -- 'draft', 'approved', 'published', 'archived'
   duration_minutes INTEGER DEFAULT 60,
   max_score REAL DEFAULT 100,
+  activity_type TEXT NOT NULL DEFAULT 'test',
+  is_active INTEGER NOT NULL DEFAULT 1,
+  version INTEGER NOT NULL DEFAULT 1,
   created_by TEXT DEFAULT 'teacher',
   created_at TEXT NOT NULL,
   updated_at TEXT NOT NULL
@@ -306,6 +309,8 @@ CREATE TABLE IF NOT EXISTS assessment_items (
   teacher_solution TEXT, -- PROTECTED TEACHER-ONLY SOLUTION & ANSWER KEY
   options_json TEXT, -- array of options for multiple choice
   is_self_correcting INTEGER DEFAULT 0,
+  starter_code TEXT DEFAULT NULL,
+  language TEXT DEFAULT NULL,
   assessable_source_id TEXT REFERENCES resources(id) ON DELETE SET NULL,
   assessable_source_version INTEGER,
   created_at TEXT NOT NULL,
@@ -326,6 +331,19 @@ CREATE TABLE IF NOT EXISTS assessment_submissions (
   proposed_grade TEXT DEFAULT NULL,
   final_grade TEXT DEFAULT NULL,
   teacher_notes TEXT DEFAULT NULL,
+  seat_row TEXT DEFAULT NULL,
+  seat_desk TEXT DEFAULT NULL,
+  left_neighbor_id TEXT DEFAULT NULL,
+  left_neighbor_name TEXT DEFAULT NULL,
+  right_neighbor_id TEXT DEFAULT NULL,
+  right_neighbor_name TEXT DEFAULT NULL,
+  last_saved_at TEXT DEFAULT NULL,
+  attempt_status TEXT NOT NULL DEFAULT 'submitted',
+  revision INTEGER NOT NULL DEFAULT 0,
+  assessment_version INTEGER NOT NULL DEFAULT 1,
+  reopened_at TEXT DEFAULT NULL,
+  reopened_by TEXT DEFAULT NULL,
+  reopen_reason TEXT DEFAULT NULL,
   created_at TEXT NOT NULL,
   updated_at TEXT NOT NULL
 );
@@ -339,6 +357,9 @@ CREATE TABLE IF NOT EXISTS submission_responses (
   submission_id TEXT NOT NULL REFERENCES assessment_submissions(id) ON DELETE CASCADE,
   item_id TEXT NOT NULL REFERENCES assessment_items(id) ON DELETE CASCADE,
   response_text TEXT NOT NULL,
+  attachment_path TEXT DEFAULT NULL,
+  attachment_name TEXT DEFAULT NULL,
+  updated_at TEXT DEFAULT NULL,
   created_at TEXT NOT NULL,
   UNIQUE(submission_id, item_id)
 );
@@ -375,4 +396,43 @@ CREATE TABLE IF NOT EXISTS lesson_preparation_confirmations (
 );
 
 CREATE INDEX IF NOT EXISTS idx_lesson_prep_confirmations ON lesson_preparation_confirmations(lesson_id);
+
+-- 23. Students (Roster managed/imported by teacher - Dossier 02 §4, Dossier 05 §43)
+CREATE TABLE IF NOT EXISTS students (
+  id TEXT PRIMARY KEY,
+  class_id TEXT NOT NULL REFERENCES classes(id) ON DELETE CASCADE,
+  first_name TEXT NOT NULL,
+  last_name TEXT NOT NULL,
+  email TEXT,
+  notes TEXT,
+  created_at TEXT NOT NULL,
+  updated_at TEXT NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_students_class ON students(class_id);
+
+-- 24. Student Activity Credentials & Temporary Access Codes (Checkpoint C3.1)
+CREATE TABLE IF NOT EXISTS student_activity_credentials (
+  id TEXT PRIMARY KEY,
+  assessment_id TEXT NOT NULL REFERENCES assessments(id) ON DELETE CASCADE,
+  student_id TEXT NOT NULL REFERENCES students(id) ON DELETE CASCADE,
+  access_code TEXT NOT NULL,
+  token_hash TEXT UNIQUE,
+  token TEXT, -- Legacy backwards compatibility during migration
+  status TEXT NOT NULL DEFAULT 'issued', -- 'issued', 'active', 'submitted', 'revoked', 'expired'
+  reissue_count INTEGER NOT NULL DEFAULT 0,
+  revoked_at TEXT DEFAULT NULL,
+  revoked_reason TEXT DEFAULT NULL,
+  expires_at TEXT NOT NULL,
+  claimed_at TEXT,
+  last_seen_at TEXT,
+  created_at TEXT NOT NULL,
+  updated_at TEXT NOT NULL,
+  UNIQUE(assessment_id, student_id),
+  UNIQUE(access_code)
+);
+
+CREATE INDEX IF NOT EXISTS idx_student_cred_assessment ON student_activity_credentials(assessment_id);
+CREATE INDEX IF NOT EXISTS idx_student_cred_code ON student_activity_credentials(access_code);
+CREATE INDEX IF NOT EXISTS idx_student_cred_token ON student_activity_credentials(token);
 `;

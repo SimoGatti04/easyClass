@@ -347,4 +347,73 @@ export class OrganizationService {
     `);
     return stmt.all(collectionId);
   }
+
+  /* -------------------------------------------------------------------------- */
+  /* STUDENTS (CLASS ROSTER) - Dossier 02 §4, Dossier 05 §43                    */
+  /* -------------------------------------------------------------------------- */
+
+  addStudent({ classId, firstName, lastName, email = null, notes = null }) {
+    if (!classId || !firstName || !lastName) {
+      throw new ValidationError("classId, firstName, and lastName are required", { classId, firstName, lastName });
+    }
+    this.getClass(classId); // Ensure class exists
+
+    const id = `student-${crypto.randomUUID()}`;
+    const now = new Date().toISOString();
+
+    const stmt = this.dbManager.prepare(`
+      INSERT INTO students (id, class_id, first_name, last_name, email, notes, created_at, updated_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    `);
+    stmt.run(id, classId, firstName.trim(), lastName.trim(), email ? email.trim() : null, notes, now, now);
+
+    return this.getStudent(id);
+  }
+
+  getStudent(id) {
+    const stmt = this.dbManager.prepare("SELECT * FROM students WHERE id = ?");
+    const row = stmt.get(id);
+    if (!row) {
+      throw new NotFoundError("Student", id);
+    }
+    return row;
+  }
+
+  listStudents(classId) {
+    if (!classId) return [];
+    const stmt = this.dbManager.prepare(`
+      SELECT * FROM students WHERE class_id = ? ORDER BY last_name ASC, first_name ASC
+    `);
+    return stmt.all(classId);
+  }
+
+  importStudents(classId, studentList = []) {
+    if (!classId) throw new ValidationError("classId is required");
+    this.getClass(classId);
+
+    const inserted = [];
+    this.dbManager.transaction(() => {
+      for (const item of studentList) {
+        if (!item.firstName || !item.lastName) continue;
+        const student = this.addStudent({
+          classId,
+          firstName: item.firstName,
+          lastName: item.lastName,
+          email: item.email || null,
+          notes: item.notes || null
+        });
+        inserted.push(student);
+      }
+    });
+
+    return inserted;
+  }
+
+  deleteStudent(id) {
+    this.getStudent(id);
+    const stmt = this.dbManager.prepare("DELETE FROM students WHERE id = ?");
+    stmt.run(id);
+    return { success: true, id };
+  }
+
 }

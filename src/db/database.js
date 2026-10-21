@@ -57,6 +57,47 @@ export class DatabaseManager {
     ensureColumn('sources', 'authority_basis', 'TEXT');
     ensureColumn('lessons', 'duration_minutes', 'INTEGER DEFAULT 60');
 
+    
+    ensureColumn('assessments', 'activity_type', "TEXT NOT NULL DEFAULT 'test'");
+    ensureColumn('assessments', 'is_active', 'INTEGER NOT NULL DEFAULT 1');
+    ensureColumn('assessment_items', 'starter_code', 'TEXT DEFAULT NULL');
+    ensureColumn('assessment_items', 'language', 'TEXT DEFAULT NULL');
+    ensureColumn('assessment_submissions', 'seat_row', 'TEXT DEFAULT NULL');
+    ensureColumn('assessment_submissions', 'seat_desk', 'TEXT DEFAULT NULL');
+    ensureColumn('assessment_submissions', 'left_neighbor_id', 'TEXT DEFAULT NULL');
+    ensureColumn('assessment_submissions', 'left_neighbor_name', 'TEXT DEFAULT NULL');
+    ensureColumn('assessment_submissions', 'right_neighbor_id', 'TEXT DEFAULT NULL');
+    ensureColumn('assessment_submissions', 'right_neighbor_name', 'TEXT DEFAULT NULL');
+    ensureColumn('assessment_submissions', 'last_saved_at', 'TEXT DEFAULT NULL');
+    ensureColumn('assessment_submissions', 'attempt_status', "TEXT NOT NULL DEFAULT 'submitted'");
+    ensureColumn('submission_responses', 'updated_at', 'TEXT DEFAULT NULL');
+    ensureColumn('submission_responses', 'attachment_path', 'TEXT DEFAULT NULL');
+    ensureColumn('submission_responses', 'attachment_name', 'TEXT DEFAULT NULL');
+    ensureColumn('assessment_submissions', 'reopened_at', 'TEXT DEFAULT NULL');
+    ensureColumn('assessment_submissions', 'reopened_by', 'TEXT DEFAULT NULL');
+    ensureColumn('assessment_submissions', 'reopen_reason', 'TEXT DEFAULT NULL');
+
+    this.db.exec(`
+      CREATE TABLE IF NOT EXISTS student_activity_credentials (
+        id TEXT PRIMARY KEY,
+        assessment_id TEXT NOT NULL REFERENCES assessments(id) ON DELETE CASCADE,
+        student_id TEXT NOT NULL REFERENCES students(id) ON DELETE CASCADE,
+        access_code TEXT NOT NULL,
+        token TEXT UNIQUE,
+        status TEXT NOT NULL DEFAULT 'issued',
+        expires_at TEXT NOT NULL,
+        claimed_at TEXT,
+        last_seen_at TEXT,
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL,
+        UNIQUE(assessment_id, student_id),
+        UNIQUE(assessment_id, access_code)
+      );
+      CREATE INDEX IF NOT EXISTS idx_student_cred_assessment ON student_activity_credentials(assessment_id);
+      CREATE INDEX IF NOT EXISTS idx_student_cred_code ON student_activity_credentials(access_code);
+      CREATE INDEX IF NOT EXISTS idx_student_cred_token ON student_activity_credentials(token);
+    `);
+
     // Backfill one truthful baseline snapshot for rules that predate history.
     // This is a state snapshot, not an assertion about older edits.
     this.db.prepare(`
@@ -88,6 +129,10 @@ export class DatabaseManager {
    * @returns {T}
    */
   transaction(fn) {
+    if (this._inTransaction) {
+      return fn();
+    }
+    this._inTransaction = true;
     this.db.exec('BEGIN IMMEDIATE;');
     try {
       const result = fn();
@@ -96,6 +141,8 @@ export class DatabaseManager {
     } catch (err) {
       this.db.exec('ROLLBACK;');
       throw err;
+    } finally {
+      this._inTransaction = false;
     }
   }
 

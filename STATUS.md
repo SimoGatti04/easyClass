@@ -511,3 +511,99 @@ Conformemente alle autorizzazioni del Domain Owner e del Supervisore, il rilasci
 6. **Bonifica e Cleanup Completo dei Dati Sintetici di Test**:
    - Eliminazione permanente di tutti i materiali, lezioni, materie e classi con prefisso `[TEST-E2E-T1]`.
    - Verifica di stato pulito: 0 materiali sintetici residui in database, indice FTS5 e FileStore.
+
+### 8. Checkpoint C3: UI/UX Foundation & Local Development Preview (21 ottobre 2026)
+
+Conformemente alle direttive del Domain Owner e alla supervisione ChatGPT, è stato completato con successo il **Checkpoint C3**, avviando la nuova fase di Teacher Service incentrata sul sistema integrato di esercitazioni, verifiche, studenti, consegne, correzioni, monitoraggio live e anticopiatura:
+
+1. **Formalizzazione dello Scope e Contratti di Dominio (C3–C7)**:
+   - Creato documento programmatico e contrattuale `docs/c3-c7-roadmap-and-contracts.md`, allineato ai Dossier 01–11 (in particolare Dossier 04 §§46-48, Dossier 05 §§56-57, Dossier 06 §§1-4, Dossier 09 §§1-6).
+   - Distinzione rigorosa tra **CURRENT** (operativo), **PLANNED** (C4–C7) e **DEPRECATED / PROHIBITED** (proctoring invasivo, keylogger, telecamere, grading arbitrario senza controllo docente).
+
+2. **Separazione Architetturale delle Superfici & Sicurezza Fail-Closed**:
+   - **Area Studenti (`/api/student/*` e `#/studente`)**: pubblica, zero credenziali o password, identificazione leggera tramite selezione classe e nominativo da elenco docente. Mascheramento applicativo rigoroso di soluzioni docente (`teacher_solution`) e rubriche (`rubric_json`).
+   - **Area Docente (`/api/*` e `#/docente`) & Server MCP (`/mcp`)**: protetti da Cloudflare Access e verifica di autorizzazione del principal docente (`verifyTeacherAuthorization` con lista `TEACHER_SERVICE_TEACHER_EMAILS`). Rifiuto immediato (401/403) di tentativi non autorizzati.
+
+3. **Nuova Struttura UI/UX & Design System Responsive**:
+   - **Homepage Portale (`client/src/components/Homepage.js`)**: landing page responsive con card di accesso dedicate per Studenti e Docenti.
+   - **Student Experience (`client/src/components/StudentArea.js`)**: flusso guidato a 6 step:
+     1. Selezione classe;
+     2. Identificazione nominativo con ricerca rapida;
+     3. Selezione verifica/esercitazione attiva;
+     4. Dichiarazione obbligatoria Seat Map (Fila, Banco, Vicino SX e DX con scelta esplicita «Nessuno»);
+     5. Svolgimento prova con autosalvataggio persistente in background (debounced), badge visivo dello stato (`Salvataggio in corso...` / `Tutte le modifiche salvate`), supporto per scelta multipla, risposte aperte, codice ed upload allegati;
+     6. Schermata di conferma consegna con riepilogo.
+   - **Teacher Dashboard Multi-Scheda (`client/src/components/TeacherArea.js`)**:
+     - *Lezioni (T1)*: modulo di preparazione lezioni intatto e operativo (`TeacherPreparationView.js`).
+     - *Attività*: creazione e gestione verifiche ed esercitazioni (`ActivitiesView.js`).
+     - *Studenti*: gestione anagrafica classe, inserimento ed importazione massiva (`StudentsView.js`).
+     - *Monitoraggio Live*: cruscotto d'aula in tempo reale (`LiveMonitoringView.js`) con toggle tra Mappa d'Aula (Seat Map visiva con cattedra, banchi per fila, stato studente e vicini dichiarati) ed Elenco Roster tabellare; polling automatico configurabile (5s).
+     - *Consegne & Valutazioni*: esame delle prove sottomesse dagli studenti, risposte e allegati, calcolo proposta automatica AI/deterministica, input e conferma definitiva della valutazione sovrana del docente (`SubmissionsView.js`).
+     - *Integrità & Anticopiatura*: anteprima esplicita C6 con i 5 pilastri architetturali, visualizzazione cluster di prossimità e disclaimer etico (`IntegrityPreviewView.js`).
+   - **Router Client & Build Vite**:
+     - Router reattivo hash-based in `client/app.js` (`#/`, `#/studente`, `#/docente`).
+     - Stili responsive in `client/app.css` ottimizzati per desktop, tablet e smartphone.
+     - Compilazione asset con `pnpm build:client` (`client/dist/`, 30 moduli, digest immutabile, zero errori).
+
+4. **Ambiente di Anteprima Locale Isolato (`pnpm dev:preview` & `pnpm dev:preview:clean`)**:
+   - Creato script `bin/teacher-service-preview.js` per avvio locale e su LAN Wi-Fi (binding `0.0.0.0:8780`).
+   - Rilevamento automatico dell'indirizzo IP di rete locale per accesso immediato da dispositivi mobili/smartphone connessi alla LAN.
+   - Isolamento totale dello storage: SQLite dedicato in `.tmp/dev-preview/teacher-preview.db` e FileStore in `.tmp/dev-preview/filestore/` (zero toccamento dei dati di produzione o volumi K3s).
+   - Generazione automatica di un ricco seed dimostrativo riproducibile (classi 4A Informatica e 3B Liceo, studenti, lezioni, dispense pubblicate, attività di verifica/esercitazione, sottomissioni simulate con Seat Map e correzioni).
+   - Script di pulizia atomico e sicuro `bin/teacher-service-preview-clean.js` (`pnpm dev:preview:clean`) per eliminare la directory temporanea senza residui.
+
+5. **Suite di Test & Validazione**:
+   - **24 test suite eseguite ed esito 100% PASS (zero fallimenti)**:
+     - `tests/server/student-api.test.js` (12 test): API studente isolate, mascheramento soluzioni docente, dichiarazione Seat Map, autosave, consegna finale, upload allegati, blocco chiamate non autorizzate su endpoint docente, monitoraggio live.
+     - `tests/integration/dev-preview.test.js` (2 test): inizializzazione storage isolato, seed dimostrativo e pulizia sicura.
+     - Tutte le 22 suite preesistenti (unit, server, mcp, integration) confermate passanti senza alcuna regressione.
+
+### 9. Checkpoint C3.1: Stabilizzazione prima di C4 (22 ottobre 2026)
+
+Conformemente alle direttive del Domain Owner e alla supervisione ChatGPT, è stato completato con successo il **Checkpoint C3.1** di consolidamento e stabilizzazione del flusso di verifiche ed esercitazioni:
+
+1. **Sicurezza e Identità degli Studenti (Zero-Account & Token Crittografici con Hash)**:
+   - Eliminato il rischio del modello basato su libero `studentId` client-side.
+   - Implementato sistema di accesso leggero basato su credenziali individuali temporanee per attività (`access_code` monouso da 6 caratteri o QR) e session token crittografici a 256 bit (`student_activity_credentials`) con scadenza configurabile e stato (`issued`, `active`, `submitted`, `revoked`).
+   - Il server memorizza su SQLite esclusivamente l'hash crittografico SHA-256 del token (`token_hash`), mai il token in chiaro.
+   - Riscatto monouso rigorosamente applicato: una volta riscattato (`cred.status !== "issued"`), il codice non può essere riutilizzato da terzi o soggetti diversi; tentativi di riscatto multiplo vengono respinti con `403 AuthorizationError`.
+   - Endpoint studente protetti dall'header obbligatorio `X-Student-Token` o `Authorization: Bearer <token>`: ogni operazione (`start`, `autosave`, `submit`, `upload`, `getSubmission`) risolve l'identità verificata (`studentId`, `classId`, `assessmentId`) lato server in modo fail-closed (`validateStudentSession`).
+   - Privacy dei nominativi garantita: l'elenco studenti per la classe nell'area pubblica espone solo nome e iniziale del cognome (es. `Mario R.`); i dati completi e la consegna sono visibili unicamente alla sessione autorizzata.
+   - Difesa contro attacchi a forza bruta implementata a livello HTTP: blocco dell'IP dopo 5 tentativi errati di riscatto codice entro 5 minuti con risposta `429 Too Many Requests`.
+   - Procedura controllata per smarrimento, rinnovo e revoca: implementato `reissueActivityCredential` a livello service, esposto via REST (`POST /api/assessments/:id/credentials/:credId/reissue`), via MCP (`reissue_student_credential`) e nella UI docente con pulsante "Rinnova" individuale.
+   - Interfaccia docente corretta: rimosse le indicazioni di proiezione collettiva alla lavagna, sostituite da istruzioni di distribuzione personale e riservata (tagliandi cartacei o QR individuali).
+
+2. **Integrità delle Verifiche & Lifecycle Immutabile**:
+   - Lifecycle rigorosamente applicato: `draft` → `ready` → `active` → `closed`.
+   - Nello stato `ready`, i quesiti della prova rimangono inaccessibili (`items: []`), consentendo solo la visualizzazione delle informazioni generali di attesa; le domande vengono sbloccate solo con la transizione esplicita ad `active`.
+   - Le verifiche in stato `draft` sono rigidamente inaccessibili agli studenti (rifiuto 403 con AuthorizationError su claim, start, autosave e query).
+   - Validazione cross-class: studenti di una classe non possono accedere o salvare tentativi per verifiche di altre classi.
+   - Immutabilità della consegna definitiva (`attempt_status === "submitted"`): qualsiasi tentativo successivo di autosave, consegna o upload di allegati viene respinto con `409 Conflict` sia a livello database che HTTP.
+   - Riapertura controllata (`reopenSubmission`): il docente può riaprire esplicitamente un tentativo consegnato, tracciando l'audit e consentendo allo studente di riprendere la compilazione.
+   - Versionamento delle domande e delle verifiche: ogni modifica o aggiunta quesiti incrementa `assessment.version`; le consegne sono collegate alla versione esatta dell'attività; eliminazione quesiti bloccata con `ConflictError` se sussistono risposte.
+
+3. **Autosalvataggio Monotono & Protezione Concorrenza**:
+   - Controllo di revisione monotona lato server (`revision` numerica crescente inviata ad ogni salvataggio bozza): richieste stale o fuori ordine vengono scartate con `409 Conflict`.
+   - Richieste di autosave ritardate arrivate dopo la consegna definitiva vengono respinte con `409 Conflict` senza sovrascritture parziali o corruzioni.
+   - Gestione esplicita dei conflitti HTTP nel frontend, evitando falsi positivi di salvataggio.
+   - Test approfonditi di concorrenza, duplicazione rapida, disconnessione e arrivo asincrono fuori sequenza implementati ed eseguiti con successo.
+
+4. **Minimizzazione Dati Studente & Isolamento Docente**:
+   - `getStudentSubmission` con ruolo `student` pulisce rigorosamente il payload: rimosse soluzioni riservate (`teacher_solution`), rubriche di correzione (`rubric_json`), note interne, valutazioni non pubblicate e percorsi filesystem assoluti del FileStore.
+   - Endpoint upload allegati restituisce percorsi relativi e sicuri.
+   - Test negativi rigorosi su soluzioni, rubriche e dati interni.
+
+5. **Proposta Architetturale Cloudflare Zero Trust (IaC)**:
+   - Documento `docs/cloudflare-routing-iac-proposal.md` completamente allineato alle convenzioni `infra` e agli standard Zero Trust.
+   - Rimosso il bypass globale; proposta architettura basata su Access Applications path-scoped (`/docente*` e `/api/*` protette da IDP docente; `/api/student/*` e asset con bypass scoped).
+   - Predisposto piano di transizione e comandi canonici `make cf-save-access-plan`, `make cf-verify-access-plan`, `make cf-apply-access-plan` per Checkpoint C7.
+   - Nessuna modifica applicata a Cloudflare, Tunnel o K3s in C3.1.
+
+6. **Esito Validazione & Gate C4**:
+   - **24/24 test suite eseguite ed esito 100% PASS (zero fallimenti)**:
+     - `tests/server/student-api.test.js` (30 test): sicurezza token, brute-force defense, single-use codes, state transitions, question invisibility in ready state, monotonic revision rejection, sanitized student submission payload, teacher reissue.
+     - `tests/integration/dev-preview.test.js` (2 test): inizializzazione storage isolato, seed dimostrativo e pulizia sicura.
+     - Tutte le 22 suite preesistenti (unit, server, mcp, integration) confermate passanti senza alcuna regressione.
+   - Client SPA compilato con successo (`pnpm run build:client`).
+   - Flusso completo verificato in ambiente locale isolato `.tmp/dev-preview/`.
+   - **Gate C4 APERTO**: la base di sicurezza, identità, integrità e persistenza è solida per avviare l'implementazione della Student Experience avanzata (C4).
