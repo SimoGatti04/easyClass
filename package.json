@@ -2,7 +2,7 @@
   "name": "teacher-service",
   "version": "0.1.0",
   "packageManager": "pnpm@10.32.1",
-  "description": "Teacher Service — Domain Core, Materials Management, and MCP Service",
+  "description": "Teacher Service \u2014 Domain Core, Materials Management, and MCP Service",
   "type": "module",
   "main": "src/index.js",
   "bin": {
@@ -19,7 +19,8 @@
     "start:http": "node --env-file=.env.local bin/teacher-service-http.js",
     "build:client": "vite build",
     "dev:preview": "node bin/teacher-service-preview.js",
-    "dev:preview:clean": "node bin/teacher-service-preview-clean.js"
+    "dev:preview:clean": "node bin/teacher-service-preview-clean.js",
+    "test:browser:c4": "pnpm run build:client && node --test tests/browser/student-c4-browser.test.js"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "1.29.0",

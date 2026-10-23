@@ -138,10 +138,12 @@ test('Student Public API & Teacher Live Monitor HTTP Suite', async (t) => {
     method = 'GET',
     url = '/health',
     headers = {},
-    body = null
+    body = null,
+    remoteAddress = '127.0.0.1'
   } = {}) {
     const socket = new EventEmitter();
     socket.setTimeout = () => {};
+    socket.remoteAddress = remoteAddress;
     const req = new http.IncomingMessage(socket);
     req.method = method;
     req.url = url;
@@ -314,7 +316,9 @@ test('Student Public API & Teacher Live Monitor HTTP Suite', async (t) => {
         leftNeighborId: null,
         leftNeighborName: 'Nessuno',
         rightNeighborId: student2.id,
-        rightNeighborName: 'Laura Bianchi'
+        rightNeighborName: 'Laura Bianchi',
+        revision: 1,
+        responses: []
       }
     });
 
@@ -336,6 +340,7 @@ test('Student Public API & Teacher Live Monitor HTTP Suite', async (t) => {
         'X-Student-Token': student1Token
       },
       body: {
+        revision: 2,
         seatRow: 'Fila 1',
         seatDesk: 'Banco 2',
         responses: [
@@ -368,6 +373,7 @@ test('Student Public API & Teacher Live Monitor HTTP Suite', async (t) => {
         'X-Student-Token': student1Token
       },
       body: {
+        revision: 3,
         seatRow: 'Fila 1',
         seatDesk: 'Banco 2',
         responses: [
@@ -390,6 +396,7 @@ test('Student Public API & Teacher Live Monitor HTTP Suite', async (t) => {
         'X-Student-Token': student1Token
       },
       body: {
+        revision: 4,
         responses: [{ itemId: testAssessment.items[0].id, responseText: 'Modifica illegittima' }]
       }
     });
@@ -459,6 +466,7 @@ test('Student Public API & Teacher Live Monitor HTTP Suite', async (t) => {
         'X-Student-Token': student1Token
       },
       body: {
+        revision: 4,
         responses: [{ itemId: testAssessment.items[0].id, responseText: 'Trasporto (aggiornato dopo riapertura)' }]
       }
     });
@@ -538,6 +546,7 @@ test('Student Public API & Teacher Live Monitor HTTP Suite', async (t) => {
         "X-Student-Token": student2Token
       },
       body: {
+        revision: 1,
         studentId: student1.id,
         studentName: "Marco Rossi",
         responses: [{ itemId: testAssessment.items[0].id, responseText: "HACKED_BY_STUDENT_2" }]
@@ -605,6 +614,7 @@ test('Student Public API & Teacher Live Monitor HTTP Suite', async (t) => {
         "X-Student-Token": student1Token
       },
       body: {
+        revision: 5,
         responses: [{ itemId: testAssessment.items[0].id, responseText: "Risposta finale definitiva" }]
       }
     });
@@ -620,6 +630,7 @@ test('Student Public API & Teacher Live Monitor HTTP Suite', async (t) => {
         "X-Student-Token": student1Token
       },
       body: {
+        revision: 6,
         responses: [{ itemId: testAssessment.items[0].id, responseText: "Modifica non autorizzata" }]
       }
     });
@@ -634,33 +645,12 @@ test('Student Public API & Teacher Live Monitor HTTP Suite', async (t) => {
         "Content-Type": "application/json",
         "X-Student-Token": student1Token
       },
-      body: {}
+      body: { revision: 6 }
     });
     assert.equal(secondSubmitRes.statusCode, 409);
     assert.equal(secondSubmitRes.body.error, "ConflictError");
 
-    // Attachment upload for submitted assessment returns 409 Conflict
-    const boundary = "----TestBoundaryXYZ";
-    const uploadMultipart = Buffer.from(
-      "--" + boundary + "\r\n" +
-      "Content-Disposition: form-data; name=\"assessmentId\"\r\n\r\n" + testAssessment.id + "\r\n" +
-      "--" + boundary + "\r\n" +
-      "Content-Disposition: form-data; name=\"file\"; filename=\"schema.pdf\"\r\n" +
-      "Content-Type: application/pdf\r\n\r\n%PDF-1.4 Dummy PDF Content\r\n" +
-      "--" + boundary + "--\r\n"
-    );
 
-    const uploadBlocked = await executeVirtualRequest({
-      method: "POST",
-      url: "/api/student/upload?assessmentId=" + testAssessment.id,
-      headers: {
-        "X-Student-Token": student1Token,
-        "Content-Type": "multipart/form-data; boundary=" + boundary
-      },
-      body: uploadMultipart
-    });
-    assert.equal(uploadBlocked.statusCode, 409);
-    assert.equal(uploadBlocked.body.error, "ConflictError");
   });
 
   await t.test("16. Security: Revoked and expired credentials fail closed with AuthorizationError", async () => {
@@ -722,57 +712,61 @@ test('Student Public API & Teacher Live Monitor HTTP Suite', async (t) => {
   });
 
   await t.test("18. File upload security: Safe extensions accepted, dangerous/executable rejected", async () => {
-    // Use active Student 2 session token obtained in test 13
-    assert.ok(student2Token);
+    const attachmentAssessment = service.createAssessment({
+      title: "Consegna allegato sicurezza",
+      classId: testClass.id,
+      subjectId: testSubject.id,
+      status: "active",
+      durationMinutes: 45,
+      items: [{
+        type: "attachment",
+        questionText: "Carica un diagramma di rete",
+        maxScore: 10,
+        assessableSourceId: studentMaterial.id,
+        assessableSourceVersion: 1
+      }]
+    });
+    const credential = service.listActivityCredentials(attachmentAssessment.id).find(c => c.studentId === student2.id);
+    assert.ok(credential);
+    const claimRes = await executeVirtualRequest({
+      method: "POST", url: "/api/student/claim-code",
+      headers: { "Content-Type": "application/json" }, body: { accessCode: credential.accessCode }
+    });
+    assert.equal(claimRes.statusCode, 200);
+    const token = claimRes.body.session.token;
+    const startRes = await executeVirtualRequest({
+      method: "POST", url: `/api/student/activities/${attachmentAssessment.id}/start`,
+      headers: { "Content-Type": "application/json", "X-Student-Token": token },
+      body: { revision: 1, responses: [] }
+    });
+    assert.equal(startRes.statusCode, 200);
 
     const boundary = "----UploadSecBoundary123";
-
-    // 1. Dangerous executable extension (.sh) must be rejected with 400 SecurityError
-    const dangerousMultipart = Buffer.from(
-      "--" + boundary + "\r\n" +
-      "Content-Disposition: form-data; name=\"assessmentId\"\r\n\r\n" + testAssessment.id + "\r\n" +
-      "--" + boundary + "\r\n" +
-      "Content-Disposition: form-data; name=\"file\"; filename=\"exploit.sh\"\r\n" +
-      "Content-Type: text/x-sh\r\n\r\n#!/bin/bash\necho hack\r\n" +
-      "--" + boundary + "--\r\n"
-    );
-
+    const makeMultipart = (filename, contentType, bytes) => Buffer.concat([
+      Buffer.from(`--${boundary}\r\nContent-Disposition: form-data; name="assessmentId"\r\n\r\n${attachmentAssessment.id}\r\n`),
+      Buffer.from(`--${boundary}\r\nContent-Disposition: form-data; name="itemId"\r\n\r\n${attachmentAssessment.items[0].id}\r\n`),
+      Buffer.from(`--${boundary}\r\nContent-Disposition: form-data; name="file"; filename="${filename}"\r\nContent-Type: ${contentType}\r\n\r\n`),
+      bytes, Buffer.from(`\r\n--${boundary}--\r\n`)
+    ]);
+    const dangerous = makeMultipart("exploit.sh", "text/x-sh", Buffer.from("#!/bin/sh\necho blocked"));
     const dangerRes = await executeVirtualRequest({
-      method: "POST",
-      url: "/api/student/upload?assessmentId=" + testAssessment.id,
-      headers: {
-        "X-Student-Token": student2Token,
-        "Content-Type": "multipart/form-data; boundary=" + boundary
-      },
-      body: dangerousMultipart
+      method: "POST", url: "/api/student/upload",
+      headers: { "X-Student-Token": token, "Content-Type": `multipart/form-data; boundary=${boundary}` },
+      body: dangerous
     });
     assert.equal(dangerRes.statusCode, 400);
     assert.match(dangerRes.body.message, /Unsupported file extension/);
 
-    // 2. Safe allowed extension (.pdf) with valid magic bytes is accepted
-    const safeMultipart = Buffer.from(
-      "--" + boundary + "\r\n" +
-      "Content-Disposition: form-data; name=\"assessmentId\"\r\n\r\n" + testAssessment.id + "\r\n" +
-      "--" + boundary + "\r\n" +
-      "Content-Disposition: form-data; name=\"file\"; filename=\"schema_rete.pdf\"\r\n" +
-      "Content-Type: application/pdf\r\n\r\n%PDF-1.4 Legitimate network diagram binary\r\n" +
-      "--" + boundary + "--\r\n"
-    );
-
-    // log safeRes
-const safeRes = await executeVirtualRequest({
-      method: "POST",
-      url: "/api/student/upload?assessmentId=" + testAssessment.id,
-      headers: {
-        "X-Student-Token": student2Token,
-        "Content-Type": "multipart/form-data; boundary=" + boundary
-      },
-      body: safeMultipart
+    const safe = makeMultipart("schema_rete.pdf", "application/pdf", Buffer.from("%PDF-1.4\nDiagramma sintetico\n"));
+    const safeRes = await executeVirtualRequest({
+      method: "POST", url: "/api/student/upload",
+      headers: { "X-Student-Token": token, "Content-Type": `multipart/form-data; boundary=${boundary}` },
+      body: safe
     });
-    assert.equal(safeRes.statusCode, 200);
-    assert.equal(safeRes.body.success, true);
-    assert.ok(safeRes.body.attachmentPath);
+    assert.equal(safeRes.statusCode, 201);
+    assert.ok(safeRes.body.attachmentId);
     assert.equal(safeRes.body.attachmentName, "schema_rete.pdf");
+    assert.equal(safeRes.body.attachmentPath, undefined, "storage path must not be exposed to the browser");
   });
 
   await t.test("19. Cross-Class Access Rejection: Student from Class A cannot access or save for Class B", async () => {
@@ -797,7 +791,7 @@ const safeRes = await executeVirtualRequest({
         });
       },
       {
-        name: "ValidationError",
+        name: "AuthorizationError",
         message: /non appartiene alla classe/
       }
     );
@@ -815,6 +809,7 @@ const safeRes = await executeVirtualRequest({
         "X-Student-Token": student2Token
       },
       body: {
+        revision: 2,
         responses: [{ itemId: testAssessment.items[0].id, responseText: "Risposta revisione 1" }]
       }
     });
@@ -828,6 +823,7 @@ const safeRes = await executeVirtualRequest({
         "X-Student-Token": student2Token
       },
       body: {
+        revision: 3,
         responses: [{ itemId: testAssessment.items[0].id, responseText: "Risposta revisione 2 (definitiva)" }]
       }
     });
@@ -879,6 +875,7 @@ const safeRes = await executeVirtualRequest({
         "X-Student-Token": student2Token
       },
       body: {
+        revision: 4,
         responses: [
           { itemId: testAssessment.items[0].id, responseText: "Risposta finale sigillata" }
         ]
@@ -896,6 +893,7 @@ const safeRes = await executeVirtualRequest({
         "X-Student-Token": student2Token
       },
       body: {
+        revision: 3,
         responses: [
           { itemId: testAssessment.items[0].id, responseText: "Stale out-of-order text that must not overwrite" }
         ]
@@ -943,7 +941,9 @@ const safeRes = await executeVirtualRequest({
       },
       body: {
         seatRow: "Fila 3",
-        seatDesk: "Banco 1"
+        seatDesk: "Banco 1",
+        revision: 1,
+        responses: []
       }
     });
     assert.equal(startRes.statusCode, 200);
@@ -960,6 +960,7 @@ const safeRes = await executeVirtualRequest({
         "X-Student-Token": student3Token
       },
       body: {
+        revision: 2,
         responses: [{ itemId: testAssessment.items[0].id, responseText: "Tentativo post revoca" }]
       }
     });
@@ -974,7 +975,7 @@ const safeRes = await executeVirtualRequest({
         "Content-Type": "application/json",
         "X-Student-Token": student3Token
       },
-      body: {}
+      body: { revision: 2 }
     });
     assert.equal(submitRes.statusCode, 403);
   });
@@ -983,33 +984,41 @@ const safeRes = await executeVirtualRequest({
     // Reopen student 3 submission
     const sub3 = service.getStudentSubmission(testAssessment.id, student3.id);
     service.reopenSubmission(sub3.id, { reason: "Riapertura per test concorrenza" });
-    const creds = service.listActivityCredentials(testAssessment.id);
-    const s3Cred = creds.find(c => c.studentId === student3.id);
+    let s3Cred = service.listActivityCredentials(testAssessment.id).find(c => c.studentId === student3.id);
+    const renewed = service.reissueActivityCredential(s3Cred.id, { reason: "Ripresa del test concorrente" });
+    s3Cred = service.listActivityCredentials(testAssessment.id).find(c => c.studentId === student3.id);
+    const renewedClaim = await executeVirtualRequest({
+      method: "POST", url: "/api/student/claim-code",
+      headers: { "Content-Type": "application/json" }, body: { accessCode: renewed.accessCode }
+    });
+    assert.equal(renewedClaim.statusCode, 200);
+    student3Token = renewedClaim.body.session.token;
 
-    // Concurrent autosaves in flight
+    // Concurrent autosaves in flight: two requests with duplicate revision 2
+    // Exactly one must succeed (200) and the duplicate must be rejected (409 Conflict)
     const [resA, resB] = await Promise.all([
       executeVirtualRequest({
         method: "POST",
         url: "/api/student/activities/" + testAssessment.id + "/autosave",
         headers: { "Content-Type": "application/json", "X-Student-Token": student3Token },
-        body: { responses: [{ itemId: testAssessment.items[0].id, responseText: "Test concorrente A" }] }
+        body: { revision: 2, responses: [{ itemId: testAssessment.items[0].id, responseText: "Test concorrente A" }] }
       }),
       executeVirtualRequest({
         method: "POST",
         url: "/api/student/activities/" + testAssessment.id + "/autosave",
         headers: { "Content-Type": "application/json", "X-Student-Token": student3Token },
-        body: { responses: [{ itemId: testAssessment.items[0].id, responseText: "Test concorrente B" }] }
+        body: { revision: 2, responses: [{ itemId: testAssessment.items[0].id, responseText: "Test concorrente B" }] }
       })
     ]);
-    assert.equal(resA.statusCode, 200);
-    assert.equal(resB.statusCode, 200);
+    const statuses = [resA.statusCode, resB.statusCode].sort();
+    assert.deepEqual(statuses, [200, 409]);
 
-    // Duplicate submit calls: first succeeds, second returns 409 Conflict
+    // Duplicate submit calls: first succeeds with revision 3, second returns 409 Conflict
     const submit1 = await executeVirtualRequest({
       method: "POST",
       url: "/api/student/activities/" + testAssessment.id + "/submit",
       headers: { "Content-Type": "application/json", "X-Student-Token": student3Token },
-      body: {}
+      body: { revision: 3 }
     });
     assert.equal(submit1.statusCode, 200);
 
@@ -1017,17 +1026,57 @@ const safeRes = await executeVirtualRequest({
       method: "POST",
       url: "/api/student/activities/" + testAssessment.id + "/submit",
       headers: { "Content-Type": "application/json", "X-Student-Token": student3Token },
-      body: {}
+      body: { revision: 3 }
     });
     assert.equal(submit2.statusCode, 409);
     assert.equal(submit2.body.error, "ConflictError");
   });
 
   await t.test("25. Question Item CRUD & Teacher Solutions Protection", async () => {
+    // 1. Invariant: Modifying items on an assessment with started submissions is rejected with 409 Conflict
+    const rejectedAddItem = await executeVirtualRequest({
+      method: "POST",
+      url: "/api/assessments/" + testAssessment.id + "/items",
+      headers: {
+        "Content-Type": "application/json",
+        "Cf-Access-Jwt-Assertion": teacherToken
+      },
+      body: {
+        type: "code",
+        questionText: "Non consentito su prova già avviata",
+        maxScore: 10,
+        assessableSourceId: studentMaterial.id,
+        assessableSourceVersion: 1
+      }
+    });
+    assert.equal(rejectedAddItem.statusCode, 409);
+    assert.match(rejectedAddItem.body.message, /ha già tentativi avviati/);
+
+    // 2. Fresh assessment without attempts allows full item CRUD, version bumping, and solution isolation
+    const freshAsm = service.createAssessment({
+      title: "Verifica Quesiti e Rubriche Docente",
+      classId: testClass.id,
+      subjectId: testSubject.id,
+      activityType: "test",
+      status: "active",
+      durationMinutes: 45,
+      maxScore: 30
+    });
+    const freshCreds = service.generateActivityCredentials(freshAsm.id);
+    const s1Cred = freshCreds.find(c => c.studentId === student1.id);
+    const claimRes = await executeVirtualRequest({
+      method: "POST",
+      url: "/api/student/claim-code",
+      headers: { "Content-Type": "application/json" },
+      body: { accessCode: s1Cred.accessCode }
+    });
+    assert.equal(claimRes.statusCode, 200);
+    const freshStudentToken = claimRes.body.session.token;
+
     // Teacher adds a new Code question item
     const addItemRes = await executeVirtualRequest({
       method: "POST",
-      url: "/api/assessments/" + testAssessment.id + "/items",
+      url: "/api/assessments/" + freshAsm.id + "/items",
       headers: {
         "Content-Type": "application/json",
         "Cf-Access-Jwt-Assertion": teacherToken
@@ -1050,7 +1099,7 @@ const safeRes = await executeVirtualRequest({
     // Teacher view has teacher solution
     const teacherView = await executeVirtualRequest({
       method: "GET",
-      url: "/api/assessments/" + testAssessment.id,
+      url: "/api/assessments/" + freshAsm.id,
       headers: { "Cf-Access-Jwt-Assertion": teacherToken }
     });
     assert.equal(teacherView.statusCode, 200);
@@ -1060,8 +1109,8 @@ const safeRes = await executeVirtualRequest({
     // Student view strips teacher solution
     const studentView = await executeVirtualRequest({
       method: "GET",
-      url: "/api/student/activities/" + testAssessment.id,
-      headers: { "X-Student-Token": student1Token }
+      url: "/api/student/activities/" + freshAsm.id,
+      headers: { "X-Student-Token": freshStudentToken }
     });
     assert.equal(studentView.statusCode, 200);
     const addedItemStudent = studentView.body.activity.items.find(i => i.id === newItemId);
@@ -1070,7 +1119,7 @@ const safeRes = await executeVirtualRequest({
     // Teacher updates the item
     const updateItemRes = await executeVirtualRequest({
       method: "PUT",
-      url: "/api/assessments/" + testAssessment.id + "/items/" + newItemId,
+      url: "/api/assessments/" + freshAsm.id + "/items/" + newItemId,
       headers: {
         "Content-Type": "application/json",
         "Cf-Access-Jwt-Assertion": teacherToken
@@ -1086,7 +1135,7 @@ const safeRes = await executeVirtualRequest({
     // Teacher deletes the item
     const deleteItemRes = await executeVirtualRequest({
       method: "DELETE",
-      url: "/api/assessments/" + testAssessment.id + "/items/" + newItemId,
+      url: "/api/assessments/" + freshAsm.id + "/items/" + newItemId,
       headers: { "Cf-Access-Jwt-Assertion": teacherToken }
     });
     assert.equal(deleteItemRes.statusCode, 200);
@@ -1211,7 +1260,7 @@ const safeRes = await executeVirtualRequest({
         "Content-Type": "application/json",
         "X-Student-Token": readyToken
       },
-      body: { seatRow: "Fila 1" }
+      body: { seatRow: "Fila 1", revision: 1, responses: [] }
     });
     assert.equal(startRes.statusCode, 403);
 
@@ -1310,5 +1359,594 @@ const safeRes = await executeVirtualRequest({
     assert.equal(reissueRes.body.status, "issued");
     assert.equal(reissueRes.body.token, undefined);
     assert.equal(reissueRes.body.token_hash, undefined);
+  });
+
+  await t.test("31. Concurrent Code Claiming: Two simultaneous claims yield exactly one valid session", async () => {
+    // Generate new credentials for testAssessment
+    const creds = service.generateActivityCredentials(testAssessment.id, { forceRegenerate: true });
+    const targetStudent = creds[0];
+    assert.ok(targetStudent);
+
+    // Execute two concurrent claim requests with the identical code
+    const [res1, res2] = await Promise.all([
+      executeVirtualRequest({
+        method: "POST",
+        url: "/api/student/claim-code",
+        headers: { "Content-Type": "application/json" },
+        body: { accessCode: targetStudent.accessCode }
+      }),
+      executeVirtualRequest({
+        method: "POST",
+        url: "/api/student/claim-code",
+        headers: { "Content-Type": "application/json" },
+        body: { accessCode: targetStudent.accessCode }
+      })
+    ]);
+
+    const statuses = [res1.statusCode, res2.statusCode].sort();
+    assert.deepEqual(statuses, [200, 403], "Exactly one claim must succeed (200) and one must be rejected (403)");
+    const successRes = res1.statusCode === 200 ? res1 : res2;
+    const failRes = res1.statusCode === 403 ? res1 : res2;
+    assert.ok(successRes.body.session?.token);
+    assert.match(failRes.body.message, /già stato utilizzato/);
+  });
+
+  await t.test("32. Credential Reissue on Finalized Submission preserves submission integrity without response loss", async () => {
+    // Submit attempt for target student
+    const studentForReissue = service.addStudent({
+      classId: testClass.id,
+      firstName: "Davide",
+      lastName: "Verdi",
+      email: "d.verdi@scuola.example"
+    });
+    const creds = service.generateActivityCredentials(testAssessment.id);
+    const targetCred = creds.find(c => c.studentId === studentForReissue.id);
+    assert.ok(targetCred);
+
+    const claimRes = await executeVirtualRequest({
+      method: "POST",
+      url: "/api/student/claim-code",
+      headers: { "Content-Type": "application/json" },
+      body: { accessCode: targetCred.accessCode }
+    });
+    assert.equal(claimRes.statusCode, 200);
+    const token = claimRes.body.session.token;
+
+    // Start and submit
+    await executeVirtualRequest({
+      method: "POST",
+      url: `/api/student/activities/${testAssessment.id}/start`,
+      headers: { "Content-Type": "application/json", "X-Student-Token": token },
+      body: { revision: 1, responses: [] }
+    });
+    const subRes = await executeVirtualRequest({
+      method: "POST",
+      url: `/api/student/activities/${testAssessment.id}/submit`,
+      headers: { "Content-Type": "application/json", "X-Student-Token": token },
+      body: {
+        revision: 2,
+        responses: [{ itemId: testAssessment.items[0].id, responseText: "Risposta Davide definitiva" }]
+      }
+    });
+    assert.equal(subRes.statusCode, 200);
+
+    // Now teacher reissues credentials for this student
+    const credRow = service.listActivityCredentials(testAssessment.id).find(c => c.studentId === studentForReissue.id);
+    assert.ok(credRow);
+
+    const reissueRes = await executeVirtualRequest({
+      method: "POST",
+      url: `/api/assessments/${testAssessment.id}/credentials/${credRow.id}/reissue`,
+      headers: {
+        "Content-Type": "application/json",
+        "Cf-Access-Jwt-Assertion": teacherToken
+      },
+      body: { reason: "Recupero accesso studente" }
+    });
+    assert.equal(reissueRes.statusCode, 200);
+
+    // Verify submission is still intact, submitted, and responses are unchanged
+    const finalSub = service.getStudentSubmission(testAssessment.id, studentForReissue.id, { role: "teacher" });
+    assert.equal(finalSub.status, "submitted");
+    assert.equal(finalSub.responses.length, 1);
+    assert.equal(finalSub.responses[0].response_text, "Risposta Davide definitiva");
+  });
+
+  await t.test("33. Multi-Question Assessment with Two Concurrent Students: Monotonic Autosave & Live Monitoring", async () => {
+    // 1. Create a multi-question assessment with 3 varied items
+    const multiAsm = service.createAssessment({
+      title: "Verifica Multi-Quesito Concorrente",
+      classId: testClass.id,
+      subjectId: testSubject.id,
+      activityType: "test",
+      status: "active",
+      durationMinutes: 60,
+      maxScore: 30,
+      items: [
+        {
+          type: "open_short",
+          questionText: "Cos'è il modello OSI?",
+          maxScore: 10,
+          assessableSourceId: studentMaterial.id,
+          assessableSourceVersion: 1,
+          teacherSolution: "Modello architetturale a 7 livelli"
+        },
+        {
+          type: "multiple_choice",
+          questionText: "Quale livello gestisce il routing IP?",
+          options: ["Fisico", "Collegamento", "Rete", "Trasporto"],
+          maxScore: 5,
+          assessableSourceId: studentMaterial.id,
+          assessableSourceVersion: 1,
+          teacherSolution: "Rete"
+        },
+        {
+          type: "code",
+          questionText: "Implementa un socket TCP client",
+          maxScore: 15,
+          assessableSourceId: studentMaterial.id,
+          assessableSourceVersion: 1,
+          teacherSolution: "import socket\ns = socket.socket()"
+        }
+      ]
+    });
+    assert.equal(multiAsm.items.length, 3);
+
+    // 2. Add two distinct students and generate credentials
+    const studA = service.addStudent({
+      classId: testClass.id,
+      firstName: "Elena",
+      lastName: "Galli",
+      email: "e.galli@scuola.example"
+    });
+    const studB = service.addStudent({
+      classId: testClass.id,
+      firstName: "Federico",
+      lastName: "Riva",
+      email: "f.riva@scuola.example"
+    });
+
+    const creds = service.generateActivityCredentials(multiAsm.id);
+    const credA = creds.find(c => c.studentId === studA.id);
+    const credB = creds.find(c => c.studentId === studB.id);
+    assert.ok(credA && credB);
+
+    // 3. Both students claim their respective credentials
+    const [claimA, claimB] = await Promise.all([
+      executeVirtualRequest({
+        method: "POST",
+        url: "/api/student/claim-code",
+        headers: { "Content-Type": "application/json" },
+        body: { accessCode: credA.accessCode }
+      }),
+      executeVirtualRequest({
+        method: "POST",
+        url: "/api/student/claim-code",
+        headers: { "Content-Type": "application/json" },
+        body: { accessCode: credB.accessCode }
+      })
+    ]);
+    assert.equal(claimA.statusCode, 200);
+    assert.equal(claimB.statusCode, 200);
+    const tokenA = claimA.body.session.token;
+    const tokenB = claimB.body.session.token;
+
+    // 4. Both students start attempt with seat map
+    await Promise.all([
+      executeVirtualRequest({
+        method: "POST",
+        url: `/api/student/activities/${multiAsm.id}/start`,
+        headers: { "Content-Type": "application/json", "X-Student-Token": tokenA },
+        body: {
+          seatRow: "Fila 2",
+          seatDesk: "Banco 1",
+          rightNeighborId: studB.id,
+          rightNeighborName: "Federico Riva",
+          responses: [],
+          revision: 1
+        }
+      }),
+      executeVirtualRequest({
+        method: "POST",
+        url: `/api/student/activities/${multiAsm.id}/start`,
+        headers: { "Content-Type": "application/json", "X-Student-Token": tokenB },
+        body: {
+          seatRow: "Fila 2",
+          seatDesk: "Banco 2",
+          leftNeighborId: studA.id,
+          leftNeighborName: "Elena Galli",
+          responses: [],
+          revision: 1
+        }
+      })
+    ]);
+
+    // 5. Concurrent autosaves across questions with monotonic revisions
+    const items = multiAsm.items;
+    const [autoA1, autoB1] = await Promise.all([
+      executeVirtualRequest({
+        method: "POST",
+        url: `/api/student/activities/${multiAsm.id}/autosave`,
+        headers: { "Content-Type": "application/json", "X-Student-Token": tokenA },
+        body: {
+          revision: 2,
+          responses: [{ itemId: items[0].id, responseText: "Elena: Modello a 7 strati ISO/OSI" }]
+        }
+      }),
+      executeVirtualRequest({
+        method: "POST",
+        url: `/api/student/activities/${multiAsm.id}/autosave`,
+        headers: { "Content-Type": "application/json", "X-Student-Token": tokenB },
+        body: {
+          revision: 2,
+          responses: [{ itemId: items[0].id, responseText: "Federico: Standard internazionale reti" }]
+        }
+      })
+    ]);
+    assert.equal(autoA1.statusCode, 200);
+    assert.equal(autoA1.body.revision, 2);
+    assert.equal(autoB1.statusCode, 200);
+    assert.equal(autoB1.body.revision, 2);
+
+    // Save Q2 and Q3
+    await executeVirtualRequest({
+      method: "POST",
+      url: `/api/student/activities/${multiAsm.id}/autosave`,
+      headers: { "Content-Type": "application/json", "X-Student-Token": tokenA },
+      body: {
+        revision: 3,
+        responses: [
+          { itemId: items[0].id, responseText: "Elena: Modello a 7 strati ISO/OSI" },
+          { itemId: items[1].id, responseText: "Rete" },
+          { itemId: items[2].id, responseText: "const client = net.createConnection(80);" }
+        ]
+      }
+    });
+
+    await executeVirtualRequest({
+      method: "POST",
+      url: `/api/student/activities/${multiAsm.id}/autosave`,
+      headers: { "Content-Type": "application/json", "X-Student-Token": tokenB },
+      body: {
+        revision: 3,
+        responses: [
+          { itemId: items[0].id, responseText: "Federico: Standard internazionale reti" },
+          { itemId: items[1].id, responseText: "Rete" },
+          { itemId: items[2].id, responseText: "s = socket.socket(); s.connect(('127.0.0.1', 80))" }
+        ]
+      }
+    });
+
+    // 6. Student A finalizes submission (revision 4)
+    const submitA = await executeVirtualRequest({
+      method: "POST",
+      url: `/api/student/activities/${multiAsm.id}/submit`,
+      headers: { "Content-Type": "application/json", "X-Student-Token": tokenA },
+      body: {
+        revision: 4,
+        responses: [
+          { itemId: items[0].id, responseText: "Elena: Modello a 7 strati ISO/OSI Definitivo" },
+          { itemId: items[1].id, responseText: "Rete" },
+          { itemId: items[2].id, responseText: "const client = net.createConnection(80);" }
+        ]
+      }
+    });
+    assert.equal(submitA.statusCode, 200);
+    assert.equal(submitA.body.status, "submitted");
+    assert.equal(submitA.body.revision, 4);
+
+    // 7. Late autosave attempt from Student A is rejected with 409 Conflict
+    const lateAutoA = await executeVirtualRequest({
+      method: "POST",
+      url: `/api/student/activities/${multiAsm.id}/autosave`,
+      headers: { "Content-Type": "application/json", "X-Student-Token": tokenA },
+      body: {
+        revision: 5,
+        responses: [{ itemId: items[0].id, responseText: "Late modification" }]
+      }
+    });
+    assert.equal(lateAutoA.statusCode, 409);
+    assert.match(lateAutoA.body.message, /già finalizzata ed immutabile/);
+
+    // 8. Student B continues editing peacefully (revision 4)
+    const autoB4 = await executeVirtualRequest({
+      method: "POST",
+      url: `/api/student/activities/${multiAsm.id}/autosave`,
+      headers: { "Content-Type": "application/json", "X-Student-Token": tokenB },
+      body: {
+        revision: 4,
+        responses: [
+          { itemId: items[0].id, responseText: "Federico: Revisione approfondita" },
+          { itemId: items[1].id, responseText: "Rete" },
+          { itemId: items[2].id, responseText: "s = socket.socket(); s.connect(('127.0.0.1', 80))" }
+        ]
+      }
+    });
+    assert.equal(autoB4.statusCode, 200);
+    assert.equal(autoB4.body.revision, 4);
+
+    // 9. Teacher Live Monitor accurately reflects both students
+    const monitorRes = await executeVirtualRequest({
+      method: "GET",
+      url: `/api/assessments/${multiAsm.id}/live-monitor`,
+      headers: { "Cf-Access-Jwt-Assertion": teacherToken }
+    });
+    assert.equal(monitorRes.statusCode, 200);
+    const mon = monitorRes.body.liveMonitoring;
+    assert.equal(mon.summary.submitted, 1);
+    assert.equal(mon.summary.inProgress, 1);
+
+    const studAMon = mon.students.find(s => s.studentId === studA.id);
+    const studBMon = mon.students.find(s => s.studentId === studB.id);
+    assert.equal(studAMon.status, "submitted");
+    assert.equal(studAMon.answeredCount, 3);
+    assert.equal(studAMon.seatRow, "Fila 2");
+    assert.equal(studAMon.seatDesk, "Banco 1");
+
+    assert.equal(studBMon.status, "in_progress");
+    assert.equal(studBMon.answeredCount, 3);
+    assert.equal(studBMon.seatRow, "Fila 2");
+    assert.equal(studBMon.seatDesk, "Banco 2");
+  });
+
+  await t.test("34. IP Proxy & Header Anti-Spoofing: Direct public connections ignore client-forged IP headers", async () => {
+    // Direct public IP attempting to rotate X-Forwarded-For and Cf-Connecting-Ip headers on every attempt
+    const directPublicIp = "203.0.113.88";
+
+    for (let i = 0; i < 5; i++) {
+      const res = await executeVirtualRequest({
+        method: "POST",
+        url: "/api/student/claim-code",
+        remoteAddress: directPublicIp,
+        headers: {
+          "Content-Type": "application/json",
+          "X-Forwarded-For": `1.2.3.${i}`,
+          "Cf-Connecting-Ip": `10.0.0.${i}`
+        },
+        body: { accessCode: `WRONGSPOOF${i}` }
+      });
+      assert.equal(res.statusCode, 403);
+    }
+
+    // 6th attempt with yet another spoofed IP in header must be blocked with 429 TooManyRequests
+    const blockedRes = await executeVirtualRequest({
+      method: "POST",
+      url: "/api/student/claim-code",
+      remoteAddress: directPublicIp,
+      headers: {
+        "Content-Type": "application/json",
+        "X-Forwarded-For": "8.8.8.8",
+        "Cf-Connecting-Ip": "8.8.4.4"
+      },
+      body: { accessCode: "WRONGSPOOF6" }
+    });
+    assert.equal(blockedRes.statusCode, 429);
+    assert.equal(blockedRes.body.error, "TooManyRequests");
+  });
+
+  await t.test("35. Authoritative Server Timer, Expiration Enforcement & Teacher Extra Time", async () => {
+    // 1. Create a timed assessment with 10 minutes duration
+    const timedAsm = service.assessments.createAssessment({
+      title: "Verifica a Tempo — 10 Minuti",
+      durationMinutes: 10,
+      classId: testClass.id,
+      maxScore: 30
+    });
+    service.assessments.setAssessmentStatus(timedAsm.id, "active");
+    const item1 = service.assessments.addItem(timedAsm.id, {
+      type: "open_short",
+      questionText: "Domanda a tempo",
+      maxScore: 10
+    });
+    // 2. Issue code to student
+    const creds = service.assessments.generateActivityCredentials(timedAsm.id);
+    const studentCred = creds.find(c => (c.studentId || c.student_id) === student1.id);
+    assert.ok(studentCred);
+
+    // 3. Student claims code and starts attempt
+    const claimRes = await executeVirtualRequest({
+      method: "POST",
+      url: "/api/student/claim-code",
+      body: { accessCode: studentCred.accessCode || studentCred.access_code }
+    });
+    const sToken = claimRes.body.session?.token || claimRes.body.token;
+
+    const startRes = await executeVirtualRequest({
+      method: "POST",
+      url: `/api/student/activities/${timedAsm.id}/start`,
+      headers: { "X-Student-Token": sToken },
+      body: {
+        seatRow: "Fila 1",
+        seatDesk: "Banco 1",
+        revision: 1
+      }
+    });
+    assert.equal(startRes.statusCode, 200);
+    assert.ok(startRes.body.timer);
+    assert.equal(startRes.body.timer.duration_minutes, 10);
+    assert.equal(startRes.body.timer.extra_time_minutes, 0);
+    assert.ok(startRes.body.timer.started_at);
+    assert.ok(startRes.body.timer.expires_at);
+    assert.ok(startRes.body.timer.time_remaining_seconds > 580);
+    assert.equal(startRes.body.timer.is_time_expired, false);
+
+    // 4. Student queries submission endpoint and verifies timer matches
+    const subRes = await executeVirtualRequest({
+      method: "GET",
+      url: `/api/student/activities/${timedAsm.id}/submission`,
+      headers: { "X-Student-Token": sToken }
+    });
+    assert.equal(subRes.statusCode, 200);
+    assert.ok(subRes.body.submission.timer);
+    assert.equal(subRes.body.submission.timer.duration_minutes, 10);
+
+    // 5. Teacher grants 5 minutes extra time
+    const extraTimeRes = await executeVirtualRequest({
+      method: "POST",
+      url: `/api/assessments/${timedAsm.id}/submissions/${student1.id}/extra-time`,
+      headers: { "Cf-Access-Jwt-Assertion": teacherToken },
+      body: { extraMinutes: 5 }
+    });
+    assert.equal(extraTimeRes.statusCode, 200);
+    assert.equal(extraTimeRes.body.submission.extra_time_minutes, 5);
+    assert.ok(extraTimeRes.body.submission.timer.time_remaining_seconds > 850);
+
+    // 6. Simulate timer expiration by moving started_at back in the database
+    const pastStartedAt = new Date(Date.now() - 20 * 60 * 1000).toISOString(); // 20 mins ago (allowed was 10+5=15m)
+    service.dbManager.prepare(`
+      UPDATE assessment_submissions
+      SET started_at = ?
+      WHERE assessment_id = ? AND student_id = ?
+    `).run(pastStartedAt, timedAsm.id, student1.id);
+
+    // 7. Autosave after grace period is rejected with 409 Conflict and attempt is auto-sealed
+    const expiredAutosaveRes = await executeVirtualRequest({
+      method: "POST",
+      url: `/api/student/activities/${timedAsm.id}/autosave`,
+      headers: { "X-Student-Token": sToken },
+      body: {
+        revision: 2,
+        responses: [{ itemId: item1.id, responseText: "Risposta tardiva" }]
+      }
+    });
+    assert.equal(expiredAutosaveRes.statusCode, 409);
+    assert.match(expiredAutosaveRes.body.message, /Tempo a disposizione per la verifica scaduto/);
+
+    // Check DB: attempt status is now 'submitted' (sealed)
+    const sealedSub = service.assessments.getStudentSubmission(timedAsm.id, student1.id, { role: "teacher" });
+    assert.equal(sealedSub.attempt_status, "submitted");
+    assert.equal(sealedSub.status, "submitted");
+
+    // Expiration must also prevent a delayed attachment upload from reaching FileStore.
+    // Use a separate student/attempt so the preceding autosave-expiry assertion cannot
+    // pre-seal this upload scenario.
+    const uploadAssessment = service.assessments.createAssessment({
+      title: "Verifica a tempo con allegato",
+      durationMinutes: 10,
+      classId: testClass.id,
+      maxScore: 10,
+      items: [{
+        type: "attachment",
+        questionText: "Allega un file SQL",
+        maxScore: 10,
+        assessableSourceId: studentMaterial.id,
+        assessableSourceVersion: 1
+      }]
+    });
+    service.assessments.setAssessmentStatus(uploadAssessment.id, "active");
+    const uploadItem = uploadAssessment.items[0];
+    const uploadCredential = service.assessments.generateActivityCredentials(uploadAssessment.id)
+      .find(c => (c.studentId || c.student_id) === student2.id);
+    const uploadClaim = await executeVirtualRequest({
+      method: "POST", url: "/api/student/claim-code",
+      body: { accessCode: uploadCredential.accessCode || uploadCredential.access_code }
+    });
+    const uploadToken = uploadClaim.body.session?.token || uploadClaim.body.token;
+    const uploadStart = await executeVirtualRequest({
+      method: "POST", url: `/api/student/activities/${uploadAssessment.id}/start`,
+      headers: { "X-Student-Token": uploadToken }, body: { revision: 1, responses: [] }
+    });
+    assert.equal(uploadStart.statusCode, 200);
+    service.dbManager.prepare(`
+      UPDATE assessment_submissions SET started_at = ?
+      WHERE assessment_id = ? AND student_id = ?
+    `).run(pastStartedAt, uploadAssessment.id, student2.id);
+
+    const boundary = "----ExpiredUploadBoundary";
+    const uploadBuffer = Buffer.from("SELECT 'late' AS attempt;\n");
+    const multipartBody = Buffer.concat([
+      Buffer.from(`--${boundary}\r\nContent-Disposition: form-data; name="assessmentId"\r\n\r\n${uploadAssessment.id}\r\n`),
+      Buffer.from(`--${boundary}\r\nContent-Disposition: form-data; name="itemId"\r\n\r\n${uploadItem.id}\r\n`),
+      Buffer.from(`--${boundary}\r\nContent-Disposition: form-data; name="file"; filename="late.sql"\r\nContent-Type: text/plain\r\n\r\n`),
+      uploadBuffer,
+      Buffer.from(`\r\n--${boundary}--\r\n`)
+    ]);
+    const attachmentCountBefore = service.dbManager.prepare(
+      "SELECT COUNT(*) AS count FROM student_attachments WHERE assessment_id = ?"
+    ).get(uploadAssessment.id).count;
+    const expiredUpload = await executeVirtualRequest({
+      method: "POST",
+      url: "/api/student/upload",
+      headers: { "X-Student-Token": uploadToken, "Content-Type": `multipart/form-data; boundary=${boundary}` },
+      body: multipartBody
+    });
+    assert.equal(expiredUpload.statusCode, 409);
+    assert.match(expiredUpload.body.message, /Tempo a disposizione per la verifica scaduto/);
+    assert.equal(service.dbManager.prepare(
+      "SELECT COUNT(*) AS count FROM student_attachments WHERE assessment_id = ?"
+    ).get(uploadAssessment.id).count, attachmentCountBefore, "expired uploads must not create attachment records");
+  });
+
+  await t.test("36. Attachment Preview API Security: opaque IDs, ownership, and submitted immutability", async () => {
+    const uploadStud = service.addStudent({ classId: testClass.id, firstName: "Paolo", lastName: "Verdi", email: "p.verdi@scuola.example" });
+    const otherStud = service.addStudent({ classId: testClass.id, firstName: "Sara", lastName: "Neri", email: "s.neri@scuola.example" });
+    const uploadAssessment = service.createAssessment({
+      title: "Verifica allegati e anteprima",
+      classId: testClass.id, subjectId: testSubject.id, status: "active", durationMinutes: 45,
+      items: [{ type: "attachment", questionText: "Allega un'immagine del diagramma", maxScore: 10, assessableSourceId: studentMaterial.id, assessableSourceVersion: 1 }]
+    });
+    const issueSession = async student => {
+      const credential = service.listActivityCredentials(uploadAssessment.id).find(c => c.studentId === student.id);
+      const claim = await executeVirtualRequest({ method: "POST", url: "/api/student/claim-code", body: { accessCode: credential.accessCode } });
+      assert.equal(claim.statusCode, 200);
+      const token = claim.body.session.token;
+      const started = await executeVirtualRequest({
+        method: "POST", url: `/api/student/activities/${uploadAssessment.id}/start`,
+        headers: { "X-Student-Token": token }, body: { revision: 1, responses: [] }
+      });
+      assert.equal(started.statusCode, 200);
+      return token;
+    };
+    const uploadToken = await issueSession(uploadStud);
+    const otherToken = await issueSession(otherStud);
+    const boundary = "----PreviewBoundary456";
+    const pngBuffer = Buffer.from([0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A, 0x00, 0x00, 0x00, 0x0D, 0x49, 0x48, 0x44, 0x52]);
+    const itemId = uploadAssessment.items[0].id;
+    const body = Buffer.concat([
+      Buffer.from(`--${boundary}\r\nContent-Disposition: form-data; name="assessmentId"\r\n\r\n${uploadAssessment.id}\r\n`),
+      Buffer.from(`--${boundary}\r\nContent-Disposition: form-data; name="itemId"\r\n\r\n${itemId}\r\n`),
+      Buffer.from(`--${boundary}\r\nContent-Disposition: form-data; name="file"; filename="schema.png"\r\nContent-Type: image/png\r\n\r\n`),
+      pngBuffer, Buffer.from(`\r\n--${boundary}--\r\n`)
+    ]);
+    const upload = await executeVirtualRequest({
+      method: "POST", url: "/api/student/upload",
+      headers: { "X-Student-Token": uploadToken, "Content-Type": `multipart/form-data; boundary=${boundary}` }, body
+    });
+    assert.equal(upload.statusCode, 201);
+    const attachmentId = upload.body.attachmentId;
+    assert.ok(attachmentId);
+
+    const preview = await executeVirtualRequest({
+      method: "GET", url: `/api/student/attachment?assessmentId=${uploadAssessment.id}&attachmentId=${attachmentId}`,
+      headers: { "X-Student-Token": uploadToken }
+    });
+    assert.equal(preview.statusCode, 200);
+    assert.equal(preview.headers["content-type"], "image/png");
+    assert.equal(preview.headers["x-content-type-options"], "nosniff");
+    assert.ok(preview.headers["content-security-policy"]);
+
+    const crossStudent = await executeVirtualRequest({
+      method: "GET", url: `/api/student/attachment?assessmentId=${uploadAssessment.id}&attachmentId=${attachmentId}`,
+      headers: { "X-Student-Token": otherToken }
+    });
+    assert.equal(crossStudent.statusCode, 404);
+    const traversal = await executeVirtualRequest({
+      method: "GET", url: `/api/student/attachment?assessmentId=${uploadAssessment.id}&attachmentId=../../package.json`,
+      headers: { "X-Student-Token": uploadToken }
+    });
+    assert.equal(traversal.statusCode, 404);
+    const unauth = await executeVirtualRequest({ method: "GET", url: `/api/student/attachment?assessmentId=${uploadAssessment.id}&attachmentId=${attachmentId}` });
+    assert.ok([401, 403].includes(unauth.statusCode));
+
+    const submitted = await executeVirtualRequest({
+      method: "POST", url: `/api/student/activities/${uploadAssessment.id}/submit`,
+      headers: { "X-Student-Token": uploadToken }, body: { revision: 2, responses: [{ itemId, responseText: "", attachmentId }] }
+    });
+    assert.equal(submitted.statusCode, 200);
+    const lateUpload = await executeVirtualRequest({
+      method: "POST", url: "/api/student/upload",
+      headers: { "X-Student-Token": uploadToken, "Content-Type": `multipart/form-data; boundary=${boundary}` }, body
+    });
+    assert.equal(lateUpload.statusCode, 409);
   });
 });

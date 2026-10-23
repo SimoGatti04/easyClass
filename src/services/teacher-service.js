@@ -53,7 +53,7 @@ export class TeacherService {
     this.webResearch = webResearchClient || new WebResearchClient();
     this.sources = new SourceService(this.dbManager, this.materials, this.org, this.webResearch);
     this.fileService = new FileService(this.materials, this.fileStore, fileServiceOptions);
-    this.assessments = new AssessmentService(this.dbManager, this.materials, this.ai, this.aiRules);
+    this.assessments = new AssessmentService(this.dbManager, this.materials, this.ai, this.aiRules, this.fileStore);
     this.generation = new GenerationService(this.ai, this.materials, this.org, this.aiRules, this.assessments, this.sources);
     this._activeArtifactLocks = new Set();
   }
@@ -188,6 +188,9 @@ export class TeacherService {
   reissueActivityCredential(credentialId, options) { return this.assessments.reissueActivityCredential(credentialId, options); }
   claimStudentSession(accessCode) { return this.assessments.claimStudentSession(accessCode); }
   validateStudentSession(token, assessmentId) { return this.assessments.validateStudentSession(token, assessmentId); }
+  registerStudentAttachment(data) { return this.assessments.registerStudentAttachment(data); }
+  getStudentAttachment(data) { return this.assessments.getStudentAttachment(data); }
+  grantExtraTime(assessmentId, studentId, extraMinutes) { return this.assessments.grantExtraTime(assessmentId, studentId, extraMinutes); }
   reopenSubmission(submissionId, options) { return this.assessments.reopenSubmission(submissionId, options); }
   importSubmission(data) { return this.assessments.importSubmission(data); }
   getSubmission(id) { return this.assessments.getSubmission(id); }

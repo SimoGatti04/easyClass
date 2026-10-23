@@ -11,6 +11,7 @@
  * - Export of assessment results (JSON, CSV, Markdown report)
  */
 import crypto from 'node:crypto';
+import path from 'node:path';
 import { NotFoundError, ValidationError, AuthorizationError, ConflictError } from '../core/errors.js';
 import {
   ItemTypes,
@@ -29,11 +30,12 @@ export class AssessmentService {
    * @param {import('../ai/omniroute-client.js').OmniRouteClient} omniRouteClient
    * @param {import('./ai-rule-service.js').AiRuleService} [aiRuleService]
    */
-  constructor(dbManager, materialService, omniRouteClient, aiRuleService = null) {
+  constructor(dbManager, materialService, omniRouteClient, aiRuleService = null, fileStore = null) {
     this.dbManager = dbManager;
     this.materialService = materialService;
     this.omniRouteClient = omniRouteClient;
     this.aiRuleService = aiRuleService;
+    this.fileStore = fileStore;
   }
 
   /* -------------------------------------------------------------------------- */
@@ -214,6 +216,13 @@ export class AssessmentService {
       throw new ValidationError('Question text is required for assessment item');
     }
 
+    const activeAttemptsCount = this.dbManager.prepare(`
+      SELECT COUNT(*) as count FROM assessment_submissions WHERE assessment_id = ?
+    `).get(assessmentId)?.count || 0;
+    if (activeAttemptsCount > 0) {
+      throw new ConflictError("Impossibile aggiungere quesiti: la verifica ha già tentativi avviati dagli studenti.");
+    }
+
     // Auto-detect published assessable material for the assessment if not explicitly provided
     if (!assessableSourceId) {
       const parentAsm = this.dbManager.prepare('SELECT * FROM assessments WHERE id = ?').get(assessmentId);
@@ -374,6 +383,14 @@ export class AssessmentService {
 
   updateItem(assessmentId, itemId, updates = {}) {
     this.getAssessment(assessmentId);
+
+    const activeAttemptsCount = this.dbManager.prepare(`
+      SELECT COUNT(*) as count FROM assessment_submissions WHERE assessment_id = ?
+    `).get(assessmentId)?.count || 0;
+    if (activeAttemptsCount > 0) {
+      throw new ConflictError("Impossibile modificare i quesiti: la verifica ha già tentativi avviati dagli studenti.");
+    }
+
     const existing = this.dbManager.prepare(`
       SELECT * FROM assessment_items WHERE id = ? AND assessment_id = ?
     `).get(itemId, assessmentId);
@@ -446,6 +463,14 @@ export class AssessmentService {
 
   deleteItem(assessmentId, itemId) {
     this.getAssessment(assessmentId);
+
+    const activeAttemptsCount = this.dbManager.prepare(`
+      SELECT COUNT(*) as count FROM assessment_submissions WHERE assessment_id = ?
+    `).get(assessmentId)?.count || 0;
+    if (activeAttemptsCount > 0) {
+      throw new ConflictError("Impossibile eliminare i quesiti: la verifica ha già tentativi avviati dagli studenti.");
+    }
+
     const existing = this.dbManager.prepare(`
       SELECT id FROM assessment_items WHERE id = ? AND assessment_id = ?
     `).get(itemId, assessmentId);
@@ -822,14 +847,58 @@ export class AssessmentService {
     const sub = stmt.get(assessmentId, studentId);
     if (!sub) return null;
 
+    const asm = this.dbManager.prepare(`
+      SELECT duration_minutes, status FROM assessments WHERE id = ?
+    `).get(assessmentId);
+
+    const durationMinutes = (asm && typeof asm.duration_minutes === 'number' && asm.duration_minutes > 0)
+      ? asm.duration_minutes
+      : (asm?.duration_minutes === null ? null : 60);
+
+    const extraMinutes = sub.extra_time_minutes || 0;
+    let timer = null;
+    if (sub.started_at && durationMinutes) {
+      const startedMs = new Date(sub.started_at).getTime();
+      const totalAllowedMinutes = durationMinutes + extraMinutes;
+      const expiresAtMs = startedMs + (totalAllowedMinutes * 60 * 1000);
+      const nowMs = Date.now();
+      const timeRemainingSeconds = Math.max(0, Math.floor((expiresAtMs - nowMs) / 1000));
+      const isTimeExpired = (nowMs >= expiresAtMs);
+      timer = {
+        duration_minutes: durationMinutes,
+        extra_time_minutes: extraMinutes,
+        started_at: sub.started_at,
+        expires_at: new Date(expiresAtMs).toISOString(),
+        server_now: new Date(nowMs).toISOString(),
+        time_remaining_seconds: timeRemainingSeconds,
+        is_time_expired: isTimeExpired
+      };
+    } else {
+      timer = {
+        duration_minutes: durationMinutes,
+        extra_time_minutes: extraMinutes,
+        started_at: sub.started_at || null,
+        expires_at: null,
+        server_now: new Date().toISOString(),
+        time_remaining_seconds: durationMinutes ? durationMinutes * 60 : null,
+        is_time_expired: false
+      };
+    }
+
     if (role === 'student') {
       const respStmt = this.dbManager.prepare(`
-        SELECT r.id, r.item_id, r.response_text, r.attachment_name, r.updated_at,
+        SELECT r.id, r.item_id, r.response_text, r.attachment_path, r.attachment_name, r.updated_at,
+               a.id AS attachment_id,
                CASE WHEN r.attachment_path IS NOT NULL AND r.attachment_path != '' THEN 1 ELSE 0 END as has_attachment
         FROM submission_responses r
+        LEFT JOIN student_attachments a
+          ON a.storage_path = r.attachment_path
+          AND a.assessment_id = ?
+          AND a.student_id = ?
+          AND a.item_id = r.item_id
         WHERE r.submission_id = ?
       `);
-      const responses = respStmt.all(sub.id);
+      const responses = respStmt.all(assessmentId, studentId, sub.id);
 
       return {
         id: sub.id,
@@ -840,6 +909,8 @@ export class AssessmentService {
         status: sub.status,
         submitted_at: sub.submitted_at,
         last_saved_at: sub.last_saved_at,
+        started_at: sub.started_at,
+        extra_time_minutes: extraMinutes,
         revision: sub.revision || 0,
         assessment_version: sub.assessment_version || 1,
         seat_row: sub.seat_row,
@@ -848,10 +919,12 @@ export class AssessmentService {
         left_neighbor_name: sub.left_neighbor_name,
         right_neighbor_id: sub.right_neighbor_id,
         right_neighbor_name: sub.right_neighbor_name,
+        timer,
         responses: responses.map(r => ({
           item_id: r.item_id,
           response_text: r.response_text,
           attachment_name: r.attachment_name,
+          attachment_id: r.attachment_id || null,
           has_attachment: Boolean(r.has_attachment),
           updated_at: r.updated_at
         }))
@@ -868,6 +941,7 @@ export class AssessmentService {
 
     return {
       ...sub,
+      timer,
       responses
     };
   }
@@ -906,8 +980,8 @@ export class AssessmentService {
     // Server-side class membership validation
     if (asm.class_id) {
       const studentRow = this.dbManager.prepare(`SELECT class_id FROM students WHERE id = ?`).get(studentId);
-      if (studentRow && studentRow.class_id !== asm.class_id) {
-        throw new ValidationError("Lo studente non appartiene alla classe assegnata a questa attività");
+      if (!studentRow || studentRow.class_id !== asm.class_id) {
+        throw new AuthorizationError("Lo studente non appartiene alla classe assegnata a questa attività");
       }
     }
 
@@ -925,15 +999,49 @@ export class AssessmentService {
 
     const now = new Date().toISOString();
 
+    const subCheck = this.dbManager.prepare(`
+      SELECT id, started_at, extra_time_minutes, attempt_status, status FROM assessment_submissions
+      WHERE assessment_id = ? AND student_id = ?
+    `).get(assessmentId, studentId);
+
+    // Immutability check: once submitted, cannot be updated unless reopened by teacher
+    if (subCheck && (subCheck.attempt_status === "submitted" || subCheck.status === "submitted")) {
+      throw new ConflictError("Consegna già finalizzata ed immutabile. La prova non può essere modificata.");
+    }
+
+    const durationMinutes = (typeof asm.duration_minutes === 'number' && asm.duration_minutes > 0)
+      ? asm.duration_minutes
+      : (asm?.duration_minutes === null ? null : 60);
+
+    const finalSubmit = isFinal || attemptStatus === "submitted";
+
+    // Authoritative timer check: if duration set and student already started, enforce timer limit
+    if (subCheck && durationMinutes && subCheck.started_at) {
+      const extraMinutes = subCheck.extra_time_minutes || 0;
+      const startedMs = new Date(subCheck.started_at).getTime();
+      const totalMinutes = durationMinutes + extraMinutes;
+      const expiresAtMs = startedMs + (totalMinutes * 60 * 1000);
+      const nowMs = Date.now();
+      if (nowMs >= expiresAtMs) {
+        // Seal the last server-persisted snapshot and reject all late writes,
+        // including a delayed final submit. The browser keeps any unsynced
+        // offline draft locally for explicit teacher-assisted recovery.
+        this.dbManager.prepare(`
+          UPDATE assessment_submissions
+          SET attempt_status = 'submitted', status = 'submitted',
+              submitted_at = COALESCE(submitted_at, ?), updated_at = ?
+          WHERE id = ? AND attempt_status != 'submitted'
+        `).run(now, now, subCheck.id);
+        throw new ConflictError('Tempo a disposizione per la verifica scaduto. La prova è stata conclusa con le risposte già salvate.');
+      }
+    }
+
     return this.dbManager.transaction(() => {
       let sub = this.dbManager.prepare(`
         SELECT * FROM assessment_submissions WHERE assessment_id = ? AND student_id = ?
       `).get(assessmentId, studentId);
 
-      // Immutability check: once submitted, cannot be updated unless reopened by teacher
-      if (sub && (sub.attempt_status === "submitted" || sub.status === "submitted")) {
-        throw new ConflictError("Consegna già finalizzata ed immutabile. La prova non può essere modificata.");
-      }
+      const startedAt = sub?.started_at || now;
 
       // Monotonic revision check: incoming revision must be strictly greater than current
       let currentRev = sub ? (sub.revision || 0) : 0;
@@ -950,10 +1058,9 @@ export class AssessmentService {
         nextRev = currentRev + 1;
       }
 
-      const finalSubmit = isFinal || attemptStatus === "submitted";
       const status = finalSubmit ? SubmissionStatuses.SUBMITTED : (sub?.status || "in_progress");
       const effAttemptStatus = finalSubmit ? "submitted" : (attemptStatus || sub?.attempt_status || "in_progress");
-      const asmVersion = asm.version || 1;
+      const asmVersion = sub?.assessment_version || asm.version || 1;
 
       let subId = sub?.id;
       if (!sub) {
@@ -963,8 +1070,9 @@ export class AssessmentService {
             id, assessment_id, student_id, student_name, submitted_at,
             seat_row, seat_desk, left_neighbor_id, left_neighbor_name,
             right_neighbor_id, right_neighbor_name, last_saved_at,
-            attempt_status, status, revision, assessment_version, created_at, updated_at
-          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            attempt_status, status, revision, assessment_version,
+            started_at, extra_time_minutes, created_at, updated_at
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         `).run(
           subId,
           assessmentId,
@@ -982,6 +1090,8 @@ export class AssessmentService {
           status,
           nextRev,
           asmVersion,
+          startedAt,
+          0,
           now,
           now
         );
@@ -1000,6 +1110,7 @@ export class AssessmentService {
               status = ?,
               revision = ?,
               assessment_version = ?,
+              started_at = COALESCE(started_at, ?),
               updated_at = ?,
               submitted_at = CASE WHEN ? = 1 THEN ? ELSE submitted_at END
           WHERE id = ?
@@ -1016,8 +1127,9 @@ export class AssessmentService {
           status,
           nextRev,
           asmVersion,
+          startedAt,
           now,
-          isFinal ? 1 : 0,
+          finalSubmit ? 1 : 0,
           now,
           subId
         );
@@ -1039,11 +1151,39 @@ export class AssessmentService {
 
       for (const resp of responses) {
         if (!resp.itemId) continue;
+        let attachmentPath = resp.attachmentPath || null;
+        let attachmentName = resp.attachmentName || null;
+        if (Object.hasOwn(resp, 'attachmentId')) {
+          if (resp.attachmentId === null || resp.attachmentId === '') {
+            attachmentPath = null;
+            attachmentName = null;
+          } else {
+            const attachment = this.dbManager.prepare(`
+              SELECT storage_path, original_name FROM student_attachments
+              WHERE id = ? AND assessment_id = ? AND student_id = ? AND item_id = ?
+            `).get(resp.attachmentId, assessmentId, studentId, resp.itemId);
+            if (!attachment) {
+              throw new AuthorizationError('Allegato non valido per questo studente, quesito o tentativo');
+            }
+            attachmentPath = attachment.storage_path;
+            attachmentName = attachment.original_name;
+          }
+        }
         const existing = stmtRespCheck.get(subId, resp.itemId);
         if (existing) {
-          stmtRespUpdate.run(resp.responseText ?? "", resp.attachmentPath || null, resp.attachmentName || null, now, existing.id);
+          if (Object.hasOwn(resp, 'attachmentId') || Object.hasOwn(resp, 'attachmentPath') || Object.hasOwn(resp, 'attachmentName')) {
+            this.dbManager.prepare(`
+              UPDATE submission_responses
+              SET response_text = ?, attachment_path = ?, attachment_name = ?, updated_at = ?
+              WHERE id = ?
+            `).run(resp.responseText ?? '', attachmentPath, attachmentName, now, existing.id);
+          } else {
+            this.dbManager.prepare(`
+              UPDATE submission_responses SET response_text = ?, updated_at = ? WHERE id = ?
+            `).run(resp.responseText ?? '', now, existing.id);
+          }
         } else {
-          stmtRespInsert.run(`resp-${crypto.randomUUID()}`, subId, resp.itemId, resp.responseText ?? "", resp.attachmentPath || null, resp.attachmentName || null, now, now);
+          stmtRespInsert.run(`resp-${crypto.randomUUID()}`, subId, resp.itemId, resp.responseText ?? '', attachmentPath, attachmentName, now, now);
         }
       }
 
@@ -1180,71 +1320,162 @@ export class AssessmentService {
     return { success: true, id: credentialId, status: "revoked" };
   }
 
+  registerStudentAttachment({ assessmentId, studentId, itemId, filename, contentType, buffer }) {
+    if (!this.fileStore) throw new ValidationError('FileStore non disponibile per gli allegati studente');
+    if (!assessmentId || !studentId || !itemId || !Buffer.isBuffer(buffer) || buffer.length === 0) {
+      throw new ValidationError('assessmentId, studentId, itemId e file valido sono obbligatori');
+    }
+    const assessment = this.getAssessment(assessmentId, { role: 'student', includeTeacherSolutions: false });
+    if (assessment.status !== AssessmentStatuses.ACTIVE) {
+      throw new AuthorizationError('Gli allegati sono consentiti solo per una prova attiva');
+    }
+    const student = this.dbManager.prepare('SELECT class_id FROM students WHERE id = ?').get(studentId);
+    if (!student || (assessment.class_id && student.class_id !== assessment.class_id)) {
+      throw new AuthorizationError('Lo studente non appartiene alla classe della prova');
+    }
+    const item = this.dbManager.prepare(`
+      SELECT id, type FROM assessment_items WHERE id = ? AND assessment_id = ?
+    `).get(itemId, assessmentId);
+    if (!item || item.type !== ItemTypes.ATTACHMENT) {
+      throw new ValidationError('Il quesito non prevede il caricamento di allegati');
+    }
+    const existing = this.dbManager.prepare(`
+      SELECT id, attempt_status, status, started_at, extra_time_minutes FROM assessment_submissions
+      WHERE assessment_id = ? AND student_id = ?
+    `).get(assessmentId, studentId);
+    if (!existing || existing.attempt_status !== 'in_progress' || existing.status === 'submitted') {
+      throw new ConflictError('Avvia la prova prima di caricare un allegato');
+    }
+
+    const durationMinutes = (typeof assessment.duration_minutes === 'number' && assessment.duration_minutes > 0)
+      ? assessment.duration_minutes
+      : (assessment.duration_minutes === null ? null : 60);
+    if (durationMinutes && existing.started_at) {
+      const deadline = new Date(existing.started_at).getTime()
+        + (durationMinutes + (existing.extra_time_minutes || 0)) * 60 * 1000;
+      if (Date.now() >= deadline) {
+        const now = new Date().toISOString();
+        this.dbManager.prepare(`
+          UPDATE assessment_submissions
+          SET attempt_status = 'submitted', status = 'submitted',
+              submitted_at = COALESCE(submitted_at, ?), updated_at = ?
+          WHERE id = ? AND attempt_status = 'in_progress'
+        `).run(now, now, existing.id);
+        throw new ConflictError('Tempo a disposizione per la verifica scaduto. La prova è stata conclusa con le risposte già salvate.');
+      }
+    }
+
+    const saved = this.fileStore.saveAttachment(filename, buffer);
+    const storagePath = path.relative(this.fileStore.baseDir, saved.filePath).replaceAll('\\', '/');
+    const id = `att-${crypto.randomUUID()}`;
+    try {
+      this.dbManager.prepare(`
+        INSERT INTO student_attachments (
+          id, assessment_id, item_id, student_id, storage_path,
+          original_name, content_type, size_bytes, created_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `).run(
+        id, assessmentId, itemId, studentId, storagePath,
+        saved.filename, contentType, saved.bytes, new Date().toISOString()
+      );
+    } catch (error) {
+      try { this.fileStore.deleteStoredFile(storagePath); } catch {}
+      throw error;
+    }
+    return {
+      attachmentId: id,
+      attachmentName: saved.filename,
+      contentType,
+      size: saved.bytes,
+      previewable: contentType.startsWith('image/') || contentType === 'application/pdf' || contentType.startsWith('text/')
+    };
+  }
+
+  getStudentAttachment({ assessmentId, studentId, attachmentId }) {
+    if (!assessmentId || !studentId || !attachmentId) throw new ValidationError('assessmentId e attachmentId sono obbligatori');
+    const attachment = this.dbManager.prepare(`
+      SELECT id, assessment_id, item_id, student_id, storage_path,
+             original_name, content_type, size_bytes
+      FROM student_attachments
+      WHERE id = ? AND assessment_id = ? AND student_id = ?
+    `).get(attachmentId, assessmentId, studentId);
+    if (!attachment) throw new NotFoundError('Allegato studente', attachmentId);
+    return attachment;
+  }
+
   claimStudentSession(accessCode) {
     if (!accessCode || typeof accessCode !== "string" || accessCode.trim() === "") {
       throw new ValidationError("Codice di accesso richiesto");
     }
     const cleanCode = accessCode.trim().toUpperCase();
-    const cred = this.dbManager.prepare(`
-      SELECT c.*, s.first_name, s.last_name, s.class_id, a.title AS activity_title,
-             a.status AS activity_status, a.activity_type, a.version AS assessment_version, cl.name AS class_name
-      FROM student_activity_credentials c
-      JOIN students s ON c.student_id = s.id
-      JOIN assessments a ON c.assessment_id = a.id
-      LEFT JOIN classes cl ON s.class_id = cl.id
-      WHERE UPPER(c.access_code) = ?
-    `).get(cleanCode);
 
-    if (!cred) {
-      throw new AuthorizationError("Codice di accesso non valido. Controlla il codice fornito dal docente.");
-    }
+    return this.dbManager.transaction(() => {
+      const cred = this.dbManager.prepare(`
+        SELECT c.*, s.first_name, s.last_name, s.class_id, a.title AS activity_title,
+               a.status AS activity_status, a.activity_type, a.version AS assessment_version, cl.name AS class_name
+        FROM student_activity_credentials c
+        JOIN students s ON c.student_id = s.id
+        JOIN assessments a ON c.assessment_id = a.id
+        LEFT JOIN classes cl ON s.class_id = cl.id
+        WHERE UPPER(c.access_code) = ?
+      `).get(cleanCode);
 
-    if (cred.status === "revoked") {
-      throw new AuthorizationError("Questa credenziale di accesso è stata revocata dal docente.");
-    }
+      if (!cred) {
+        throw new AuthorizationError("Codice di accesso non valido. Controlla il codice fornito dal docente.");
+      }
 
-    if (new Date(cred.expires_at) < new Date()) {
-      throw new AuthorizationError("Questo codice di accesso è scaduto.");
-    }
+      if (cred.status === "revoked") {
+        throw new AuthorizationError("Questa credenziale di accesso è stata revocata dal docente.");
+      }
 
-    if (cred.activity_status === "draft") {
-      throw new AuthorizationError("La verifica è ancora in fase di bozza e non è accessibile agli studenti.");
-    }
+      if (new Date(cred.expires_at) < new Date()) {
+        throw new AuthorizationError("Questo codice di accesso è scaduto.");
+      }
 
-    if (cred.activity_status === "closed") {
-      throw new AuthorizationError("La verifica è stata chiusa dal docente.");
-    }
+      if (cred.activity_status === "draft") {
+        throw new AuthorizationError("La verifica è ancora in fase di bozza e non è accessibile agli studenti.");
+      }
 
-    // Single-use code protection: cannot be claimed repeatedly by different subjects
-    if (cred.status !== "issued") {
-      throw new AuthorizationError("Questo codice di accesso è già stato utilizzato. Rivolgiti al docente per ripristinare o rinnovare l'accesso.");
-    }
+      if (cred.activity_status === "closed") {
+        throw new AuthorizationError("La verifica è stata chiusa dal docente.");
+      }
 
-    const now = new Date().toISOString();
-    // Cryptographically secure session token generated exclusively on authorized claim
-    const rawToken = crypto.randomBytes(32).toString("hex");
-    const tokenHash = crypto.createHash("sha256").update(rawToken).digest("hex");
+      // Single-use code protection: must be strictly in 'issued' status
+      if (cred.status !== "issued") {
+        throw new AuthorizationError("Questo codice di accesso è già stato utilizzato. Rivolgiti al docente per ripristinare o rinnovare l'accesso.");
+      }
 
-    this.dbManager.prepare(`
-      UPDATE student_activity_credentials
-      SET token_hash = ?, token = NULL, status = 'active', claimed_at = ?, last_seen_at = ?, updated_at = ?
-      WHERE id = ?
-    `).run(tokenHash, now, now, now, cred.id);
+      const now = new Date().toISOString();
+      // Cryptographically secure session token generated exclusively on authorized claim
+      const rawToken = crypto.randomBytes(32).toString("hex");
+      const tokenHash = crypto.createHash("sha256").update(rawToken).digest("hex");
 
-    return {
-      token: rawToken,
-      credentialId: cred.id,
-      assessmentId: cred.assessment_id,
-      assessmentVersion: cred.assessment_version || 1,
-      studentId: cred.student_id,
-      studentName: `${cred.first_name} ${cred.last_name}`.trim(),
-      classId: cred.class_id,
-      className: cred.class_name || "",
-      activityTitle: cred.activity_title,
-      activityStatus: cred.activity_status,
-      activityType: cred.activity_type,
-      expiresAt: cred.expires_at
-    };
+      // Atomic conditional update enforcing status = 'issued'
+      const updateResult = this.dbManager.prepare(`
+        UPDATE student_activity_credentials
+        SET token_hash = ?, token = NULL, status = 'active', claimed_at = ?, last_seen_at = ?, updated_at = ?
+        WHERE id = ? AND status = 'issued'
+      `).run(tokenHash, now, now, now, cred.id);
+
+      if (updateResult.changes === 0) {
+        throw new AuthorizationError("Questo codice di accesso è già stato utilizzato. Rivolgiti al docente per ripristinare o rinnovare l'accesso.");
+      }
+
+      return {
+        token: rawToken,
+        credentialId: cred.id,
+        assessmentId: cred.assessment_id,
+        assessmentVersion: cred.assessment_version || 1,
+        studentId: cred.student_id,
+        studentName: `${cred.first_name} ${cred.last_name}`.trim(),
+        classId: cred.class_id,
+        className: cred.class_name || "",
+        activityTitle: cred.activity_title,
+        activityStatus: cred.activity_status,
+        activityType: cred.activity_type,
+        expiresAt: cred.expires_at
+      };
+    });
   }
 
   validateStudentSession(token, assessmentId = null) {
@@ -1359,7 +1590,34 @@ export class AssessmentService {
     };
   }
 
-    reopenSubmission(submissionId, { reason = "", teacherPrincipal = "teacher" } = {}) {
+    grantExtraTime(assessmentId, studentId, extraMinutes) {
+    if (!assessmentId || !studentId) {
+      throw new ValidationError('assessmentId e studentId sono obbligatori');
+    }
+    const minutes = Number(extraMinutes);
+    if (!Number.isInteger(minutes) || minutes <= 0) {
+      throw new ValidationError('extraMinutes deve essere un numero intero positivo');
+    }
+    const sub = this.dbManager.prepare(`
+      SELECT * FROM assessment_submissions WHERE assessment_id = ? AND student_id = ?
+    `).get(assessmentId, studentId);
+    if (!sub) {
+      throw new NotFoundError('Tentativo studente non trovato');
+    }
+    if (sub.attempt_status === 'submitted' || sub.status === 'submitted') {
+      throw new ConflictError('Impossibile concedere tempo extra a una prova già consegnata definitivamente');
+    }
+    const now = new Date().toISOString();
+    const newExtra = (sub.extra_time_minutes || 0) + minutes;
+    this.dbManager.prepare(`
+      UPDATE assessment_submissions
+      SET extra_time_minutes = ?, updated_at = ?
+      WHERE id = ?
+    `).run(newExtra, now, sub.id);
+    return this.getStudentSubmission(assessmentId, studentId, { role: 'teacher' });
+  }
+
+  reopenSubmission(submissionId, { reason = "", teacherPrincipal = "teacher" } = {}) {
     const sub = this.dbManager.prepare(`
       SELECT * FROM assessment_submissions WHERE id = ?
     `).get(submissionId);

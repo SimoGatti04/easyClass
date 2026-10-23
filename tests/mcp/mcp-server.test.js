@@ -425,8 +425,28 @@ test('MCP Server Protocol & Tool Integration Tests', async (t) => {
     const statusAsm = JSON.parse(statusRes.content[0].text);
     assert.equal(statusAsm.status, "ready");
 
-    const addItRes = await callTool("add_assessment_item", {
+    // Verify protection: modifying items on assessment with active submissions is rejected
+    const rejectedAddRes = await callTool("add_assessment_item", {
       assessmentId: asm.id,
+      type: "code",
+      questionText: "Funzione Bloccata",
+      maxScore: 10,
+      assessableSourceId: assessmentSource.id,
+      assessableSourceVersion: 1
+    });
+    assert.equal(rejectedAddRes.isError, true);
+    assert.match(rejectedAddRes.content[0].text, /ha già tentativi avviati/);
+
+    // Create fresh assessment to test item CRUD via MCP
+    const asmItemRes = await callTool("create_assessment", {
+      title: "Verifica per Test Item MCP",
+      durationMinutes: 45,
+      maxScore: 20
+    });
+    const asmItem = JSON.parse(asmItemRes.content[0].text);
+
+    const addItRes = await callTool("add_assessment_item", {
+      assessmentId: asmItem.id,
       type: "code",
       questionText: "Funzione MCP",
       maxScore: 10,
@@ -438,7 +458,7 @@ test('MCP Server Protocol & Tool Integration Tests', async (t) => {
     assert.ok(addIt.id);
 
     const updItRes = await callTool("update_assessment_item", {
-      assessmentId: asm.id,
+      assessmentId: asmItem.id,
       itemId: addIt.id,
       maxScore: 12
     });
@@ -446,7 +466,7 @@ test('MCP Server Protocol & Tool Integration Tests', async (t) => {
     assert.equal(updIt.maxScore, 12);
 
     const delItRes = await callTool("delete_assessment_item", {
-      assessmentId: asm.id,
+      assessmentId: asmItem.id,
       itemId: addIt.id
     });
     const delIt = JSON.parse(delItRes.content[0].text);

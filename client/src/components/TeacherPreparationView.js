@@ -622,12 +622,3 @@ export function TeacherPreparationView() {
     }) : null
   ]);
 }
-
-// Mount React Root
-if (typeof document !== 'undefined') {
-  const rootElement = document.getElementById('app');
-if (rootElement) {
-  const root = createRoot(rootElement);
-  root.render(h(TeacherApp));
-  }
-}

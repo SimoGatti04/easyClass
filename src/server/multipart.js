@@ -13,7 +13,11 @@ import path from 'node:path';
 import { ValidationError } from '../core/errors.js';
 
 export const MAX_UPLOAD_BYTES = 25 * 1024 * 1024; // 25 MB
-export const ALLOWED_EXTENSIONS = new Set(['.pdf', '.docx', '.md', '.txt', '.html']);
+export const ALLOWED_EXTENSIONS = new Set([
+  '.pdf', '.docx', '.md', '.txt', '.html',
+  '.png', '.jpg', '.jpeg', '.webp',
+  '.sql', '.py', '.js', '.json'
+]);
 
 // RFC 2046 boundary grammar: 1 to 70 chars from bcharsnospace
 const BOUNDARY_REGEX = /^[a-zA-Z0-9'()+_,-./:=?]{1,70}$/;
@@ -171,18 +175,39 @@ function validateRealFileContent(buffer, ext, filename) {
     if (buffer.length < 4 || buffer[0] !== 0x50 || buffer[1] !== 0x4b || buffer[2] !== 0x03 || buffer[3] !== 0x04) {
       throw new ValidationError(`Corrupted or invalid DOCX file "${filename}": missing ZIP magic bytes`);
     }
+  } else if (ext === '.png') {
+    // PNG magic bytes: 0x89 0x50 0x4E 0x47 0x0D 0x0A 0x1A 0x0A
+    if (buffer.length < 8 || buffer[0] !== 0x89 || buffer[1] !== 0x50 || buffer[2] !== 0x4e || buffer[3] !== 0x47 || buffer[4] !== 0x0d || buffer[5] !== 0x0a || buffer[6] !== 0x1a || buffer[7] !== 0x0a) {
+      throw new ValidationError(`Corrupted or invalid PNG file "${filename}": missing PNG signature`);
+    }
+  } else if (ext === '.jpg' || ext === '.jpeg') {
+    // JPEG SOI: 0xFF 0xD8 0xFF
+    if (buffer.length < 3 || buffer[0] !== 0xff || buffer[1] !== 0xd8 || buffer[2] !== 0xff) {
+      throw new ValidationError(`Corrupted or invalid JPEG file "${filename}": missing JPEG SOI marker`);
+    }
+  } else if (ext === '.webp') {
+    // WebP: RIFF....WEBP
+    if (buffer.length < 12 || buffer.subarray(0, 4).toString('ascii') !== 'RIFF' || buffer.subarray(8, 12).toString('ascii') !== 'WEBP') {
+      throw new ValidationError(`Corrupted or invalid WebP file "${filename}": missing WebP signature`);
+    }
   } else if (ext === '.html') {
     // HTML text verification
     const snippet = buffer.subarray(0, 1024).toString('utf-8').toLowerCase();
     if (!snippet.includes('<html') && !snippet.includes('<!doctype') && !snippet.includes('<head') && !snippet.includes('<body') && !snippet.includes('<div') && !snippet.includes('<p')) {
       throw new ValidationError(`Corrupted or invalid HTML file "${filename}": missing standard HTML tags`);
     }
-  } else if (ext === '.md' || ext === '.txt') {
-    // Plain text / Markdown verification: ensure no binary null bytes
+  } else if (ext === '.json') {
+    try {
+      JSON.parse(buffer.toString('utf-8'));
+    } catch (e) {
+      throw new ValidationError(`Corrupted or invalid JSON file "${filename}": ${e.message}`);
+    }
+  } else if (ext === '.md' || ext === '.txt' || ext === '.sql' || ext === '.py' || ext === '.js') {
+    // Plain text / Markdown / Source code verification: ensure no binary null bytes
     const checkLen = Math.min(buffer.length, 8192);
     for (let i = 0; i < checkLen; i++) {
       if (buffer[i] === 0) {
-        throw new ValidationError(`Binary content detected in text file "${filename}"`);
+        throw new ValidationError(`Binary content detected in text/code file "${filename}"`);
       }
     }
   }

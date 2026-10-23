@@ -1,9 +1,9 @@
 # Teacher Service — Roadmap & Contratti di Dominio C3–C7
 **Sistema Integrato di Esercitazioni, Verifiche, Studenti, Consegne, Correzioni, Monitoraggio Live e Anticopiatura**
 
-**Aggiornato:** 2026-10-21 (Europe/Rome)  
-**Ruolo:** Software Engineering / UI-UX Engineering  
-**Stato Normativo:** Approvato dal Domain Owner  
+**Aggiornato:** 2026-10-23 (Europe/Rome)
+**Ruolo:** Software Engineering / UI-UX Engineering
+**Stato Normativo:** Approvato dal Domain Owner
 **Riferimenti di Dominio:** Dossier 01–11, in particolare Dossier 04 (§46–48), Dossier 05 (§56–57), Dossier 06 (§1–4), Dossier 09 (§1–6).
 
 ---
@@ -12,7 +12,7 @@
 
 Il sistema Teacher Service si estende oltre la preparazione lezioni ("Tomorrow is ready" - T1) integrando in un unico flusso digitale:
 1. **Homepage Unificata**: punto di ingresso chiaro con biforcazione immediata tra **Area Studenti** (pubblica) e **Area Docente** (protetta).
-2. **Identificazione Leggera Studenti**: nessun account da registrare, nessuna password da gestire o dimenticare. Lo studente seleziona la classe ed il proprio nominativo da un elenco gestito/importato dal docente.
+2. **Identificazione Leggera Studenti**: nessun account permanente o password. Il docente distribuisce un codice/QR monouso individuale per attività; il riscatto emette una sessione temporanea, revocabile e legata allo studente e alla prova. La rubrica non è esposta come metodo di autenticazione.
 3. **Dominio Unificato Attività (Dossier 05 §1)**: verifiche sommative ed esercitazioni formative condividono la stessa struttura (quesiti a scelta multipla, a risposta aperta, codice sorgente e quesiti con allegati file).
 4. **Postazione d'Aula & Seat Map (Dossier 05)**: all'inizio di ogni attività, lo studente dichiara obbligatoriamente fila, banco e i vicini di banco immediati (con opzione esplicita «Nessuno»).
 5. **Autosalvataggio Persistente & Resilienza**: salvataggio continuo in background delle risposte fornite, con possibilità di chiusura accidentale del browser e ripristino istantaneo della sessione.
@@ -20,8 +20,8 @@ Il sistema Teacher Service si estende oltre la preparazione lezioni ("Tomorrow i
 7. **Grading a Due Livelli & Sovranità del Docente (Dossier 06)**: correzione deterministica (per quiz oggettivi) ed assistita da AI (per quesiti aperti/codice). La proposta AI è sempre un suggerimento non vincolante; il voto finale appartiene esclusivamente al docente.
 8. **Integrità Multilivello senza Profiling (Dossier 06)**: rilevamento di correlazioni su 5 livelli (prossimità Seat Map, errori rari identici, codice superfluo identico, similarità semantica/AST, fonti web). Le evidenze sono registrate in uno storico riservato al docente, senza produrre punteggi di colpevolezza o sanzioni automatiche.
 9. **Superfici di Accesso e Sicurezza**:
-   - Area Studenti: pubblica, zero permessi, mascheramento rigoroso a livello applicativo di soluzioni docente (`teacher_solution`) e rubriche (`rubric_json`).
-   - Area Docente e Server MCP: protetti da Cloudflare Access e verifica di autorizzazione del principal docente (`verifyTeacherAuthorization`, fail-closed).
+   - Superficie pubblica studente e API di consultazione: nessun Cloudflare Access, ma ogni sessione/operazione sul tentativo richiede il codice/session token previsto; soluzioni (`teacher_solution`) e rubriche (`rubric_json`) sono rimosse lato server.
+   - Area Docente e Server MCP: Cloudflare Access più autorizzazione esplicita del principal docente (`verifyTeacherAuthorization`, fail-closed). La navigazione hash del frontend non è un confine di sicurezza.
 
 ---
 
@@ -30,19 +30,22 @@ Il sistema Teacher Service si estende oltre la preparazione lezioni ("Tomorrow i
 | Componente / Area | Stato | Dettagli Architetturali |
 |---|---|---|
 | **Preparazione Lezioni T1 ("Tomorrow is ready")** | **CURRENT** | Lesson Plan, Teacher Script, Dispensa Studente, Esercizi, Modali, Conferma e Versionamento. Intatto e funzionante. |
-| **Homepage Portale con Biforcazione Studente/Docente** | **CURRENT** | Card interattive, navigazione reattiva hash-based (`#/`, `#/studente`, `#/docente`). |
-| **Identificazione Leggera Studente (Roster per Classe)** | **CURRENT** | Selezione classe, ricerca nominativo, visualizzazione attività attive. |
-| **Dichiarazione Seat Map (Fila, Banco, Vicini)** | **CURRENT** | Modulo obbligatorio con scelta «Nessuno» e persistenza sul database. |
-| **Autosalvataggio e Svolgimento Prova (Frontend)** | **CURRENT** | Interfaccia a domande multiple, aperte, codice ed upload allegati, con autosave debounced e ripristino bozza. |
-| **API Studente Isolate (`/api/student/*`)** | **CURRENT** | Endpoint pubblici senza credenziali, sanitizzazione applicativa fail-closed di soluzioni e criteri rubrica. |
-| **Protezione Area Docente & MCP** | **CURRENT** | Cloudflare Access + Teacher Principal Authorization (`teacher@school.example`). Blocco 401/403 su tentativi non autorizzati. |
+| **Homepage Portale con Biforcazione Studente/Docente** | **CURRENT** | Homepage e routing client (`#/`, `#/studente`, `#/docente`); il routing hash è solo navigazione, mai autorizzazione. |
+| **Identificazione Leggera Studente** | **CURRENT** | Codice/QR individuale monouso per attività e sessione breve revocabile; nessun account permanente e nessuna autenticazione tramite elenco pubblico. |
+| **Dichiarazione Seat Map (Fila, Banco, Vicini)** | **CURRENT** | Modulo obbligatorio con fila, banco e scelta «Nessuno» per i vicini; persistenza lato server. |
+| **Autosalvataggio e Svolgimento Prova (Frontend)** | **CURRENT** | Quesiti multipli, aperti, codice e allegati; revisioni monotone, cache IndexedDB isolata per sessione, ripristino offline e riconciliazione esplicita dei conflitti. La copia locale non è presentata come salvata sul server. |
+| **API Studente Isolate (`/api/student/*`)** | **CURRENT** | Consultazione pubblica dove appropriato; ogni accesso/modifica al tentativo è vincolato a session token individuale. Soluzioni e rubriche sono filtrate lato server. |
+| **Timer & Scadenza (C4)** | **CURRENT** | Scadenza calcolata dal server e persistente attraverso i refresh; conto alla rovescia e avvisi UI a 10/5 minuti. Upload e scritture tardive vengono respinti; l’eventuale tempo extra è gestito dal dato server esistente. |
+| **Editor di Codice e Allegati (C4)** | **CURRENT** | Editor leggero con numeri riga, indentazione e supporto touch; anteprima protetta per immagini, PDF e testo/codice. |
+| **Consegna Definitiva (C4)** | **CURRENT** | Riepilogo risposte/allegati prima della conferma, snapshot dell’invio, blocco delle modifiche concorrenti e tentativo sigillato lato server. |
+| **Protezione Area Docente & MCP** | **CURRENT** | Cloudflare Access più autorizzazione esplicita teacher principal; fallimento chiuso 401/403. Nessuna modifica d’infrastruttura in C4. |
 | **Dashboard Docente Multi-Scheda** | **CURRENT** | Schede: Preparazione T1, Attività, Studenti, Monitor Live, Consegne, Integrità C6. |
 | **Registro Studenti (Docente)** | **CURRENT** | Inserimento singolo, importazione massiva un nominativo per riga, rimozione. |
 | **Monitoraggio Live d'Aula (Seat Map & Roster)** | **CURRENT** | Mappa visiva dell'aula (cattedra, file di banchi, colori di stato, vicini) e tabella roster con auto-refresh (5s). |
 | **Gestione Consegne e Revisione Voto Docente** | **CURRENT** | Elenco consegne, dettaglio risposte studente, correzione automatica/AI, input e conferma del voto finale docente. |
-| **Anteprima Architettura Integrità (C6)** | **CURRENT** | Scheda illustrativa dei 5 pilastri, disclaimer etico, rilevamento preliminare cluster di prossimità. |
+| **Anteprima Architettura Integrità (C6)** | **CURRENT (DEMO/UI)** | Scheda illustrativa/disclaimer e anteprima limitata; non equivale a confronto completo, Integrity Evidence operativa o giudizio automatico. |
 | **Ambiente di Anteprima Locale Isolato (`pnpm dev:preview`)** | **CURRENT** | Esecuzione locale e su LAN Wi-Fi (0.0.0.0), storage isolato in `.tmp/dev-preview/`, seed dati dimostrativi, cleanup sicuro. |
-| **Timer Svolgimento & Chiusura Automatica Prova (C4)** | **PLANNED** | Conto alla rovescia sincronizzato con `duration_minutes`, blocco modifiche a tempo scaduto. |
+| **Test browser C4** | **CURRENT** | Flusso Playwright reale su Chromium locale con due studenti e viewport mobile/tablet/desktop, autosave, interruzione/ripristino offline, timer, allegati e verifica docente. Emulazione viewport, non collaudo su dispositivi fisici. |
 | **Ritiro Forzato / Riapertura Prova da Docente (C5)** | **PLANNED** | Azioni rapide nel live monitor per terminare la prova di uno studente o concedere tempo extra. |
 | **Valutazione Comparativa MCP & Analisi Semantica AST (C6)** | **PLANNED** | Tool MCP dedicati per analisi di similarità strutturale su codice e testi, incroci con Seat Map. |
 | **Deployment e Rilascio Infrastrutturale K3s (C7)** | **PLANNED** | Verifica su ingress cluster K3s, aggiornamento manifesti se necessario, test in ambiente reale. |
@@ -57,13 +60,14 @@ Il sistema Teacher Service si estende oltre la preparazione lezioni ("Tomorrow i
 - **Obiettivo**: Perfezionare e rendere a prova di bomba l'esperienza studente in aula su PC, tablet e smartphone.
 - **Contratti Frontend & UX**:
   - Timer d'attività reattivo: visualizzazione tempo residuo con avvisi visivi a 10 e 5 minuti dal termine.
-  - Sincronizzazione offline: se la connessione Wi-Fi d'aula ha un micro-blackout, le risposte rimangono memorizzate nel `localStorage` e sincronizzate appena torna la linea.
-  - Editor di codice arricchito con numerazione righe e indentazione per quesiti di tipo `code`.
+  - Sincronizzazione offline: durante brevi interruzioni le risposte e i file pendenti restano in IndexedDB associati alla sessione e all’attività; alla riconnessione si sincronizzano con revisioni monotone. Le divergenze sono presentate per scelta esplicita, non sovrascritte silenziosamente.
+  - Editor leggero con numerazione righe, indentazione e interazione touch per quesiti di tipo `code`.
   - Anteprima immediata degli allegati caricati (immagini, diagrammi, file sorgenti, PDF).
   - Conferma di consegna con riepilogo delle domande risposte e domande eventualmente lasciate in bianco prima della sottomissione definitiva.
 - **Contratti Backend**:
   - `POST /api/student/activities/:id/autosave`: idempotente, accetta risposte parziali e aggiorna `last_saved_at`.
   - `POST /api/student/activities/:id/submit`: sigilla il tentativo con `status = submitted`, impedendo ulteriori modifiche da parte dello studente.
+- **Esito C4 (2026-10-23): CURRENT e verificato localmente.** Il browser usa snapshot di revisione per invio, disabilita mutazioni mentre la consegna è in volo, dichiara salvataggio solo dopo conferma server e conserva le bozze locali divergenti. Il backend applica scadenza anche agli upload e sigilla il tentativo. Non include le azioni operative C5 né le funzioni C6/C7.
 
 ### Checkpoint C5 — Monitoraggio Live, Consegne e Correzioni Docente
 - **Obiettivo**: Consolidare gli strumenti operativi d'aula durante lo svolgimento della prova e la fase di revisione.

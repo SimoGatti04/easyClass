@@ -341,6 +341,8 @@ CREATE TABLE IF NOT EXISTS assessment_submissions (
   attempt_status TEXT NOT NULL DEFAULT 'submitted',
   revision INTEGER NOT NULL DEFAULT 0,
   assessment_version INTEGER NOT NULL DEFAULT 1,
+  started_at TEXT DEFAULT NULL,
+  extra_time_minutes INTEGER DEFAULT 0,
   reopened_at TEXT DEFAULT NULL,
   reopened_by TEXT DEFAULT NULL,
   reopen_reason TEXT DEFAULT NULL,
@@ -365,6 +367,23 @@ CREATE TABLE IF NOT EXISTS submission_responses (
 );
 
 CREATE INDEX IF NOT EXISTS idx_submission_responses_sub ON submission_responses(submission_id);
+
+-- Student uploads are opaque, session-owned attachments. The storage path is
+-- never accepted from or returned to the student client.
+CREATE TABLE IF NOT EXISTS student_attachments (
+  id TEXT PRIMARY KEY,
+  assessment_id TEXT NOT NULL REFERENCES assessments(id) ON DELETE CASCADE,
+  item_id TEXT NOT NULL REFERENCES assessment_items(id) ON DELETE CASCADE,
+  student_id TEXT NOT NULL REFERENCES students(id) ON DELETE CASCADE,
+  storage_path TEXT NOT NULL UNIQUE,
+  original_name TEXT NOT NULL,
+  content_type TEXT NOT NULL,
+  size_bytes INTEGER NOT NULL,
+  created_at TEXT NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_student_attachments_owner
+  ON student_attachments(assessment_id, student_id, item_id);
 
 -- 17. Evaluations (Dossier 06 §2, §3 - preserves evaluation rounds for regrading)
 CREATE TABLE IF NOT EXISTS evaluations (

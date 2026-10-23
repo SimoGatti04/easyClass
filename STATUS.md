@@ -1,8 +1,8 @@
 # Teacher Service — Stato operativo
 
-**Aggiornato:** 2026-10-13 (Europe/Rome)  
-**Fase attiva:** Live Integration & ChatGPT MCP Readiness (Supervisione: ChatGPT)  
-**Perimetro:** Workspace locale `teacher-service-design`.  
+**Aggiornato:** 2026-10-23 (Europe/Rome)
+**Fase attiva:** Checkpoint C4 — Student Experience & Mobile-First UX (Supervisione: ChatGPT)
+**Perimetro:** Workspace locale `teacher-service-design`.
 **Fonte normativa:** `docs/` e decisioni del Domain Owner (13 ottobre 2026); **evidenze storiche:** `validation/results/`.
 
 ## 1. Transizione a Product MVP e completamento dei Checkpoint (2026-10-13)
@@ -599,11 +599,62 @@ Conformemente alle direttive del Domain Owner e alla supervisione ChatGPT, è st
    - Predisposto piano di transizione e comandi canonici `make cf-save-access-plan`, `make cf-verify-access-plan`, `make cf-apply-access-plan` per Checkpoint C7.
    - Nessuna modifica applicata a Cloudflare, Tunnel o K3s in C3.1.
 
-6. **Esito Validazione & Gate C4**:
+6. **Esito Validazione C3.1**:
    - **24/24 test suite eseguite ed esito 100% PASS (zero fallimenti)**:
-     - `tests/server/student-api.test.js` (30 test): sicurezza token, brute-force defense, single-use codes, state transitions, question invisibility in ready state, monotonic revision rejection, sanitized student submission payload, teacher reissue.
-     - `tests/integration/dev-preview.test.js` (2 test): inizializzazione storage isolato, seed dimostrativo e pulizia sicura.
-     - Tutte le 22 suite preesistenti (unit, server, mcp, integration) confermate passanti senza alcuna regressione.
+     - `tests/server/student-api.test.js` (30 test passati al checkpoint precedente).
+     - `tests/integration/dev-preview.test.js` (2 test).
+     - Tutte le 22 suite preesistenti confermate passanti.
    - Client SPA compilato con successo (`pnpm run build:client`).
-   - Flusso completo verificato in ambiente locale isolato `.tmp/dev-preview/`.
-   - **Gate C4 APERTO**: la base di sicurezza, identità, integrità e persistenza è solida per avviare l'implementazione della Student Experience avanzata (C4).
+
+### 10. Checkpoint C3.1: Final Integration Fix (22 ottobre 2026)
+
+Risoluzione definitiva delle discrepanze individuate dalla revisione indipendente tra frontend, backend e test, consolidando il contratto end-to-end prima di C4:
+
+1. **Revisioni di Autosalvataggio End-to-End (Frontend & Backend)**:
+   - In `client/src/components/StudentArea.js`, introdotta gestione con riferimenti reattivi (`responsesRef`, `attachmentsRef`, `serverRevisionRef`, `clientRevisionRef`, `persistedRevision`).
+   - Inizializzazione corretta della revisione dal draft recuperato dal server (`sub.revision || 0`).
+   - Incremento monotono rigoroso su ogni digitazione, rimozione o caricamento allegato.
+   - Trasmissione obbligatoria del parametro `revision` su `/api/student/activities/:id/start`, `/autosave` e `/submit`.
+   - Backend `src/server/http.js`: convalida stretta di `revision` (intero non negativo), con rifiuto HTTP 400 `ValidationError` in caso di assenza o valore non valido.
+   - Riconciliazione automatica su HTTP 409: in caso di conflitto, il client recupera lo stato aggiornato della submission da `/submission`. Se la prova è già finalizzata, passa direttamente alla schermata di consegna; se in corso, sincronizza `serverRevisionRef`, incrementa `clientRevisionRef` e ritrasmette immediatamente le modifiche locali senza perdita di dati.
+   - Badge visivo salvataggio: visualizza la revisione effettivamente confermata e persistita (`✓ Salvato (Rev X) • HH:MM:SS`).
+
+2. **Riscatto Atomico dei Codici di Accesso**:
+   - In `src/services/assessment-service.js`, `claimStudentSession` incapsulato in transazione atomica SQLite con aggiornamento condizionale:
+     `UPDATE student_activity_credentials SET ... WHERE id = ? AND status = 'issued'`.
+   - Controllo vincolante di `changes === 0` con lancio di `AuthorizationError` ("Questo codice di accesso è già stato utilizzato...").
+   - Test di concorrenza reale con `Promise.all` simultaneo: esattamente 1 richiesta ottiene token (200), la concorrente viene respinta (403).
+
+3. **Versionamento Coerente delle Verifiche e Immutabilità Quesiti**:
+   - Inibizione di modifiche ai quesiti (`addItem`, `updateItem`, `deleteItem`) su verifiche che presentano tentativi avviati dagli studenti (`assessment_submissions > 0`), con rifiuto HTTP 409 `ConflictError`.
+   - Preservazione dell'ancoraggio alla versione originale della verifica (`sub.assessment_version || asm.version || 1`) in `saveDraftSubmission`.
+
+4. **Verifiche Accessorie di Sicurezza**:
+   - Rate limiting brute-force: rilevamento IP cliente sicuro in `src/server/http.js`. Gli header `X-Forwarded-For` e `CF-Connecting-IP` sono considerati validi esclusivamente se la connessione remota del socket proviene da proxy locale/privato (loopback, 10.*, 192.168.*, 172.*). Su connessioni dirette pubbliche, gli header client vengono ignorati, impedendo spoofing dell'IP.
+   - Reissue credenziali studente: verificato che il rinnovo credenziali non cancella o altera le risposte già salvate o le sottomissioni già finalizzate.
+
+5. **Validazione & Test Suite**:
+   - Suite `tests/server/student-api.test.js` estesa a **35 test** (inclusi test concorrenza atomica, proxy spoofing defense, multi-question workflow con due studenti concorrenti).
+   - Bundle frontend compilato (`pnpm run build:client`) con successo (zero errori).
+   - Tutte le **24 test suite** di `tests/run-all.js` confermate passanti al **100% (zero fallimenti)**.
+   - **Gate C4 APERTO**: la base di sicurezza, identità, integrità e persistenza è consolidata ed end-to-end integrata per avviare l'implementazione della Student Experience avanzata (C4).
+
+
+### 11. Checkpoint C4 — Student Experience & Mobile-First UX (23 ottobre 2026)
+
+**Stato:** implementazione C4 completata e verificata localmente; nessun rilascio produttivo eseguito. C5–C7 non avviati. Le modifiche storiche C0–C13 e i dati/configurazioni di produzione sono stati preservati.
+
+1. **Esperienza studente:** `~/Workspace/teacher-service-design/client/src/components/StudentArea.js` ora offre navigazione a quesiti, avanzamento, stato online/salvataggio, avvio Seat Map, editor codice leggero con gutter numerato e indentazione, upload con anteprima sicura di immagini/PDF/testo, riepilogo pre-consegna e blocco delle modifiche durante l’invio. Gli stili responsive/touch e gli spazi per safe area sono in `client/app.css`.
+2. **Timer e server:** il conto alla rovescia si basa sulla scadenza e sull’orario restituiti dal server, sopravvive al refresh e mostra avvisi a 10/5 minuti. Il backend impedisce scritture e upload dopo la scadenza; gli upload scaduti sigillano il tentativo senza creare record/file. L’estensione di tempo già memorizzata lato server resta compatibile con C5, senza nuove azioni docente introdotte qui.
+3. **Resilienza offline:** `client/src/utils/student-offline-cache.js` persiste bozze e allegati pendenti in IndexedDB con chiave per sessione/studente/attività, revisione e base server. I salvataggi locali non sono presentati come confermati dal server; una divergenza richiede riconciliazione esplicita. Sessioni consegnate/uscite sono ritirate dalla cache.
+4. **Affidabilità e accesso:** corretti `start(0)` per restituire la porta effimera corretta nei test e il bootstrap React di `TeacherPreparationView.js`, che impediva alla SPA di avviarsi nel browser. Il test browser legge il tentativo con la sessione student token, non con endpoint anonimo. La riconciliazione usa revisioni persistite dal server; il client non si affida al solo annullamento delle richieste.
+5. **Test aggiunti/aggiornati:** `tests/browser/student-c4-browser.test.js` e `pnpm run test:browser:c4`; regressione HTTP per upload dopo scadenza in `tests/server/student-api.test.js`. Gli E2E browser usano SQLite e FileStore temporanei sotto `.tmp/dev-preview/` e li eliminano nel cleanup del test.
+6. **Verifiche effettive:**
+   - `node --test tests/server/student-api.test.js`: PASS, 37 test (inclusi accesso con due studenti, timer e upload dopo scadenza).
+   - `pnpm test`: PASS, 24 suite senza fallimenti; il test loopback MCP opt-in è stato saltato dalla sandbox per divieto di bind TCP.
+   - `pnpm run test:browser:c4`: PASS, un flusso Playwright reale su Chromium locale, due studenti, viewport 390×844 (telefono), 768×1024 (tablet) e 1365×900 (desktop), offline/ripristino, allegato/preview, avvisi timer, consegna e controllo teacher-side. La prima esecuzione ha rivelato una richiesta test non autenticata e poi un item ID invalido nel caso di scrittura tardiva; entrambi corretti nel test e l’esecuzione finale è passata. La prova non è su dispositivi fisici o tastiere di sistema reali.
+   - `pnpm run build:client` è eseguito dal comando browser e PASS.
+7. **Dati e cleanup:** database e FileStore del test sono sintetici e temporanei; il cleanup `t.after` elimina la directory del singolo run. Non è stata eseguita pulizia indiscriminata di `.tmp/dev-preview/` né di file preesistenti. Nessun endpoint esterno o runtime di produzione è stato toccato.
+8. **Readiness:** gate C4 soddisfatto per il perimetro software locale e criterio funzionale del browser. Pronto ad aprire C5 dopo decisione/avvio separato; il test non sostituisce prove su telefoni fisici, browser diversi, condizioni reali della LAN, deploy o Cloudflare. La dashboard/monitoraggio restano nell’ambito già disponibile e le estensioni C5 non sono state implementate.
+
+**Git e rilascio:** il checkpoint è registrato nella cronologia Git locale; nessun push o rilascio produttivo è stato eseguito.

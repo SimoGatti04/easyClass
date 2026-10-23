@@ -9,6 +9,7 @@
  * 5. Complete Teacher Management Web Interface with XSS prevention
  */
 import http from 'node:http';
+import fs from 'node:fs';
 import crypto from 'node:crypto';
 import { WebStandardStreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/webStandardStreamableHttp.js';
 import { isInitializeRequest } from '@modelcontextprotocol/sdk/types.js';
@@ -539,7 +540,9 @@ export async function createHttpApp(options = {}) {
     start: (port = DEFAULT_PORT, host = DEFAULT_HOST) => {
       return new Promise((resolve, reject) => {
         server.listen(port, host, () => {
-          resolve({ port, host, url: `http://${host}:${port}` });
+          const address = server.address();
+          const boundPort = address && typeof address === 'object' ? address.port : port;
+          resolve({ port: boundPort, host, url: `http://${host}:${boundPort}` });
         });
         server.on('error', reject);
       });
@@ -570,6 +573,29 @@ const CLAIM_BLOCK_WINDOW_MS = 5 * 60 * 1000;
 export async function handleStudentApi(req, res, pathname, parsedUrl, service, parsedBody, multipartData) {
   res.setHeader('Content-Type', 'application/json');
 
+  const normalizeStudentResponses = (responses) => {
+    if (!Array.isArray(responses)) throw new ValidationError('responses deve essere un array');
+    return responses.map((response) => {
+      if (!response || typeof response.itemId !== 'string' || !response.itemId) {
+        throw new ValidationError('Ogni risposta deve specificare itemId');
+      }
+      if (response.responseText !== undefined && typeof response.responseText !== 'string') {
+        throw new ValidationError('responseText deve essere una stringa');
+      }
+      if (Object.hasOwn(response, 'attachmentPath') || Object.hasOwn(response, 'attachment_path')) {
+        throw new SecurityError('Il percorso di un allegato non può essere specificato dal client');
+      }
+      if (response.attachmentId !== undefined && response.attachmentId !== null && typeof response.attachmentId !== 'string') {
+        throw new ValidationError('attachmentId non valido');
+      }
+      return {
+        itemId: response.itemId,
+        responseText: response.responseText ?? '',
+        ...(Object.hasOwn(response, 'attachmentId') ? { attachmentId: response.attachmentId } : {})
+      };
+    });
+  };
+
   const getStudentSession = (assessmentId = null) => {
     const authHeader = req.headers['authorization'] || "";
     let token = null;
@@ -589,12 +615,27 @@ export async function handleStudentApi(req, res, pathname, parsedUrl, service, p
   try {
     // POST /api/student/claim-code (Access via 6-char code / QR)
     if (pathname === '/api/student/claim-code' && req.method === 'POST') {
-      const clientIp = (
-        req.headers['cf-connecting-ip'] ||
-        req.headers['x-forwarded-for']?.split(',')[0].trim() ||
-        req.socket?.remoteAddress ||
-        'unknown'
+      const remoteAddr = req.socket?.remoteAddress || '127.0.0.1';
+      const isLocalOrPrivate = (
+        remoteAddr === '127.0.0.1' ||
+        remoteAddr === '::1' ||
+        remoteAddr === '::ffff:127.0.0.1' ||
+        remoteAddr.startsWith('10.') ||
+        remoteAddr.startsWith('192.168.') ||
+        remoteAddr.startsWith('172.') ||
+        remoteAddr.startsWith('::ffff:10.') ||
+        remoteAddr.startsWith('::ffff:192.168.') ||
+        remoteAddr.startsWith('::ffff:172.')
       );
+      let clientIp = remoteAddr || 'unknown';
+      if (isLocalOrPrivate) {
+        if (req.headers['cf-connecting-ip']) {
+          clientIp = String(req.headers['cf-connecting-ip']).trim();
+        } else if (req.headers['x-forwarded-for']) {
+          const firstIp = String(req.headers['x-forwarded-for']).split(',')[0].trim();
+          if (firstIp) clientIp = firstIp;
+        }
+      }
 
       const now = Date.now();
       const ipRecord = claimRateLimitMap.get(clientIp);
@@ -762,6 +803,10 @@ export async function handleStudentApi(req, res, pathname, parsedUrl, service, p
     if (pathname.match(/^\/api\/student\/activities\/([^/]+)\/start$/) && req.method === 'POST') {
       const id = pathname.split('/')[4];
       const session = getStudentSession(id);
+      const reqRevision = parsedBody?.revision;
+      if (reqRevision === undefined || reqRevision === null || !Number.isInteger(reqRevision) || reqRevision < 0) {
+        throw new ValidationError("Il parametro 'revision' (intero non negativo) è obbligatorio per l'avvio della prova");
+      }
       const payload = {
         assessmentId: id,
         studentId: session.studentId,
@@ -772,13 +817,14 @@ export async function handleStudentApi(req, res, pathname, parsedUrl, service, p
         leftNeighborName: parsedBody?.leftNeighborName || null,
         rightNeighborId: parsedBody?.rightNeighborId || null,
         rightNeighborName: parsedBody?.rightNeighborName || null,
-        responses: parsedBody?.responses || [],
+        responses: normalizeStudentResponses(parsedBody?.responses || []),
+        revision: reqRevision,
         isFinal: false,
         attemptStatus: "in_progress"
       };
       const submission = service.saveDraftSubmission(payload);
       res.writeHead(200);
-      res.end(JSON.stringify({ status: 'started', submission }));
+      res.end(JSON.stringify({ status: 'started', submission, revision: submission.revision, timer: submission.timer }));
       return;
     }
 
@@ -786,6 +832,10 @@ export async function handleStudentApi(req, res, pathname, parsedUrl, service, p
     if (pathname.match(/^\/api\/student\/activities\/([^/]+)\/autosave$/) && req.method === 'POST') {
       const id = pathname.split('/')[4];
       const session = getStudentSession(id);
+      const reqRevision = parsedBody?.revision;
+      if (reqRevision === undefined || reqRevision === null || !Number.isInteger(reqRevision) || reqRevision < 0) {
+        throw new ValidationError("Il parametro 'revision' (intero non negativo) è obbligatorio per l'autosalvataggio");
+      }
       const payload = {
         assessmentId: id,
         studentId: session.studentId,
@@ -796,14 +846,14 @@ export async function handleStudentApi(req, res, pathname, parsedUrl, service, p
         leftNeighborName: parsedBody?.leftNeighborName || null,
         rightNeighborId: parsedBody?.rightNeighborId || null,
         rightNeighborName: parsedBody?.rightNeighborName || null,
-        responses: parsedBody?.responses || [],
-        revision: parsedBody?.revision,
+        responses: normalizeStudentResponses(parsedBody?.responses || []),
+        revision: reqRevision,
         isFinal: false,
         attemptStatus: "in_progress"
       };
       const submission = service.saveDraftSubmission(payload);
       res.writeHead(200);
-      res.end(JSON.stringify({ status: 'saved', lastSavedAt: submission.last_saved_at, revision: submission.revision }));
+      res.end(JSON.stringify({ status: 'saved', lastSavedAt: submission.last_saved_at, revision: submission.revision, timer: submission.timer }));
       return;
     }
 
@@ -811,6 +861,10 @@ export async function handleStudentApi(req, res, pathname, parsedUrl, service, p
     if (pathname.match(/^\/api\/student\/activities\/([^/]+)\/submit$/) && req.method === 'POST') {
       const id = pathname.split('/')[4];
       const session = getStudentSession(id);
+      const reqRevision = parsedBody?.revision;
+      if (reqRevision === undefined || reqRevision === null || !Number.isInteger(reqRevision) || reqRevision < 0) {
+        throw new ValidationError("Il parametro 'revision' (intero non negativo) è obbligatorio per la consegna");
+      }
       const payload = {
         assessmentId: id,
         studentId: session.studentId,
@@ -821,20 +875,46 @@ export async function handleStudentApi(req, res, pathname, parsedUrl, service, p
         leftNeighborName: parsedBody?.leftNeighborName || null,
         rightNeighborId: parsedBody?.rightNeighborId || null,
         rightNeighborName: parsedBody?.rightNeighborName || null,
-        responses: parsedBody?.responses || [],
-        revision: parsedBody?.revision,
+        responses: normalizeStudentResponses(parsedBody?.responses || []),
+        revision: reqRevision,
         isFinal: true,
         attemptStatus: "submitted"
       };
       const submission = service.saveDraftSubmission(payload);
       res.writeHead(200);
-      res.end(JSON.stringify({ status: 'submitted', submission, revision: submission.revision }));
+      res.end(JSON.stringify({ status: 'submitted', submission, revision: submission.revision, timer: submission.timer }));
       return;
     }
 
-    // POST /api/student/upload
+    // GET /api/student/attachment?assessmentId=...&attachmentId=...
+    // The opaque ID is resolved only inside the authenticated student's own scope.
+    if (pathname === '/api/student/attachment' && req.method === 'GET') {
+      const assessmentId = parsedUrl.searchParams.get('assessmentId');
+      const attachmentId = parsedUrl.searchParams.get('attachmentId');
+      if (!assessmentId || !attachmentId) {
+        throw new ValidationError("assessmentId e attachmentId sono obbligatori");
+      }
+      const session = getStudentSession(assessmentId);
+      const attachment = service.getStudentAttachment({
+        assessmentId,
+        studentId: session.studentId,
+        attachmentId
+      });
+      const stored = service.fileStore.readStoredFile(attachment.storage_path);
+      res.writeHead(200, {
+        'Content-Type': attachment.content_type,
+        'Content-Length': stored.size,
+        'Content-Disposition': `inline; filename*=UTF-8''${encodeURIComponent(attachment.original_name)}`,
+        'X-Content-Type-Options': 'nosniff',
+        'Content-Security-Policy': "default-src 'none'; sandbox",
+        'Cache-Control': 'private, no-store'
+      });
+      res.end(stored.buffer);
+      return;
+    }
+
+    // POST /api/student/upload — upload ownership is persisted before a client can reference it.
     if (pathname === '/api/student/upload' && req.method === 'POST') {
-      const session = getStudentSession();
       const file = (multipartData?.files && multipartData.files[0]) || multipartData?.file;
       if (!file) {
         res.writeHead(400);
@@ -847,42 +927,47 @@ export async function handleStudentApi(req, res, pathname, parsedUrl, service, p
         res.end(JSON.stringify({ error: 'ValidationError', message: 'Nessun file caricato o file vuoto' }));
         return;
       }
-      const MAX_FILE_BYTES = 10 * 1024 * 1024; // 10 MB
+      const MAX_FILE_BYTES = 10 * 1024 * 1024;
       if (fileBuffer.length > MAX_FILE_BYTES) {
         res.writeHead(400);
         res.end(JSON.stringify({ error: 'ValidationError', message: 'Dimensione file eccedente il limite di 10MB' }));
         return;
       }
+
+      const assessmentId = multipartData.fields?.assessmentId || parsedUrl.searchParams.get('assessmentId');
+      const itemId = multipartData.fields?.itemId;
+      if (!assessmentId || !itemId) {
+        throw new ValidationError('assessmentId e itemId sono obbligatori per associare l’allegato al quesito');
+      }
+      const session = getStudentSession(assessmentId);
       const ext = path.extname(file.filename || '').toLowerCase();
-      const blockedExtensions = ['.exe', '.sh', '.bat', '.cmd', '.msi', '.bin', '.vbs', '.ps1', '.com', '.scr'];
-      if (blockedExtensions.includes(ext)) {
-        res.writeHead(400);
-        res.end(JSON.stringify({ error: 'SecurityError', message: 'Tipo di file non consentito per ragioni di sicurezza' }));
-        return;
+      const contentTypes = {
+        '.pdf': 'application/pdf',
+        '.png': 'image/png',
+        '.jpg': 'image/jpeg',
+        '.jpeg': 'image/jpeg',
+        '.webp': 'image/webp',
+        '.txt': 'text/plain; charset=utf-8',
+        '.md': 'text/markdown; charset=utf-8',
+        '.sql': 'text/plain; charset=utf-8',
+        '.js': 'text/plain; charset=utf-8',
+        '.py': 'text/plain; charset=utf-8',
+        '.json': 'application/json'
+      };
+      const contentType = contentTypes[ext];
+      if (!contentType) {
+        throw new ValidationError('Formato non supportato. Carica PDF, immagine o file di testo/codice.');
       }
-
-      const targetAssessmentId = multipartData.fields?.assessmentId || parsedUrl.searchParams.get('assessmentId') || session.assessmentId;
-      if (targetAssessmentId) {
-        service.validateStudentSession(session.token, targetAssessmentId);
-        const existingSub = service.getStudentSubmission(targetAssessmentId, session.studentId);
-        if (existingSub && (existingSub.attempt_status === 'submitted' || existingSub.status === 'submitted')) {
-          res.writeHead(409, { 'Content-Type': 'application/json' });
-          res.end(JSON.stringify({ error: 'ConflictError', message: 'Impossibile caricare allegati: prova già consegnata definitivamente' }));
-          return;
-        }
-      }
-
-      const safeBase = path.basename(file.filename || 'attachment').replace(/[^a-zA-Z0-9._-]/g, '_');
-      const storedFileName = Date.now() + "-" + safeBase;
-      const storedPath = service.fileStore.saveFile(storedFileName, fileBuffer);
-      const relativeKey = path.relative(service.fileStore.baseDir, storedPath).replaceAll('\\', '/');
-      res.writeHead(200);
-      res.end(JSON.stringify({
-        success: true,
-        attachmentPath: relativeKey,
-        attachmentName: file.filename,
-        size: fileBuffer.length
-      }));
+      const attachment = service.registerStudentAttachment({
+        assessmentId,
+        studentId: session.studentId,
+        itemId,
+        filename: file.filename,
+        contentType,
+        buffer: fileBuffer
+      });
+      res.writeHead(201);
+      res.end(JSON.stringify({ success: true, ...attachment }));
       return;
     }
 
@@ -1350,6 +1435,18 @@ async function handleRestApi(req, res, pathname, parsedUrl, service, authResult,
       const result = service.reissueActivityCredential(credId, parsedBody || {});
       res.writeHead(200);
       res.end(JSON.stringify(result));
+      return;
+    }
+
+    // POST /api/assessments/:id/submissions/:studentId/extra-time (Teacher grant extra time)
+    if (pathname.match(/^\/api\/assessments\/([^/]+)\/submissions\/([^/]+)\/extra-time$/) && req.method === 'POST') {
+      const parts = pathname.split('/');
+      const asmId = parts[3];
+      const studentId = parts[5];
+      const extraMinutes = Number(parsedBody?.extraMinutes || 0);
+      const updated = service.grantExtraTime(asmId, studentId, extraMinutes);
+      res.writeHead(200);
+      res.end(JSON.stringify({ success: true, submission: updated }));
       return;
     }
 
