@@ -190,7 +190,10 @@ export class TeacherService {
   validateStudentSession(token, assessmentId) { return this.assessments.validateStudentSession(token, assessmentId); }
   registerStudentAttachment(data) { return this.assessments.registerStudentAttachment(data); }
   getStudentAttachment(data) { return this.assessments.getStudentAttachment(data); }
-  grantExtraTime(assessmentId, studentId, extraMinutes) { return this.assessments.grantExtraTime(assessmentId, studentId, extraMinutes); }
+  getAssessmentStatistics(assessmentId) { return this.assessments.getAssessmentStatistics(assessmentId); }
+  getSubmissionsForItem(assessmentId, itemId) { return this.assessments.getSubmissionsForItem(assessmentId, itemId); }
+  grantExtraTime(assessmentId, studentId, extraMinutes, options) { return this.assessments.grantExtraTime(assessmentId, studentId, extraMinutes, options); }
+  withdrawSubmission(submissionId, options) { return this.assessments.withdrawSubmission(submissionId, options); }
   reopenSubmission(submissionId, options) { return this.assessments.reopenSubmission(submissionId, options); }
   importSubmission(data) { return this.assessments.importSubmission(data); }
   getSubmission(id) { return this.assessments.getSubmission(id); }

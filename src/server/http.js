@@ -1320,6 +1320,24 @@ async function handleRestApi(req, res, pathname, parsedUrl, service, authResult,
       return;
     }
 
+    // GET /api/assessments/:id/statistics (teacher-confirmed grading statistics)
+    if (pathname.match(/^\/api\/assessments\/([^/]+)\/statistics$/) && req.method === 'GET') {
+      const id = pathname.split('/')[3];
+      const statistics = service.getAssessmentStatistics(id);
+      res.writeHead(200);
+      res.end(JSON.stringify({ statistics }));
+      return;
+    }
+
+    // GET /api/assessments/:id/items/:itemId/responses (question-centric review)
+    if (pathname.match(/^\/api\/assessments\/([^/]+)\/items\/([^/]+)\/responses$/) && req.method === 'GET') {
+      const parts = pathname.split('/');
+      const responses = service.getSubmissionsForItem(parts[3], parts[5]);
+      res.writeHead(200);
+      res.end(JSON.stringify(responses));
+      return;
+    }
+
     // GET /api/assessments/:id/live-monitor (Live monitoring: answers saved, seat map, attendance)
     if (pathname.match(/^\/api\/assessments\/([^/]+)\/live-monitor$/) && req.method === 'GET') {
       const id = pathname.split('/')[3];
@@ -1444,9 +1462,26 @@ async function handleRestApi(req, res, pathname, parsedUrl, service, authResult,
       const asmId = parts[3];
       const studentId = parts[5];
       const extraMinutes = Number(parsedBody?.extraMinutes || 0);
-      const updated = service.grantExtraTime(asmId, studentId, extraMinutes);
+      const updated = service.grantExtraTime(asmId, studentId, extraMinutes, {
+        idempotencyKey: parsedBody?.idempotencyKey,
+        reason: parsedBody?.reason,
+        teacherPrincipal: authResult.principal
+      });
       res.writeHead(200);
       res.end(JSON.stringify({ success: true, submission: updated }));
+      return;
+    }
+
+    // POST /api/submissions/:id/withdraw (Teacher-controlled termination; preserves saved answers)
+    if (pathname.match(/^\/api\/submissions\/([^/]+)\/withdraw$/) && req.method === 'POST') {
+      const submissionId = pathname.split('/')[3];
+      const submission = service.withdrawSubmission(submissionId, {
+        reason: parsedBody?.reason,
+        idempotencyKey: parsedBody?.idempotencyKey,
+        teacherPrincipal: authResult.principal
+      });
+      res.writeHead(200);
+      res.end(JSON.stringify({ success: true, submission }));
       return;
     }
 
@@ -1456,6 +1491,8 @@ async function handleRestApi(req, res, pathname, parsedUrl, service, authResult,
       const subId = parts[5];
       const sub = service.reopenSubmission(subId, {
         reason: parsedBody?.reason,
+        extraMinutes: parsedBody?.extraMinutes,
+        idempotencyKey: parsedBody?.idempotencyKey,
         teacherPrincipal: authResult.principal
       });
       res.writeHead(200);
@@ -1468,6 +1505,8 @@ async function handleRestApi(req, res, pathname, parsedUrl, service, authResult,
       const subId = pathname.split('/')[3];
       const sub = service.reopenSubmission(subId, {
         reason: parsedBody?.reason,
+        extraMinutes: parsedBody?.extraMinutes,
+        idempotencyKey: parsedBody?.idempotencyKey,
         teacherPrincipal: authResult.principal
       });
       res.writeHead(200);
@@ -1519,7 +1558,12 @@ async function handleRestApi(req, res, pathname, parsedUrl, service, authResult,
         return;
       }
       const submissionId = pathname.split('/')[3];
-      const result = service.reviewGrading({ submissionId, ...(parsedBody || {}) });
+      const result = service.reviewGrading({
+        submissionId,
+        ...(parsedBody || {}),
+        teacherPrincipal: authResult.principal,
+        reviewer: authResult.principal
+      });
       res.writeHead(200);
       res.end(JSON.stringify({ submission: result }));
       return;

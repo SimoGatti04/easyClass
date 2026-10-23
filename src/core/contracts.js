@@ -116,7 +116,8 @@ export const AssessmentStatuses = Object.freeze({
 export const AttemptStatuses = Object.freeze({
   IN_PROGRESS: 'in_progress',
   SUBMITTED: 'submitted',
-  REOPENED: 'reopened'
+  REOPENED: 'reopened',
+  TEACHER_WITHDRAWN: 'teacher_withdrawn'
 });
 
 export const CredentialStatuses = Object.freeze({
@@ -134,7 +135,8 @@ export const SubmissionStatuses = Object.freeze({
   SUBMITTED: 'submitted',
   GRADING_IN_PROGRESS: 'grading_in_progress',
   GRADED: 'graded',
-  REVIEWED: 'reviewed'
+  REVIEWED: 'reviewed',
+  WITHDRAWN_BY_TEACHER: 'withdrawn_by_teacher'
 });
 
 /**

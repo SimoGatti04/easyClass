@@ -334,10 +334,16 @@ test('MCP Server Protocol & Tool Integration Tests', async (t) => {
       lessonId: createdLesson.id
     });
     service.publishMaterial(assessmentSource.id, { versionNumber: 1 });
+    const mcpStudent = service.addStudent({
+      classId: createdClass.id,
+      firstName: 'Luca',
+      lastName: 'Verdi'
+    });
 
     // 1. create_assessment
     const asmRes = await callTool("create_assessment", {
       title: "Verifica MCP Architettura CPU",
+      classId: createdClass.id,
       durationMinutes: 30,
       maxScore: 10,
       items: [
@@ -370,7 +376,7 @@ test('MCP Server Protocol & Tool Integration Tests', async (t) => {
     // 2. import_submission
     const subRes = await callTool("import_submission", {
       assessmentId: asm.id,
-      studentId: "studente-mcp-1",
+      studentId: mcpStudent.id,
       studentName: "Luca Verdi",
       responses: [
         { itemId: asm.items[0].id, responseText: "A" },
@@ -472,12 +478,20 @@ test('MCP Server Protocol & Tool Integration Tests', async (t) => {
     const delIt = JSON.parse(delItRes.content[0].text);
     assert.equal(delIt.success, true);
 
+    const reactivateRes = await callTool("set_assessment_status", { id: asm.id, status: "active" });
+    assert.equal(JSON.parse(reactivateRes.content[0].text).status, "active");
+    const activeCredential = service.generateActivityCredentials(asm.id)
+      .find(credential => credential.studentId === mcpStudent.id);
+    assert.ok(activeCredential);
+    service.claimStudentSession(activeCredential.accessCode);
+
     const reopenRes = await callTool("reopen_submission", {
       submissionId: sub.id,
-      reason: "Integrazione codice richiesta dal docente"
+      reason: "Integrazione codice richiesta dal docente",
+      idempotencyKey: "mcp-reopen-submission-test-0001"
     });
     const reopened = JSON.parse(reopenRes.content[0].text);
-    assert.equal(reopened.attempt_status, "in_progress");
+    assert.equal(reopened.attempt_status, "in_progress", JSON.stringify(reopened));
     assert.equal(reopened.reopen_reason, "Integrazione codice richiesta dal docente");
   });
 

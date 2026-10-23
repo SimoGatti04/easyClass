@@ -20,7 +20,8 @@
     "build:client": "vite build",
     "dev:preview": "node bin/teacher-service-preview.js",
     "dev:preview:clean": "node bin/teacher-service-preview-clean.js",
-    "test:browser:c4": "pnpm run build:client && node --test tests/browser/student-c4-browser.test.js"
+    "test:browser:c4": "pnpm run build:client && node --test tests/browser/student-c4-browser.test.js",
+    "test:browser:c5": "pnpm run build:client && node --test tests/browser/teacher-c5-browser.test.js"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "1.29.0",

@@ -396,6 +396,7 @@ CREATE TABLE IF NOT EXISTS evaluations (
   max_score REAL NOT NULL DEFAULT 0,
   confidence REAL DEFAULT 1.0,
   feedback TEXT,
+  teacher_notes TEXT,
   criteria_breakdown_json TEXT,
   status TEXT NOT NULL DEFAULT 'proposed', -- 'proposed', 'approved', 'overridden'
   evaluator TEXT DEFAULT 'system',
@@ -403,6 +404,23 @@ CREATE TABLE IF NOT EXISTS evaluations (
 );
 
 CREATE INDEX IF NOT EXISTS idx_evaluations_submission_round ON evaluations(submission_id, evaluation_round);
+
+-- 17a. Auditable teacher actions and grading decisions (Checkpoint C5)
+CREATE TABLE IF NOT EXISTS assessment_action_events (
+  id TEXT PRIMARY KEY,
+  assessment_id TEXT NOT NULL REFERENCES assessments(id) ON DELETE CASCADE,
+  submission_id TEXT REFERENCES assessment_submissions(id) ON DELETE SET NULL,
+  action TEXT NOT NULL,
+  actor TEXT NOT NULL,
+  reason TEXT,
+  idempotency_key TEXT,
+  details_json TEXT,
+  created_at TEXT NOT NULL,
+  UNIQUE(assessment_id, idempotency_key)
+);
+
+CREATE INDEX IF NOT EXISTS idx_assessment_action_events_submission
+  ON assessment_action_events(submission_id, created_at);
 
 -- 18. Lesson Preparation Confirmations (Dossier 01 §7, §20, §30)
 CREATE TABLE IF NOT EXISTS lesson_preparation_confirmations (

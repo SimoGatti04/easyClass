@@ -15,8 +15,10 @@ grading while preserving teacher control and provenance.
   portale-classi PostgreSQL/uploads. Do not restart or reconnect those runtimes.
   The repository's local `.env.local` and local SQLite remain for development
   only.
-- **PLANNED — C2:** a fuller teacher management dashboard. The current minimal
-  web interface remains available; C1 does not expand it.
+- **CURRENT — local product UI:** C3/C4 student flows and the C5 teacher
+  workspace (activity queues, live monitoring, submissions, grading and results)
+  are implemented and locally verified. C5 has not been released to production.
+- **PLANNED — C6:** integrity-evidence analysis and expanded MCP workflows.
 
 ## Current capabilities
 

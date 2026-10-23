@@ -1,7 +1,7 @@
 # Teacher Service — Stato operativo
 
 **Aggiornato:** 2026-10-23 (Europe/Rome)
-**Fase attiva:** Checkpoint C4 — Student Experience & Mobile-First UX (Supervisione: ChatGPT)
+**Fase attiva:** C5 completato localmente; C6 è il prossimo checkpoint PLANNED (Supervisione: ChatGPT)
 **Perimetro:** Workspace locale `teacher-service-design`.
 **Fonte normativa:** `docs/` e decisioni del Domain Owner (13 ottobre 2026); **evidenze storiche:** `validation/results/`.
 
@@ -658,3 +658,16 @@ Risoluzione definitiva delle discrepanze individuate dalla revisione indipendent
 8. **Readiness:** gate C4 soddisfatto per il perimetro software locale e criterio funzionale del browser. Pronto ad aprire C5 dopo decisione/avvio separato; il test non sostituisce prove su telefoni fisici, browser diversi, condizioni reali della LAN, deploy o Cloudflare. La dashboard/monitoraggio restano nell’ambito già disponibile e le estensioni C5 non sono state implementate.
 
 **Git e rilascio:** il checkpoint è registrato nella cronologia Git locale; nessun push o rilascio produttivo è stato eseguito.
+
+## Checkpoint C5 — Teacher Monitoring, Submissions & Grading UX (23 ottobre 2026)
+
+**Stato:** completato e verificato localmente sul branch `codex/teacher-service-c5`, derivato dal commit C4 `f33f07d`. Nessun push, deploy o cambiamento a Cloudflare/K3s/GHCR/ingress. Il runtime produttivo non è stato interrogato o modificato in questo checkpoint. C6 e C7 non sono stati avviati.
+
+- **Dashboard docente:** aggiunta panoramica con code per attività da preparare, prove attive, consegne da correggere e valutazioni concluse, collegata alle viste esistenti.
+- **Monitoraggio live:** Seat Map e roster mostrano chi non ha iniziato, chi è in prova, consegnati/ritirati, risposte persistite, timestamp dell'ultimo salvataggio confermato dal server e timer; polling ogni 10 secondi e annunci una tantum delle nuove consegne osservate. Nessuna inferenza di inattività/proctoring.
+- **Azioni durante la prova:** shortcut +5 minuti e concessione tempo extra configurabile, ritiro docente distinto dalla consegna volontaria e riapertura motivata. Operazioni idempotenti con chiavi stabili, aggiornamenti condizionali/transazionali e audit di autore, motivazione e dettagli; le risposte persistite sono mantenute. Endpoint docente restano protetti dall'autorizzazione server-side.
+- **Correzione e risultati:** viste per studente e per quesito, override per item con feedback/note, revisioni non distruttive, proposta AI distinta dal voto confermato e protezione del voto finale da successive rielaborazioni automatiche. Statistiche su soli voti definitivi confermati con denominatore esplicito, media, deviazione standard di popolazione e distribuzione; export CSV/JSON/Markdown.
+- **Moduli modificati:** `src/services/assessment-service.js`, `src/services/teacher-service.js`, `src/db/schema.js`, `src/db/database.js`, `src/server/http.js`, `src/mcp/server.js`, `src/core/contracts.js`; componenti docente in `client/src/components/` e `client/app.css`; test unitari, server, MCP e browser.
+- **MCP:** mantenuto il servizio applicativo condiviso; aggiornato il contratto `reopen_submission` per motivazione, idempotency key e tempo aggiuntivo facoltativo. Nessuna modifica a endpoint o autenticazione OAuth MCP. Le nuove viste non introducono business logic MCP-only.
+- **Test eseguiti:** `pnpm test` — 24 suite passate, 150 test passati, 0 falliti, 1 test loopback opt-in saltato dalla policy sandbox; esecuzione isolata di `node --test tests/mcp/http-loopback-integration.test.js` con permesso loopback — 1/1 pass (protocollo locale, non ChatGPT remoto); `pnpm run test:browser:c4` — 1/1 pass; `pnpm run test:browser:c5` — 1/1 pass; ciascun browser test ha anche ricostruito la SPA. C5 ha usato dati sintetici, SQLite/FileStore temporanei e AI mock.
+- **Limiti:** viewport mobili/tablet verificati in Chromium simulato, non su dispositivi fisici; nessun invio di dati studente a provider esterni e nessun test AI live; nessuna modifica o verifica di produzione. C6 (analisi integrità e ampliamento MCP) è il prossimo checkpoint pianificato; nessun lavoro C6 incluso.

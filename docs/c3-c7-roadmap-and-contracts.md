@@ -39,14 +39,15 @@ Il sistema Teacher Service si estende oltre la preparazione lezioni ("Tomorrow i
 | **Editor di Codice e Allegati (C4)** | **CURRENT** | Editor leggero con numeri riga, indentazione e supporto touch; anteprima protetta per immagini, PDF e testo/codice. |
 | **Consegna Definitiva (C4)** | **CURRENT** | Riepilogo risposte/allegati prima della conferma, snapshot dell’invio, blocco delle modifiche concorrenti e tentativo sigillato lato server. |
 | **Protezione Area Docente & MCP** | **CURRENT** | Cloudflare Access più autorizzazione esplicita teacher principal; fallimento chiuso 401/403. Nessuna modifica d’infrastruttura in C4. |
-| **Dashboard Docente Multi-Scheda** | **CURRENT** | Schede: Preparazione T1, Attività, Studenti, Monitor Live, Consegne, Integrità C6. |
+| **Dashboard Docente Multi-Scheda (C5)** | **CURRENT** | Panoramica operativa con code per preparazione, prove attive, consegne da correggere e valutazioni confermate; collegamenti rapidi a monitoraggio e correzione. |
 | **Registro Studenti (Docente)** | **CURRENT** | Inserimento singolo, importazione massiva un nominativo per riga, rimozione. |
-| **Monitoraggio Live d'Aula (Seat Map & Roster)** | **CURRENT** | Mappa visiva dell'aula (cattedra, file di banchi, colori di stato, vicini) e tabella roster con auto-refresh (5s). |
-| **Gestione Consegne e Revisione Voto Docente** | **CURRENT** | Elenco consegne, dettaglio risposte studente, correzione automatica/AI, input e conferma del voto finale docente. |
+| **Monitoraggio Live d'Aula (Seat Map & Roster)** | **CURRENT** | Seat Map e roster, presenti/non iniziati/in corso/consegnati/ritirati, timestamp ultimo autosave confermato dal server, conteggio risposte, stato timer e segnalazione singola delle nuove consegne; polling ogni 10s. Assenza di aggiornamenti non è interpretata come inattività o condotta scorretta. |
+| **Gestione Consegne e Revisione Voto Docente (C5)** | **CURRENT** | Correzione per studente e per quesito, punteggi/feedback/note, proposte deterministiche/AI non definitive, conferma docente, cronologia non distruttiva, statistiche e export CSV/JSON/Markdown. Le metriche usano soltanto voti definitivi confermati e dichiarano il denominatore. |
 | **Anteprima Architettura Integrità (C6)** | **CURRENT (DEMO/UI)** | Scheda illustrativa/disclaimer e anteprima limitata; non equivale a confronto completo, Integrity Evidence operativa o giudizio automatico. |
 | **Ambiente di Anteprima Locale Isolato (`pnpm dev:preview`)** | **CURRENT** | Esecuzione locale e su LAN Wi-Fi (0.0.0.0), storage isolato in `.tmp/dev-preview/`, seed dati dimostrativi, cleanup sicuro. |
 | **Test browser C4** | **CURRENT** | Flusso Playwright reale su Chromium locale con due studenti e viewport mobile/tablet/desktop, autosave, interruzione/ripristino offline, timer, allegati e verifica docente. Emulazione viewport, non collaudo su dispositivi fisici. |
-| **Ritiro Forzato / Riapertura Prova da Docente (C5)** | **PLANNED** | Azioni rapide nel live monitor per terminare la prova di uno studente o concedere tempo extra. |
+| **Test browser C5** | **CURRENT** | Flusso Playwright reale su frontend e HTTP locale: docente crea/attiva, due studenti lavorano, monitoraggio, tempo extra idempotente, consegna, ritiro/riapertura, correzione per quesito, conferma voti, statistiche ed export; viewport desktop/tablet/mobile. Dati SQLite/FileStore sintetici isolati e AI mock. |
+| **Operazioni Docente Durante la Prova (C5)** | **CURRENT** | Tempo extra configurabile e azione rapida; ritiro docente distinto dalla consegna volontaria; riapertura con motivazione e controllo di scadenza/sessione. Operazioni idempotenti, condizionali e registrate nell'audit; nessuna risposta già salvata viene eliminata. |
 | **Valutazione Comparativa MCP & Analisi Semantica AST (C6)** | **PLANNED** | Tool MCP dedicati per analisi di similarità strutturale su codice e testi, incroci con Seat Map. |
 | **Deployment e Rilascio Infrastrutturale K3s (C7)** | **PLANNED** | Verifica su ingress cluster K3s, aggiornamento manifesti se necessario, test in ambiente reale. |
 | **Proctoring Invasivo / Tracciamento Webcam / Keylogger** | **DEPRECATED / PROHIBITED** | Rigorosamente escluso e vietato da policy etica e normativa scolastica. |
@@ -70,16 +71,12 @@ Il sistema Teacher Service si estende oltre la preparazione lezioni ("Tomorrow i
 - **Esito C4 (2026-10-23): CURRENT e verificato localmente.** Il browser usa snapshot di revisione per invio, disabilita mutazioni mentre la consegna è in volo, dichiara salvataggio solo dopo conferma server e conserva le bozze locali divergenti. Il backend applica scadenza anche agli upload e sigilla il tentativo. Non include le azioni operative C5 né le funzioni C6/C7.
 
 ### Checkpoint C5 — Monitoraggio Live, Consegne e Correzioni Docente
-- **Obiettivo**: Consolidare gli strumenti operativi d'aula durante lo svolgimento della prova e la fase di revisione.
-- **Contratti Frontend & Docente**:
-  - Azioni d'aula dal vivo nel Monitoraggio:
-    - Bottone "Ritira Prova" per forzare la consegna di uno studente.
-    - Bottone "+5 min Extra" per estendere il tempo di singoli studenti con bisogni specifici (BES/DSA).
-    - Notifica visiva immediata quando uno studente effettua la consegna definitiva.
-  - Interfaccia di correzione guidata per quesito: possibilità per il docente di visualizzare tutte le risposte alla domanda Q1 di tutti gli studenti in sequenza, per una valutazione più equa e rapida.
-  - Calcolo automatico della media di classe, deviazione standard e distribuzione dei punteggi.
-- **Contratti Backend & Servizi**:
-  - `AssessmentService.reviewGrading`: supporta override parziali per singolo quesito e storicizza le valutazioni precedenti in round non distruttivi (`evaluation_rounds`).
+- **Stato:** CURRENT, implementato e verificato localmente; nessun rilascio produttivo. C6/C7 restano PLANNED.
+- **Dashboard:** panoramica operativa con code separate per attività da preparare, prove in corso, consegne da correggere e valutazioni confermate; navigazione diretta tra attività, monitoraggio e correzioni.
+- **Monitoraggio:** le viste Seat Map e roster mostrano chi non ha iniziato, tentativi in corso, consegnati, ritirati, ultimo salvataggio confermato (`last_saved_at`), risposte presenti, tempo extra e scadenza. Aggiornamento periodico ogni 10 secondi; le nuove consegne vengono annunciate una volta per evento osservato. Mancanza di attività non è trattata come prova di inattività.
+- **Azioni docente:** shortcut rapido +5 minuti e tempo extra configurabile; ritiro forzato che conserva le risposte e rimane distinto dalla consegna volontaria; riapertura con motivazione, controllo dello stato dell'attività/sessione e del tempo residuo o aggiuntivo. Le mutazioni sono condizionali, idempotenti e registrate con autore, motivazione e dettagli; i controlli teacher restano lato server.
+- **Correzione:** modalità per studente e per quesito. Override di punteggio per quesito, feedback, annotazioni e voto finale con history progressiva; le proposte automatiche/AI non finalizzano il voto e una valutazione definitiva non viene sovrascritta da elaborazioni successive. Le statistiche includono conteggi, media, deviazione standard di popolazione e distribuzione, usando soltanto voti definitivi confermati e riportando il denominatore. Export CSV, JSON e Markdown riutilizza il servizio applicativo.
+- **Verifica browser:** `pnpm run test:browser:c5` esercita il frontend reale e il server HTTP con due studenti sintetici, azioni docente, correzione, conferma, statistiche ed export a viewport desktop/tablet/mobile; SQLite e FileStore sono sotto `.tmp/dev-preview/` e vengono rimossi dal test. AI mock solo per questo test.
 
 ### Checkpoint C6 — Estensioni MCP, Confronti Semantici/Strutturali, Integrity Evidence & Fonti
 - **Obiettivo**: Esporre le funzionalità di assessment, monitoraggio e analisi anticopiatura a ChatGPT tramite MCP.

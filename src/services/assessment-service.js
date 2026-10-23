@@ -556,16 +556,21 @@ export class AssessmentService {
     const responses = respStmt.all(submissionId);
 
     // Get latest evaluations for this submission
-    const evalStmt = this.dbManager.prepare(`
+    const evaluations = this.dbManager.prepare(`
       SELECT * FROM evaluations WHERE submission_id = ?
-      ORDER BY evaluation_round DESC, created_at DESC
-    `);
-    const evaluations = evalStmt.all(submissionId);
+      ORDER BY evaluation_round DESC, created_at DESC, rowid DESC
+    `).all(submissionId);
+    const actionEvents = this.dbManager.prepare(`
+      SELECT id, action, actor, reason, details_json, created_at
+      FROM assessment_action_events WHERE submission_id = ?
+      ORDER BY created_at DESC, rowid DESC
+    `).all(submissionId);
 
     return {
       ...sub,
       responses,
-      evaluations
+      evaluations,
+      actionEvents
     };
   }
 
@@ -574,6 +579,125 @@ export class AssessmentService {
       SELECT * FROM assessment_submissions WHERE assessment_id = ? ORDER BY submitted_at ASC
     `);
     return stmt.all(assessmentId);
+  }
+
+  getSubmissionsForItem(assessmentId, itemId) {
+    const assessment = this.getAssessment(assessmentId);
+    const item = this.dbManager.prepare(`
+      SELECT * FROM assessment_items WHERE id = ? AND assessment_id = ?
+    `).get(itemId, assessmentId);
+    if (!item) throw new NotFoundError('AssessmentItem', itemId);
+
+    const evaluationJoin = `
+      LEFT JOIN evaluations e ON e.id = (
+        SELECT e2.id FROM evaluations e2
+        WHERE e2.submission_id = s.id AND e2.item_id = i.id
+        ORDER BY CASE WHEN e2.evaluation_type = 'manual_teacher' THEN 0 ELSE 1 END,
+                 e2.evaluation_round DESC, e2.created_at DESC, e2.rowid DESC
+        LIMIT 1
+      )`;
+    const select = `
+      SELECT COALESCE(st.id, s.student_id) AS student_id,
+             COALESCE(s.student_name, TRIM(COALESCE(st.first_name, '') || ' ' || COALESCE(st.last_name, ''))) AS student_name,
+             s.id AS submission_id, s.status AS submission_status,
+             s.attempt_status, s.submitted_at, s.last_saved_at,
+             r.response_text, r.attachment_name,
+             e.score AS current_score, e.max_score AS evaluated_max_score,
+             e.evaluation_type AS current_evaluation_type, e.feedback AS current_feedback,
+             e.teacher_notes AS current_teacher_notes,
+             s.final_grade, s.proposed_grade
+      FROM assessment_items i
+      JOIN assessments a ON a.id = i.assessment_id
+      LEFT JOIN students st ON a.class_id IS NOT NULL AND st.class_id = a.class_id
+      LEFT JOIN assessment_submissions s
+        ON s.assessment_id = i.assessment_id
+       AND (s.student_id = st.id OR st.id IS NULL)
+      LEFT JOIN submission_responses r ON r.submission_id = s.id AND r.item_id = i.id
+      ${evaluationJoin}
+      WHERE i.id = ? AND i.assessment_id = ?
+      ORDER BY COALESCE(st.last_name, s.student_name, s.student_id), COALESCE(st.first_name, '')
+    `;
+    const submissions = this.dbManager.prepare(select).all(itemId, assessmentId);
+    return {
+      assessmentId,
+      item: {
+        id: item.id,
+        order_index: item.order_index,
+        type: item.type,
+        question_text: item.question_text,
+        max_score: item.max_score,
+        rubric_json: item.rubric_json,
+        teacher_solution: item.teacher_solution
+      },
+      submissions
+    };
+  }
+
+  getAssessmentStatistics(assessmentId) {
+    const assessment = this.getAssessment(assessmentId);
+    const submissions = this.dbManager.prepare(`
+      SELECT status, attempt_status, total_score, final_grade, proposed_grade
+      FROM assessment_submissions WHERE assessment_id = ?
+    `).all(assessmentId);
+    const totalStudents = assessment.class_id
+      ? this.dbManager.prepare('SELECT COUNT(*) AS count FROM students WHERE class_id = ?').get(assessment.class_id).count
+      : submissions.length;
+    const withdrawnCount = submissions.filter(s => s.attempt_status === 'teacher_withdrawn').length;
+    const inProgressCount = submissions.filter(s => s.attempt_status === 'in_progress').length;
+    const submittedCount = submissions.filter(s => s.attempt_status === 'submitted' && s.status !== 'withdrawn_by_teacher').length;
+    const gradingCompleted = submissions.filter(s => s.status === SubmissionStatuses.REVIEWED && s.final_grade !== null && s.final_grade !== '').
+      filter(s => typeof s.total_score === 'number' && Number.isFinite(s.total_score));
+    const proposedCount = submissions.filter(s => s.proposed_grade !== null && s.proposed_grade !== '' && s.status !== SubmissionStatuses.REVIEWED).length;
+    const finalizedScores = gradingCompleted.map(s => s.total_score);
+    const meanFinalScore = finalizedScores.length
+      ? finalizedScores.reduce((sum, value) => sum + value, 0) / finalizedScores.length
+      : null;
+    // Population standard deviation summarizes this assessment's confirmed cohort.
+    const populationStdDevFinalScore = finalizedScores.length
+      ? Math.sqrt(finalizedScores.reduce((sum, value) => sum + ((value - meanFinalScore) ** 2), 0) / finalizedScores.length)
+      : null;
+    const maxScore = Number(assessment.max_score) || 0;
+    const bands = [
+      { id: 'below-50', label: '< 50%', min: 0, max: 50 },
+      { id: '50-59', label: '50–59%', min: 50, max: 60 },
+      { id: '60-69', label: '60–69%', min: 60, max: 70 },
+      { id: '70-79', label: '70–79%', min: 70, max: 80 },
+      { id: '80-89', label: '80–89%', min: 80, max: 90 },
+      { id: '90-plus', label: '≥ 90%', min: 90, max: Infinity }
+    ];
+    const scoreDistribution = bands.map(band => ({
+      id: band.id,
+      label: band.label,
+      count: maxScore > 0 ? gradingCompleted.filter(s => {
+        const percent = (s.total_score / maxScore) * 100;
+        return percent >= band.min && percent < band.max;
+      }).length : 0
+    }));
+    const startedCount = submissions.length;
+    const notStartedCount = Math.max(0, totalStudents - startedCount);
+    const awaitingCorrectionCount = Math.max(0, submittedCount + withdrawnCount - gradingCompleted.length);
+
+    return {
+      assessmentId,
+      totalStudents,
+      startedCount,
+      notStartedCount,
+      inProgressCount,
+      submittedCount,
+      withdrawnCount,
+      gradingCompletedCount: gradingCompleted.length,
+      proposedCount,
+      awaitingCorrectionCount,
+      meanFinalScore: meanFinalScore === null ? null : Number(meanFinalScore.toFixed(2)),
+      meanFinalPercent: meanFinalScore === null || maxScore <= 0 ? null : Number(((meanFinalScore / maxScore) * 100).toFixed(1)),
+      populationStdDevFinalScore: populationStdDevFinalScore === null ? null : Number(populationStdDevFinalScore.toFixed(2)),
+      populationStdDevFinalPercent: populationStdDevFinalScore === null || maxScore <= 0
+        ? null
+        : Number(((populationStdDevFinalScore / maxScore) * 100).toFixed(1)),
+      finalGradeDenominator: gradingCompleted.length,
+      scoreDistribution,
+      generatedAt: new Date().toISOString()
+    };
   }
 
   /* -------------------------------------------------------------------------- */
@@ -586,9 +710,19 @@ export class AssessmentService {
     model = undefined
   }) {
     const submission = this.getSubmission(submissionId);
-    this.getAssessment(submission.assessment_id);
-    if (submission.responses.length === 0) {
-      throw new ValidationError('Cannot grade a submission with no responses');
+    const assessment = this.getAssessment(submission.assessment_id);
+    const gradingItems = this.dbManager.prepare(`
+      SELECT i.id AS item_id, i.question_text, i.type, i.max_score, i.options_json,
+             i.rubric_json, i.teacher_solution, r.response_text, r.attachment_path,
+             r.attachment_name
+      FROM assessment_items i
+      LEFT JOIN submission_responses r
+        ON r.item_id = i.id AND r.submission_id = ?
+      WHERE i.assessment_id = ?
+      ORDER BY i.order_index ASC, i.created_at ASC
+    `).all(submissionId, submission.assessment_id);
+    if (gradingItems.length === 0) {
+      throw new ValidationError('Cannot grade an assessment with no questions');
     }
 
     let totalScore = 0;
@@ -596,18 +730,21 @@ export class AssessmentService {
     const itemResults = [];
     const now = new Date().toISOString();
 
-    // Prepare the entire evaluation round in memory first. Any AI or validation
-    // failure aborts before persistence, so the database never contains a
-    // partial round or a heuristic substitute for a failed model response.
-    for (const resp of submission.responses) {
+    // Include unanswered items as explicit zero proposals. Prepare the full
+    // round before persistence so AI/validation failures never leave partial data.
+    for (const resp of gradingItems) {
       maxPossibleScore += resp.max_score;
       let awardedScore = 0;
       let feedback = '';
       let confidence = 1.0;
       let evalType = EvaluationTypes.DETERMINISTIC;
       let criteriaBreakdown = null;
+      const answer = (resp.response_text || '').trim();
+      const hasAnswer = answer.length > 0 || Boolean(resp.attachment_path);
 
-      if (resp.type === ItemTypes.MULTIPLE_CHOICE) {
+      if (!hasAnswer) {
+        feedback = 'Nessuna risposta salvata: proposta 0 punti.';
+      } else if (resp.type === ItemTypes.MULTIPLE_CHOICE) {
         let options = [];
         try { options = resp.options_json ? JSON.parse(resp.options_json) : []; } catch {}
         const correctOptions = Array.isArray(options) ? options.filter(o => o?.isCorrect === true) : [];
@@ -615,29 +752,33 @@ export class AssessmentService {
           throw new ValidationError(`Multiple-choice item ${resp.item_id} must have exactly one valid correct option before grading`);
         }
         const correctOption = correctOptions[0];
-        const studentAnswer = (resp.response_text || '').trim();
-        const isMatch = studentAnswer.toUpperCase() === String(correctOption.id || '').toUpperCase() ||
-          studentAnswer.toLowerCase() === String(correctOption.text || '').toLowerCase();
+        const isMatch = answer.toUpperCase() === String(correctOption.id || '').toUpperCase() ||
+          answer.toLowerCase() === String(correctOption.text || '').toLowerCase();
         awardedScore = isMatch ? resp.max_score : 0;
         feedback = isMatch ? 'Risposta esatta.' : 'Risposta errata.';
       } else {
+        if (resp.attachment_path && !answer) {
+          throw new ValidationError(`Item ${resp.item_id} contains only an attachment and requires teacher review`);
+        }
         evalType = EvaluationTypes.AI_ASSISTED;
         const gradingPrompt = [
           {
             role: 'system',
-            content: `Sei un docente valutatore rigoroso ed empatico. Valuta la risposta secondo i criteri e la soluzione attesa. Il punteggio massimo è ${resp.max_score}. Restituisci esclusivamente JSON valido: {"score": numero tra 0 e ${resp.max_score}, "confidence": numero tra 0 e 1, "reasoning": stringa, "criteriaScores": array, "feedback": stringa}.` 
+            content: `Sei un docente valutatore rigoroso ed empatico. Valuta la risposta secondo i criteri e la soluzione attesa. Il punteggio massimo è ${resp.max_score}. Restituisci esclusivamente JSON valido: {"score": numero tra 0 e ${resp.max_score}, "confidence": numero tra 0 e 1, "reasoning": stringa, "criteriaScores": array, "feedback": stringa}.`
           },
           {
             role: 'user',
-            content: `Quesito: ${resp.question_text}\nSoluzione attesa docente: ${resp.teacher_solution || 'N/A'}\nRubrica: ${resp.rubric_json || 'Valutazione basata su accuratezza, chiarezza e completezza'}\n\nRisposta fornita dallo studente:\n"${resp.response_text}"`
+            content: `Quesito: ${resp.question_text}
+Soluzione attesa docente: ${resp.teacher_solution || 'N/A'}
+Rubrica: ${resp.rubric_json || 'Valutazione basata su accuratezza, chiarezza e completezza'}
+
+Risposta fornita dallo studente:
+"${answer}"`
           }
         ];
-
         const aiRes = await this.omniRouteClient.complete({ messages: gradingPrompt, model, temperature: 0.2 });
         let parsed;
-        try {
-          parsed = JSON.parse(aiRes.content);
-        } catch {
+        try { parsed = JSON.parse(aiRes.content); } catch {
           const jsonMatch = typeof aiRes.content === 'string' ? aiRes.content.match(/\{[\s\S]*\}/) : null;
           if (jsonMatch) {
             try { parsed = JSON.parse(jsonMatch[0]); } catch {}
@@ -660,7 +801,6 @@ export class AssessmentService {
         if (parsed.criteriaScores !== undefined && !Array.isArray(parsed.criteriaScores)) {
           throw new ValidationError(`AI grading returned invalid criteria breakdown for item ${resp.item_id}`);
         }
-
         awardedScore = parsed.score;
         confidence = parsed.confidence ?? 0.85;
         feedback = parsed.feedback || parsed.reasoning || '';
@@ -684,10 +824,10 @@ export class AssessmentService {
     const proposedGrade = (Math.round(normalized10 * 10) / 10).toFixed(1);
 
     const evaluationRound = this.dbManager.transaction(() => {
-      const roundStmt = this.dbManager.prepare(`
-        SELECT COALESCE(MAX(evaluation_round), 0) + 1 AS next_round FROM evaluations WHERE submission_id = ?
-      `);
-      const nextRound = roundStmt.get(submissionId).next_round;
+      const nextRound = this.dbManager.prepare(`
+        SELECT COALESCE(MAX(evaluation_round), 0) + 1 AS next_round
+        FROM evaluations WHERE submission_id = ?
+      `).get(submissionId).next_round;
       const insertEval = this.dbManager.prepare(`
         INSERT INTO evaluations (
           id, submission_id, item_id, evaluation_round, evaluation_type, score, max_score,
@@ -713,13 +853,24 @@ export class AssessmentService {
       }
       this.dbManager.prepare(`
         UPDATE assessment_submissions
-        SET status = ?, total_score = ?, proposed_grade = ?, updated_at = ?
+        SET status = CASE WHEN final_grade IS NOT NULL THEN status ELSE ? END,
+            total_score = CASE WHEN final_grade IS NOT NULL THEN total_score ELSE ? END,
+            proposed_grade = ?, updated_at = ?
         WHERE id = ?
       `).run(SubmissionStatuses.GRADED, totalScore, proposedGrade, now, submissionId);
       return nextRound;
     });
 
-    return { submissionId, evaluationRound, totalScore, maxPossibleScore, proposedGrade, itemResults };
+    return {
+      submissionId,
+      assessmentId: assessment.id,
+      evaluationRound,
+      totalScore,
+      maxPossibleScore,
+      proposedGrade,
+      itemResults,
+      finalGradePreserved: submission.final_grade !== null && submission.final_grade !== undefined
+    };
   }
 
   /* -------------------------------------------------------------------------- */
@@ -730,67 +881,145 @@ export class AssessmentService {
     submissionId,
     itemOverrides = [],
     finalGrade = null,
-    teacherNotes = '',
-    reviewer = 'teacher'
+    teacherNotes = undefined,
+    reviewer = 'teacher',
+    teacherPrincipal = null,
+    finalize = true,
+    idempotencyKey = null,
+    reason = null
   }) {
-    const submission = this.getSubmission(submissionId);
+    if (!Array.isArray(itemOverrides)) throw new ValidationError('itemOverrides must be an array');
+    if (finalize && (typeof finalGrade !== 'string' || !finalGrade.trim())) {
+      throw new ValidationError('A final grade is required to finalize a teacher review');
+    }
+    if (!finalize && itemOverrides.length === 0) {
+      throw new ValidationError('At least one item correction is required when saving without finalizing');
+    }
+    if (idempotencyKey !== null) this._validateActionKey(idempotencyKey);
+
+    const initialSubmission = this.getSubmission(submissionId);
+    const assessment = this.getAssessment(initialSubmission.assessment_id);
     const now = new Date().toISOString();
+    const actor = teacherPrincipal || reviewer || 'teacher';
+    const effectiveReason = (reason || teacherNotes || initialSubmission.teacher_notes || (finalize ? 'Conferma valutazione docente' : 'Correzione manuale per quesito')).trim();
 
     return this.dbManager.transaction(() => {
-      let currentTotal = submission.total_score || 0;
+      const existingAction = idempotencyKey
+        ? this._findActionByKey(assessment.id, idempotencyKey, 'grading_review', submissionId)
+        : null;
+      if (existingAction) return this.getSubmission(submissionId);
+      const submission = this.getSubmission(submissionId);
+      const effectiveNotes = teacherNotes ?? submission.teacher_notes ?? '';
+      const alreadyFinalized = submission.status === SubmissionStatuses.REVIEWED && submission.final_grade !== null && submission.final_grade !== '';
+
+      const seenItemIds = new Set();
+      const evaluationRound = this.dbManager.prepare(`
+        SELECT COALESCE(MAX(evaluation_round), 0) + 1 AS next_round
+        FROM evaluations WHERE submission_id = ?
+      `).get(submissionId).next_round;
+      const insertEval = this.dbManager.prepare(`
+        INSERT INTO evaluations (
+          id, submission_id, item_id, evaluation_round, evaluation_type, score, max_score,
+          confidence, feedback, teacher_notes, status, evaluator, created_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, 1.0, ?, ?, ?, ?, ?)
+      `);
 
       for (const override of itemOverrides) {
-        if (!override.itemId || typeof override.score !== 'number') {
-          throw new ValidationError('Each override requires itemId and numeric score');
+        if (!override?.itemId || typeof override.score !== 'number' || !Number.isFinite(override.score)) {
+          throw new ValidationError('Each override requires itemId and a finite numeric score');
         }
-
-        // Get item max_score
-        const itemStmt = this.dbManager.prepare('SELECT max_score FROM assessment_items WHERE id = ?');
-        const item = itemStmt.get(override.itemId);
-        const maxScore = item ? item.max_score : 10;
-
-        const evalId = `eval-${crypto.randomUUID()}`;
-        const stmt = this.dbManager.prepare(`
-          INSERT INTO evaluations (
-            id, submission_id, item_id, evaluation_round, evaluation_type, score, max_score,
-            confidence, feedback, status, evaluator, created_at
-          ) VALUES (?, ?, ?, ?, ?, ?, ?, 1.0, ?, ?, ?, ?)
-        `);
-        stmt.run(
-          evalId,
+        if (seenItemIds.has(override.itemId)) {
+          throw new ValidationError(`Duplicate item correction for ${override.itemId}`);
+        }
+        seenItemIds.add(override.itemId);
+        const item = this.dbManager.prepare(`
+          SELECT id, max_score FROM assessment_items WHERE id = ? AND assessment_id = ?
+        `).get(override.itemId, assessment.id);
+        if (!item) throw new ValidationError(`Item ${override.itemId} does not belong to this assessment`);
+        if (override.score < 0 || override.score > item.max_score) {
+          throw new ValidationError(`Score for item ${override.itemId} must be between 0 and ${item.max_score}`);
+        }
+        if (override.feedback !== undefined && typeof override.feedback !== 'string') {
+          throw new ValidationError(`Feedback for item ${override.itemId} must be text`);
+        }
+        if (override.notes !== undefined && typeof override.notes !== 'string') {
+          throw new ValidationError(`Teacher notes for item ${override.itemId} must be text`);
+        }
+        insertEval.run(
+          `eval-${crypto.randomUUID()}`,
           submissionId,
           override.itemId,
-          999, // manual review marker
+          evaluationRound,
           EvaluationTypes.MANUAL_TEACHER,
           override.score,
-          maxScore,
-          override.feedback || 'Revisione manuale docente',
+          item.max_score,
+          override.feedback ?? '',
+          override.notes ?? null,
           EvaluationStatuses.OVERRIDDEN,
-          reviewer,
+          actor,
           now
         );
       }
 
-      // Recompute total score if overrides given
+      let currentTotal = submission.total_score ?? 0;
       if (itemOverrides.length > 0) {
-        const latestScoresStmt = this.dbManager.prepare(`
-          SELECT item_id, score FROM (
-            SELECT item_id, score, ROW_NUMBER() OVER (PARTITION BY item_id ORDER BY evaluation_round DESC, created_at DESC, rowid DESC) as rn
-            FROM evaluations WHERE submission_id = ?
+        currentTotal = this.dbManager.prepare(`
+          SELECT COALESCE(SUM(score), 0) AS total FROM (
+            SELECT e.score,
+                   ROW_NUMBER() OVER (
+                     PARTITION BY e.item_id
+                     ORDER BY CASE WHEN e.evaluation_type = 'manual_teacher' THEN 0 ELSE 1 END,
+                              e.evaluation_round DESC, e.created_at DESC, e.rowid DESC
+                   ) AS rn
+            FROM evaluations e
+            JOIN assessment_items i
+              ON i.id = e.item_id AND i.assessment_id = ?
+            WHERE e.submission_id = ?
           ) WHERE rn = 1
-        `);
-        const latestScores = latestScoresStmt.all(submissionId);
-        currentTotal = latestScores.reduce((acc, curr) => acc + curr.score, 0);
+        `).get(assessment.id, submissionId).total;
       }
 
-      const effectiveFinalGrade = finalGrade !== null ? String(finalGrade) : (submission.proposed_grade || `${currentTotal}`);
-
-      const stmtSub = this.dbManager.prepare(`
+      // Saving another correction pass is not an implicit revocation of an
+      // already-confirmed grade. Keep the visible final result intact until
+      // the teacher explicitly finalizes a new grade.
+      const nextStatus = finalize
+        ? SubmissionStatuses.REVIEWED
+        : (alreadyFinalized
+          ? SubmissionStatuses.REVIEWED
+          : (submission.proposed_grade ? SubmissionStatuses.GRADED : SubmissionStatuses.SUBMITTED));
+      this.dbManager.prepare(`
         UPDATE assessment_submissions
         SET status = ?, total_score = ?, final_grade = ?, teacher_notes = ?, updated_at = ?
         WHERE id = ?
-      `);
-      stmtSub.run(SubmissionStatuses.REVIEWED, currentTotal, effectiveFinalGrade, teacherNotes, now, submissionId);
+      `).run(
+        nextStatus,
+        !finalize && alreadyFinalized ? submission.total_score : currentTotal,
+        finalize ? finalGrade.trim() : (alreadyFinalized ? submission.final_grade : null),
+        effectiveNotes,
+        now,
+        submissionId
+      );
+
+      this._recordAssessmentAction({
+        assessmentId: assessment.id,
+        submissionId,
+        action: 'grading_review',
+        actor,
+        reason: effectiveReason,
+        idempotencyKey,
+        details: {
+          finalize,
+          evaluationRound: itemOverrides.length > 0 ? evaluationRound : null,
+          itemIds: [...seenItemIds],
+          totalScoreBefore: submission.total_score,
+          totalScoreAfter: currentTotal,
+          finalGradeBefore: submission.final_grade,
+          finalGradeAfter: finalize ? finalGrade.trim() : null,
+          teacherNotesBefore: submission.teacher_notes || null,
+          teacherNotesAfter: effectiveNotes || null
+        },
+        createdAt: now
+      });
 
       return this.getSubmission(submissionId);
     });
@@ -803,11 +1032,13 @@ export class AssessmentService {
   exportAssessmentResults(assessmentId, format = 'csv') {
     const assessment = this.getAssessment(assessmentId);
     const submissions = this.listSubmissions(assessmentId);
+    const statistics = this.getAssessmentStatistics(assessmentId);
 
     if (format === 'json') {
       return {
         assessmentId,
         assessment,
+        statistics,
         submissions,
         exportedAt: new Date().toISOString()
       };
@@ -817,20 +1048,27 @@ export class AssessmentService {
       let report = `# Report Risultati Verifica: ${assessment.title}\n\n`;
       report += `Data di emissione: ${new Date().toLocaleDateString('it-IT')}\n`;
       report += `Punteggio Massimo: ${assessment.max_score} | Durata: ${assessment.duration_minutes} min\n\n`;
+      report += `## Riepilogo valutazioni confermate\n\n`;
+      report += `- Consegne volontarie: ${statistics.submittedCount}\n`;
+      report += `- Ritiri del docente: ${statistics.withdrawnCount}\n`;
+      report += `- Correzioni finali: ${statistics.gradingCompletedCount}\n`;
+      report += `- Media punti confermati: ${statistics.meanFinalScore ?? 'N/D'} (denominatore: ${statistics.finalGradeDenominator})\n`;
+      report += `- Deviazione standard popolazione, punti confermati: ${statistics.populationStdDevFinalScore ?? 'N/D'} (stesso denominatore: ${statistics.finalGradeDenominator})\n\n`;
       report += `## Riepilogo Studenti\n\n`;
       report += `| Studente | Punteggio Totale | Voto Proposto | Voto Finale | Stato |\n`;
       report += `| :--- | :---: | :---: | :---: | :---: |\n`;
-
       for (const s of submissions) {
         report += `| ${s.student_name || s.student_id} | ${s.total_score ?? 'N/D'} | ${s.proposed_grade ?? 'N/D'} | ${s.final_grade ?? 'N/D'} | ${s.status} |\n`;
       }
       return report;
     }
 
-    // Default: CSV
-    let csv = 'student_id,student_name,submitted_at,status,total_score,proposed_grade,final_grade,teacher_notes\n';
+    // Scores included in the average are explicitly marked. Pending proposals
+    // remain visible but are not conflated with confirmed teacher grades.
+    let csv = 'student_id,student_name,submitted_at,attempt_status,grading_status,total_score,proposed_grade,final_grade,statistics_included,teacher_notes\n';
     for (const s of submissions) {
-      csv += `"${s.student_id}","${s.student_name || ''}","${s.submitted_at}","${s.status}",${s.total_score ?? ''},"${s.proposed_grade ?? ''}","${s.final_grade ?? ''}","${(s.teacher_notes || '').replace(/"/g, '""')}"\n`;
+      const included = s.status === SubmissionStatuses.REVIEWED && s.final_grade !== null && s.final_grade !== '' && typeof s.total_score === 'number';
+      csv += `"${s.student_id}","${(s.student_name || '').replace(/"/g, '""')}","${s.submitted_at || ''}","${s.attempt_status}","${s.status}",${s.total_score ?? ''},"${s.proposed_grade ?? ''}","${(s.final_grade ?? '').replace(/"/g, '""')}",${included ? 'true' : 'false'},"${(s.teacher_notes || '').replace(/"/g, '""')}"\n`;
     }
     return csv;
   }
@@ -1005,7 +1243,7 @@ export class AssessmentService {
     `).get(assessmentId, studentId);
 
     // Immutability check: once submitted, cannot be updated unless reopened by teacher
-    if (subCheck && (subCheck.attempt_status === "submitted" || subCheck.status === "submitted")) {
+    if (subCheck && (subCheck.attempt_status === "submitted" || subCheck.attempt_status === "teacher_withdrawn" || subCheck.status === "submitted" || subCheck.status === "withdrawn_by_teacher")) {
       throw new ConflictError("Consegna già finalizzata ed immutabile. La prova non può essere modificata.");
     }
 
@@ -1590,7 +1828,58 @@ export class AssessmentService {
     };
   }
 
-    grantExtraTime(assessmentId, studentId, extraMinutes) {
+  _validateActionKey(key) {
+    if (typeof key !== 'string' || !/^[A-Za-z0-9_-]{8,128}$/.test(key)) {
+      throw new ValidationError('idempotencyKey must be a stable 8-128 character request identifier');
+    }
+  }
+
+  _findActionByKey(assessmentId, idempotencyKey, action, submissionId = null) {
+    if (!idempotencyKey) return null;
+    const existing = this.dbManager.prepare(`
+      SELECT * FROM assessment_action_events
+      WHERE assessment_id = ? AND idempotency_key = ?
+    `).get(assessmentId, idempotencyKey);
+    if (!existing) return null;
+    if (existing.action !== action || (submissionId && existing.submission_id !== submissionId)) {
+      throw new ConflictError('idempotencyKey already belongs to a different teacher action');
+    }
+    return existing;
+  }
+
+  _recordAssessmentAction({
+    assessmentId,
+    submissionId = null,
+    action,
+    actor,
+    reason = null,
+    idempotencyKey = null,
+    details = {},
+    createdAt = new Date().toISOString()
+  }) {
+    this.dbManager.prepare(`
+      INSERT INTO assessment_action_events (
+        id, assessment_id, submission_id, action, actor, reason,
+        idempotency_key, details_json, created_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `).run(
+      `action-${crypto.randomUUID()}`,
+      assessmentId,
+      submissionId,
+      action,
+      actor || 'teacher',
+      reason,
+      idempotencyKey,
+      JSON.stringify(details),
+      createdAt
+    );
+  }
+
+  grantExtraTime(assessmentId, studentId, extraMinutes, {
+    idempotencyKey,
+    teacherPrincipal = 'teacher',
+    reason = 'Tempo aggiuntivo concesso dal docente'
+  } = {}) {
     if (!assessmentId || !studentId) {
       throw new ValidationError('assessmentId e studentId sono obbligatori');
     }
@@ -1598,55 +1887,195 @@ export class AssessmentService {
     if (!Number.isInteger(minutes) || minutes <= 0) {
       throw new ValidationError('extraMinutes deve essere un numero intero positivo');
     }
-    const sub = this.dbManager.prepare(`
-      SELECT * FROM assessment_submissions WHERE assessment_id = ? AND student_id = ?
-    `).get(assessmentId, studentId);
-    if (!sub) {
-      throw new NotFoundError('Tentativo studente non trovato');
-    }
-    if (sub.attempt_status === 'submitted' || sub.status === 'submitted') {
-      throw new ConflictError('Impossibile concedere tempo extra a una prova già consegnata definitivamente');
-    }
-    const now = new Date().toISOString();
-    const newExtra = (sub.extra_time_minutes || 0) + minutes;
-    this.dbManager.prepare(`
-      UPDATE assessment_submissions
-      SET extra_time_minutes = ?, updated_at = ?
-      WHERE id = ?
-    `).run(newExtra, now, sub.id);
-    return this.getStudentSubmission(assessmentId, studentId, { role: 'teacher' });
+    this._validateActionKey(idempotencyKey);
+
+    return this.dbManager.transaction(() => {
+      const existing = this._findActionByKey(assessmentId, idempotencyKey, 'extra_time');
+      if (existing) {
+        const existingSub = this.dbManager.prepare(`
+          SELECT id FROM assessment_submissions WHERE assessment_id = ? AND student_id = ?
+        `).get(assessmentId, studentId);
+        if (!existingSub || existing.submission_id !== existingSub.id) {
+          throw new ConflictError('idempotencyKey already belongs to a different student attempt');
+        }
+        return this.getStudentSubmission(assessmentId, studentId, { role: 'teacher' });
+      }
+
+      const assessment = this.getAssessment(assessmentId);
+      if (assessment.status !== AssessmentStatuses.ACTIVE) {
+        throw new ConflictError('Il tempo aggiuntivo può essere concesso solo durante una prova attiva');
+      }
+      const sub = this.dbManager.prepare(`
+        SELECT * FROM assessment_submissions WHERE assessment_id = ? AND student_id = ?
+      `).get(assessmentId, studentId);
+      if (!sub) throw new NotFoundError('Tentativo studente non trovato');
+      if (sub.attempt_status !== 'in_progress' || sub.status !== 'in_progress') {
+        throw new ConflictError('Il tempo aggiuntivo è disponibile soltanto per una prova in corso');
+      }
+      const now = new Date().toISOString();
+      const update = this.dbManager.prepare(`
+        UPDATE assessment_submissions
+        SET extra_time_minutes = COALESCE(extra_time_minutes, 0) + ?, updated_at = ?
+        WHERE id = ? AND attempt_status = 'in_progress' AND status = 'in_progress'
+      `).run(minutes, now, sub.id);
+      if (update.changes !== 1) throw new ConflictError('Il tentativo è cambiato prima di applicare il tempo aggiuntivo');
+      this._recordAssessmentAction({
+        assessmentId,
+        submissionId: sub.id,
+        action: 'extra_time',
+        actor: teacherPrincipal,
+        reason: String(reason || '').trim() || 'Tempo aggiuntivo concesso dal docente',
+        idempotencyKey,
+        details: { minutesAdded: minutes, previousExtraMinutes: sub.extra_time_minutes || 0, newExtraMinutes: (sub.extra_time_minutes || 0) + minutes },
+        createdAt: now
+      });
+      return this.getStudentSubmission(assessmentId, studentId, { role: 'teacher' });
+    });
   }
 
-  reopenSubmission(submissionId, { reason = "", teacherPrincipal = "teacher" } = {}) {
-    const sub = this.dbManager.prepare(`
-      SELECT * FROM assessment_submissions WHERE id = ?
-    `).get(submissionId);
-    if (!sub) {
-      throw new NotFoundError("AssessmentSubmission", submissionId);
+  withdrawSubmission(submissionId, {
+    reason = '',
+    idempotencyKey,
+    teacherPrincipal = 'teacher'
+  } = {}) {
+    if (typeof reason !== 'string' || !reason.trim()) {
+      throw new ValidationError('La motivazione del ritiro è obbligatoria');
     }
-
+    this._validateActionKey(idempotencyKey);
     const now = new Date().toISOString();
-    const effectiveReason = reason || "Riapertura autorizzata dal docente";
 
-    this.dbManager.prepare(`
-      UPDATE assessment_submissions
-      SET attempt_status = 'in_progress',
-          status = 'in_progress',
-          reopened_at = ?,
-          reopened_by = ?,
-          reopen_reason = ?,
-          updated_at = ?
-      WHERE id = ?
-    `).run(now, teacherPrincipal, effectiveReason, now, submissionId);
+    return this.dbManager.transaction(() => {
+      const submission = this.getSubmission(submissionId);
+      const assessment = this.getAssessment(submission.assessment_id);
+      const existing = this._findActionByKey(assessment.id, idempotencyKey, 'teacher_withdrawal', submissionId);
+      if (existing) return this.getSubmission(submissionId);
+      if (assessment.status !== AssessmentStatuses.ACTIVE) {
+        throw new ConflictError('È possibile ritirare un tentativo soltanto durante una prova attiva');
+      }
+      if (submission.attempt_status !== 'in_progress' || submission.status !== 'in_progress') {
+        throw new ConflictError('Solo un tentativo in corso può essere ritirato');
+      }
+      const responseCount = this.dbManager.prepare(`
+        SELECT COUNT(*) AS count FROM submission_responses WHERE submission_id = ?
+      `).get(submissionId).count;
+      const updated = this.dbManager.prepare(`
+        UPDATE assessment_submissions
+        SET attempt_status = 'teacher_withdrawn', status = ?,
+            submitted_at = COALESCE(submitted_at, ?), updated_at = ?
+        WHERE id = ? AND attempt_status = 'in_progress' AND status = 'in_progress'
+      `).run(SubmissionStatuses.WITHDRAWN_BY_TEACHER, now, now, submissionId);
+      if (updated.changes !== 1) throw new ConflictError('Il tentativo è cambiato prima del ritiro');
+      this._recordAssessmentAction({
+        assessmentId: assessment.id,
+        submissionId,
+        action: 'teacher_withdrawal',
+        actor: teacherPrincipal,
+        reason: reason.trim(),
+        idempotencyKey,
+        details: { preservedResponseCount: responseCount, lastSavedAt: submission.last_saved_at, revision: submission.revision },
+        createdAt: now
+      });
+      return this.getSubmission(submissionId);
+    });
+  }
 
-    // Unblock student credential
-    this.dbManager.prepare(`
-      UPDATE student_activity_credentials
-      SET status = 'active', updated_at = ?
-      WHERE assessment_id = ? AND student_id = ?
-    `).run(now, sub.assessment_id, sub.student_id);
+  reopenSubmission(submissionId, {
+    reason = '',
+    extraMinutes = 0,
+    idempotencyKey,
+    teacherPrincipal = 'teacher'
+  } = {}) {
+    if (typeof reason !== 'string' || !reason.trim()) {
+      throw new ValidationError('La motivazione della riapertura è obbligatoria');
+    }
+    const addedMinutes = Number(extraMinutes);
+    if (!Number.isInteger(addedMinutes) || addedMinutes < 0) {
+      throw new ValidationError('extraMinutes deve essere un numero intero non negativo');
+    }
+    this._validateActionKey(idempotencyKey);
+    const nowMs = Date.now();
+    const now = new Date(nowMs).toISOString();
 
-    return this.getStudentSubmission(sub.assessment_id, sub.student_id, { role: "teacher" });
+    return this.dbManager.transaction(() => {
+      const initial = this.dbManager.prepare('SELECT assessment_id FROM assessment_submissions WHERE id = ?').get(submissionId);
+      if (!initial) throw new NotFoundError('AssessmentSubmission', submissionId);
+      const assessment = this.getAssessment(initial.assessment_id);
+      const existingAction = this._findActionByKey(assessment.id, idempotencyKey, 'reopen', submissionId);
+      if (existingAction) return this.getSubmission(submissionId);
+      if (assessment.status !== AssessmentStatuses.ACTIVE) {
+        throw new ConflictError('La verifica deve essere attiva per riaprire il tentativo');
+      }
+      const sub = this.dbManager.prepare(`
+        SELECT * FROM assessment_submissions WHERE id = ? AND assessment_id = ?
+      `).get(submissionId, assessment.id);
+      if (!sub) throw new NotFoundError('AssessmentSubmission', submissionId);
+      if (!['submitted', 'teacher_withdrawn'].includes(sub.attempt_status) ||
+          !['submitted', 'graded', 'reviewed', 'withdrawn_by_teacher'].includes(sub.status)) {
+        throw new ConflictError('È possibile riaprire soltanto una consegna conclusa o ritirata dal docente');
+      }
+      const credential = this.dbManager.prepare(`
+        SELECT status, token_hash, token, expires_at FROM student_activity_credentials
+        WHERE assessment_id = ? AND student_id = ?
+      `).get(assessment.id, sub.student_id);
+      if (!credential || credential.status === 'revoked' ||
+          (!credential.token_hash && !credential.token) ||
+          !['active', 'submitted'].includes(credential.status) ||
+          new Date(credential.expires_at).getTime() <= nowMs) {
+        throw new ConflictError('Sessione studente assente o scaduta. Rinnova il codice e attendi che lo studente acceda prima di riaprire la prova.');
+      }
+
+      const duration = Number(assessment.duration_minutes) > 0 ? Number(assessment.duration_minutes) : 60;
+      const oldExtra = sub.extra_time_minutes || 0;
+      const startedMs = sub.started_at ? new Date(sub.started_at).getTime() : nowMs;
+      const oldDeadlineMs = startedMs + (duration + oldExtra) * 60 * 1000;
+      const expired = nowMs >= oldDeadlineMs;
+      if (expired && addedMinutes <= 0) {
+        throw new ConflictError('Il tempo originale è scaduto: specifica minuti aggiuntivi per poter riaprire il tentativo');
+      }
+      const newExtra = oldExtra + addedMinutes;
+      const newDeadlineMs = startedMs + (duration + newExtra) * 60 * 1000;
+      if (newDeadlineMs <= nowMs) {
+        throw new ConflictError('Il tempo aggiuntivo non copre la riapertura: specifica una durata sufficiente');
+      }
+
+      const oldFinalGrade = sub.final_grade;
+      const oldTeacherNotes = sub.teacher_notes;
+      const updated = this.dbManager.prepare(`
+        UPDATE assessment_submissions
+        SET attempt_status = 'in_progress', status = 'in_progress',
+            extra_time_minutes = ?, final_grade = NULL, teacher_notes = NULL,
+            reopened_at = ?, reopened_by = ?, reopen_reason = ?, updated_at = ?
+        WHERE id = ? AND assessment_id = ?
+          AND attempt_status IN ('submitted', 'teacher_withdrawn')
+      `).run(newExtra, now, teacherPrincipal, reason.trim(), now, submissionId, assessment.id);
+      if (updated.changes !== 1) throw new ConflictError('Il tentativo è cambiato prima della riapertura');
+      if (credential.status === 'submitted') {
+        this.dbManager.prepare(`
+          UPDATE student_activity_credentials SET status = 'active', updated_at = ?
+          WHERE assessment_id = ? AND student_id = ? AND status = 'submitted'
+        `).run(now, assessment.id, sub.student_id);
+      }
+      this._recordAssessmentAction({
+        assessmentId: assessment.id,
+        submissionId,
+        action: 'reopen',
+        actor: teacherPrincipal,
+        reason: reason.trim(),
+        idempotencyKey,
+        details: {
+          previousAttemptStatus: sub.attempt_status,
+          previousSubmissionStatus: sub.status,
+          previousSubmittedAt: sub.submitted_at,
+          previousExtraMinutes: oldExtra,
+          addedExtraMinutes: addedMinutes,
+          newExtraMinutes: newExtra,
+          previousFinalGrade: oldFinalGrade,
+          previousTeacherNotes: oldTeacherNotes
+        },
+        createdAt: now
+      });
+      return this.getSubmission(submissionId);
+    });
   }
 
 getLiveMonitoringData(assessmentId) {
@@ -1662,7 +2091,7 @@ getLiveMonitoringData(assessmentId) {
 
     const submissions = this.dbManager.prepare(`
       SELECT s.*,
-        (SELECT COUNT(*) FROM submission_responses r WHERE r.submission_id = s.id AND LENGTH(TRIM(r.response_text)) > 0) AS answered_count
+        (SELECT COUNT(*) FROM submission_responses r WHERE r.submission_id = s.id AND (LENGTH(TRIM(COALESCE(r.response_text, ''))) > 0 OR r.attachment_path IS NOT NULL)) AS answered_count
       FROM assessment_submissions s
       WHERE s.assessment_id = ?
     `).all(assessmentId);
@@ -1673,7 +2102,9 @@ getLiveMonitoringData(assessmentId) {
       const sub = submissionMap.get(student.id) || null;
       let status = "not_started";
       if (sub) {
-        if (sub.status === "graded" || sub.status === "reviewed") {
+        if (sub.attempt_status === "teacher_withdrawn" || sub.status === "withdrawn_by_teacher") {
+          status = "withdrawn";
+        } else if (sub.status === "graded" || sub.status === "reviewed") {
           status = "graded";
         } else if (sub.status === "submitted" || sub.attempt_status === "submitted") {
           status = "submitted";
@@ -1681,21 +2112,32 @@ getLiveMonitoringData(assessmentId) {
           status = "in_progress";
         }
       }
+      const durationMinutes = Number(asm.duration_minutes) > 0 ? Number(asm.duration_minutes) : 60;
+      const timerExpired = Boolean(sub?.started_at && status === "in_progress" &&
+        Date.now() >= new Date(sub.started_at).getTime() + (durationMinutes + (sub.extra_time_minutes || 0)) * 60 * 1000);
 
       return {
         studentId: student.id,
+        submissionId: sub?.id || null,
         firstName: student.first_name,
         lastName: student.last_name,
         fullName: `${student.last_name} ${student.first_name}`,
         status,
         answeredCount: sub?.answered_count || 0,
         totalItems: asm.itemCount || 0,
-        lastSavedAt: sub?.last_saved_at || sub?.updated_at || null,
+        // Only last_saved_at confirms a persisted student response. updated_at
+        // may reflect teacher actions and must not be represented as a save.
+        lastSavedAt: sub?.last_saved_at || null,
+        submittedAt: sub?.submitted_at || null,
+        revision: sub?.revision || 0,
+        extraTimeMinutes: sub?.extra_time_minutes || 0,
+        timerExpired,
+        operationalNote: timerExpired ? "Il timer è scaduto; il tentativo resta disponibile per verifica del docente." : null,
         seatRow: sub?.seat_row || null,
         seatDesk: sub?.seat_desk || null,
         leftNeighborName: sub?.left_neighbor_name || null,
         rightNeighborName: sub?.right_neighbor_name || null,
-        score: sub?.total_score || null,
+        score: sub?.total_score ?? null,
         proposedGrade: sub?.proposed_grade || null,
         finalGrade: sub?.final_grade || null
       };
@@ -1707,7 +2149,9 @@ getLiveMonitoringData(assessmentId) {
       notStarted: roster.filter(r => r.status === "not_started").length,
       inProgress: roster.filter(r => r.status === "in_progress").length,
       submitted: roster.filter(r => r.status === "submitted").length,
+      withdrawn: roster.filter(r => r.status === "withdrawn").length,
       graded: roster.filter(r => r.status === "graded").length,
+      expiredInProgress: roster.filter(r => r.timerExpired).length,
       avgAnswered: roster.length > 0 ? (roster.reduce((acc, s) => acc + s.answeredCount, 0) / roster.length).toFixed(1) : 0
     };
 

@@ -1323,9 +1323,16 @@ export function createMcpServer(service = new TeacherService(), { authorizeTeach
         type: "object",
         properties: {
           submissionId: { type: "string", description: "Submission ID to reopen" },
-          reason: { type: "string", description: "Pedagogical or technical reason for reopening" }
+          reason: { type: "string", description: "Pedagogical or technical reason for reopening" },
+          extraMinutes: { type: "integer", minimum: 0, description: "Optional additional time in minutes" },
+          idempotencyKey: {
+            type: "string",
+            minLength: 8,
+            maxLength: 128,
+            description: "Stable request identifier reused only when retrying this same reopen operation"
+          }
         },
-        required: ["submissionId"],
+        required: ["submissionId", "reason", "idempotencyKey"],
         additionalProperties: false
       }
     },
@@ -1638,6 +1645,8 @@ export function createMcpServer(service = new TeacherService(), { authorizeTeach
         case "reopen_submission":
           result = service.reopenSubmission(args.submissionId, {
             reason: args.reason,
+            extraMinutes: args.extraMinutes,
+            idempotencyKey: args.idempotencyKey,
             teacherPrincipal: actor.actorId || "teacher"
           });
           break;

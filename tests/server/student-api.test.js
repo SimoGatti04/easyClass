@@ -415,6 +415,47 @@ test('Student Public API & Teacher Live Monitor HTTP Suite', async (t) => {
       url: `/api/assessments/${testAssessment.id}/live-monitor`
     });
     assert.equal(res2.statusCode, 401);
+
+    const unauthenticatedTeacherActions = await Promise.all([
+      executeVirtualRequest({
+        method: 'POST',
+        url: `/api/assessments/${testAssessment.id}/submissions/${student1.id}/extra-time`,
+        body: { extraMinutes: 5, reason: 'negative auth test', idempotencyKey: 'negative-extra-time-0001' }
+      }),
+      executeVirtualRequest({
+        method: 'POST',
+        url: `/api/submissions/${testSubmissionId}/withdraw`,
+        body: { reason: 'negative auth test', idempotencyKey: 'negative-withdraw-0001' }
+      }),
+      executeVirtualRequest({
+        method: 'POST',
+        url: `/api/assessments/${testAssessment.id}/submissions/${testSubmissionId}/reopen`,
+        body: { reason: 'negative auth test', idempotencyKey: 'negative-reopen-0001' }
+      })
+    ]);
+    assert.deepEqual(unauthenticatedTeacherActions.map(result => result.statusCode), [401, 401, 401]);
+
+    const studentCannotOperateTeacherActions = await Promise.all([
+      executeVirtualRequest({
+        method: 'POST',
+        url: `/api/assessments/${testAssessment.id}/submissions/${student1.id}/extra-time`,
+        headers: { 'X-Student-Token': student1Token },
+        body: { extraMinutes: 5, reason: 'student attempt', idempotencyKey: 'student-extra-time-0001' }
+      }),
+      executeVirtualRequest({
+        method: 'POST',
+        url: `/api/submissions/${testSubmissionId}/withdraw`,
+        headers: { 'X-Student-Token': student1Token },
+        body: { reason: 'student attempt', idempotencyKey: 'student-withdraw-0001' }
+      }),
+      executeVirtualRequest({
+        method: 'POST',
+        url: `/api/assessments/${testAssessment.id}/submissions/${testSubmissionId}/reopen`,
+        headers: { 'X-Student-Token': student1Token },
+        body: { reason: 'student attempt', idempotencyKey: 'student-reopen-0001' }
+      })
+    ]);
+    assert.deepEqual(studentCannotOperateTeacherActions.map(result => result.statusCode), [401, 401, 401]);
   });
 
   await t.test('10. Teacher can view live monitoring with seat map and saved responses', async () => {
@@ -449,10 +490,11 @@ test('Student Public API & Teacher Live Monitor HTTP Suite', async (t) => {
         'Content-Type': 'application/json'
       },
       body: {
-        reason: 'Connessione Wi-Fi interrotta durante la prova'
+        reason: 'Connessione Wi-Fi interrotta durante la prova',
+        idempotencyKey: 'student-api-reopen-attempt-0001'
       }
     });
-    assert.equal(reopenRes.statusCode, 200);
+    assert.equal(reopenRes.statusCode, 200, JSON.stringify(reopenRes.body));
     assert.equal(reopenRes.body.submission.attempt_status, 'in_progress');
     assert.equal(reopenRes.body.submission.reopened_by, teacherPrincipal);
     assert.equal(reopenRes.body.submission.reopen_reason, 'Connessione Wi-Fi interrotta durante la prova');
@@ -981,9 +1023,7 @@ test('Student Public API & Teacher Live Monitor HTTP Suite', async (t) => {
   });
 
   await t.test("24. Duplicate & Rapid Concurrent Requests Handling", async () => {
-    // Reopen student 3 submission
-    const sub3 = service.getStudentSubmission(testAssessment.id, student3.id);
-    service.reopenSubmission(sub3.id, { reason: "Riapertura per test concorrenza" });
+    // Recover the revoked credential without modifying the in-progress submission.
     let s3Cred = service.listActivityCredentials(testAssessment.id).find(c => c.studentId === student3.id);
     const renewed = service.reissueActivityCredential(s3Cred.id, { reason: "Ripresa del test concorrente" });
     s3Cred = service.listActivityCredentials(testAssessment.id).find(c => c.studentId === student3.id);
@@ -1785,7 +1825,11 @@ test('Student Public API & Teacher Live Monitor HTTP Suite', async (t) => {
       method: "POST",
       url: `/api/assessments/${timedAsm.id}/submissions/${student1.id}/extra-time`,
       headers: { "Cf-Access-Jwt-Assertion": teacherToken },
-      body: { extraMinutes: 5 }
+      body: {
+        extraMinutes: 5,
+        reason: 'Richiesta sintetica di supporto tecnico',
+        idempotencyKey: 'student-api-extra-time-0001'
+      }
     });
     assert.equal(extraTimeRes.statusCode, 200);
     assert.equal(extraTimeRes.body.submission.extra_time_minutes, 5);

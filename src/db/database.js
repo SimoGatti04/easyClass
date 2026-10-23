@@ -68,6 +68,7 @@ export class DatabaseManager {
     ensureColumn('assessment_submissions', 'left_neighbor_name', 'TEXT DEFAULT NULL');
     ensureColumn('assessment_submissions', 'right_neighbor_id', 'TEXT DEFAULT NULL');
     ensureColumn('assessment_submissions', 'right_neighbor_name', 'TEXT DEFAULT NULL');
+    ensureColumn('evaluations', 'teacher_notes', 'TEXT DEFAULT NULL');
     ensureColumn('assessment_submissions', 'last_saved_at', 'TEXT DEFAULT NULL');
     ensureColumn('assessment_submissions', 'started_at', 'TEXT DEFAULT NULL');
     ensureColumn('assessment_submissions', 'extra_time_minutes', 'INTEGER DEFAULT 0');

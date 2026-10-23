@@ -214,9 +214,27 @@ test('Assessment Blueprint, Protected Solutions & Grading (Dossiers 05 & 06) Uni
     const allEvals = dbManager.prepare('SELECT * FROM evaluations WHERE submission_id = ? ORDER BY evaluation_round ASC').all(submission.id);
     assert.ok(allEvals.length >= 3);
     const round1 = allEvals.filter(e => e.evaluation_round === 1);
-    const roundReview = allEvals.filter(e => e.evaluation_round === 999);
+    const roundReview = allEvals.filter(e => e.evaluation_round > 1);
     assert.ok(round1.length >= 2, 'Round 1 evaluations preserved intact');
-    assert.ok(roundReview.length >= 1, 'Review override recorded as distinct evaluation');
+    assert.ok(roundReview.length >= 1, 'Review override recorded in a progressive evaluation round');
+    assert.equal(roundReview[0].evaluator, 'Prof.ssa Bianchi');
+
+    const savedReview = assessmentService.reviewGrading({
+      submissionId: submission.id,
+      reviewer: 'Prof.ssa Bianchi',
+      finalize: false,
+      itemOverrides: [{ itemId: itemOpen.id, score: 20, feedback: 'Seconda revisione' }]
+    });
+    assert.equal(savedReview.status, SubmissionStatuses.REVIEWED, 'an unfinished correction pass does not revoke the confirmed grade');
+    assert.equal(savedReview.final_grade, '8.5/10');
+    assert.equal(savedReview.total_score, 27, 'the confirmed total remains current until explicit re-finalization');
+    assert.equal(savedReview.teacher_notes, 'Ottima comprensione del principio di inerzia', 'question-level edits preserve prior teacher-only notes');
+
+    await assessmentService.gradeSubmission({ submissionId: submission.id, evaluator: 'AI-Assisted-Tutor', model: 'test-model' });
+    const afterRegrade = assessmentService.getSubmission(submission.id);
+    assert.equal(afterRegrade.status, SubmissionStatuses.REVIEWED);
+    assert.equal(afterRegrade.final_grade, '8.5/10', 'automatic regrading must not overwrite a teacher-confirmed grade');
+    assert.equal(afterRegrade.total_score, 27);
   });
 
   await t.test('export assessment results in CSV, JSON and Markdown', () => {
