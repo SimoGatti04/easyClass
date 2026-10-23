@@ -30,12 +30,13 @@ export class AssessmentService {
    * @param {import('../ai/omniroute-client.js').OmniRouteClient} omniRouteClient
    * @param {import('./ai-rule-service.js').AiRuleService} [aiRuleService]
    */
-  constructor(dbManager, materialService, omniRouteClient, aiRuleService = null, fileStore = null) {
+  constructor(dbManager, materialService, omniRouteClient, aiRuleService = null, fileStore = null, { allowExternalStudentGrading = process.env.TEACHER_SERVICE_ALLOW_EXTERNAL_STUDENT_GRADING === 'true' } = {}) {
     this.dbManager = dbManager;
     this.materialService = materialService;
     this.omniRouteClient = omniRouteClient;
     this.aiRuleService = aiRuleService;
     this.fileStore = fileStore;
+    this.allowExternalStudentGrading = Boolean(allowExternalStudentGrading);
   }
 
   /* -------------------------------------------------------------------------- */
@@ -761,6 +762,9 @@ export class AssessmentService {
           throw new ValidationError(`Item ${resp.item_id} contains only an attachment and requires teacher review`);
         }
         evalType = EvaluationTypes.AI_ASSISTED;
+        if (!this.allowExternalStudentGrading && this.omniRouteClient.mockOffline !== true) {
+          throw new AuthorizationError('External AI processing of student submissions is disabled until separately authorized by configuration');
+        }
         const gradingPrompt = [
           {
             role: 'system',

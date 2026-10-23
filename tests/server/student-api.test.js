@@ -751,6 +751,30 @@ test('Student Public API & Teacher Live Monitor HTTP Suite', async (t) => {
       assert.equal(item.rubric, null, "rubric must be null for student");
       assert.equal(item.rubric_json, null, "rubric_json must be null for student");
     }
+
+    const ownSubmission = await executeVirtualRequest({
+      method: "GET",
+      url: "/api/student/activities/" + testAssessment.id + "/submission",
+      headers: { "X-Student-Token": student1Token }
+    });
+    assert.equal(ownSubmission.statusCode, 200);
+    assert.equal(ownSubmission.body.submission.student_id, student1.id);
+    assert.ok(!JSON.stringify(ownSubmission.body).includes("TEACHER_SOLUTION"));
+    assert.ok(!Object.hasOwn(ownSubmission.body.submission, "teacher_notes"));
+    assert.ok(!Object.hasOwn(ownSubmission.body.submission, "final_grade"));
+
+    const studentIntegrityRoute = await executeVirtualRequest({
+      method: "GET",
+      url: "/api/student/activities/" + testAssessment.id + "/integrity-preview",
+      headers: { "X-Student-Token": student1Token }
+    });
+    assert.equal(studentIntegrityRoute.statusCode, 404, "student API must not expose comparative integrity reports");
+    const teacherIntegrityRoute = await executeVirtualRequest({
+      method: "GET",
+      url: "/api/assessments/" + testAssessment.id + "/integrity-preview",
+      headers: { "X-Student-Token": student1Token }
+    });
+    assert.equal(teacherIntegrityRoute.statusCode, 401, "student session must not authenticate teacher-only integrity routes");
   });
 
   await t.test("18. File upload security: Safe extensions accepted, dangerous/executable rejected", async () => {

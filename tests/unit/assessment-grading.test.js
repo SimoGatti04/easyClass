@@ -174,6 +174,26 @@ test('Assessment Blueprint, Protected Solutions & Grading (Dossiers 05 & 06) Uni
     assert.ok(updatedSub.proposed_grade);
   });
 
+  await t.test('external grading of student answers is denied unless explicitly configured', async () => {
+    let providerCalls = 0;
+    const guardedClient = {
+      mockOffline: false,
+      complete: async () => { providerCalls += 1; throw new Error('must not call provider'); }
+    };
+    const guardedService = new AssessmentService(
+      dbManager, materialService, guardedClient, undefined, undefined,
+      { allowExternalStudentGrading: false }
+    );
+    const before = dbManager.prepare('SELECT COUNT(*) AS n FROM evaluations WHERE submission_id = ?').get(submission.id).n;
+
+    await assert.rejects(
+      () => guardedService.gradeSubmission({ submissionId: submission.id, evaluator: 'synthetic-test' }),
+      (error) => error instanceof AuthorizationError
+    );
+    assert.equal(providerCalls, 0);
+    assert.equal(dbManager.prepare('SELECT COUNT(*) AS n FROM evaluations WHERE submission_id = ?').get(submission.id).n, before);
+  });
+
   await t.test('AI grading failures do not persist partial rounds or heuristic grades', async () => {
     const failingSubmission = assessmentService.importSubmission({
       assessmentId: assessment.id,

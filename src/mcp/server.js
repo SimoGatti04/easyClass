@@ -1065,11 +1065,13 @@ export function createMcpServer(service = new TeacherService(), { authorizeTeach
             items: {
               type: "object",
               properties: {
-                type: { type: "string", enum: ["multiple_choice", "open_short", "open_extended", "code", "problem_case"] },
+                type: { type: "string", enum: ["multiple_choice", "open_question", "open_short", "open_extended", "code", "attachment", "problem_case"] },
                 questionText: { type: "string" },
                 maxScore: { type: "number" },
                 rubricJson: { type: "object" },
                 teacherSolution: { type: "string" },
+                starterCode: { type: "string" },
+                language: { type: "string", description: "Programming language for code questions; structural comparison is lexical unless a parser is explicitly integrated." },
                 options: { type: "array", items: { type: "string" } },
                 isSelfCorrecting: { type: "boolean" },
                 assessableSourceId: { type: "string" },
@@ -1121,11 +1123,13 @@ export function createMcpServer(service = new TeacherService(), { authorizeTeach
         type: "object",
         properties: {
           assessmentId: { type: "string", description: "Assessment ID" },
-          type: { type: "string", enum: ["multiple_choice", "open_short", "open_extended", "code", "problem_case"] },
+          type: { type: "string", enum: ["multiple_choice", "open_question", "open_short", "open_extended", "code", "attachment", "problem_case"] },
           questionText: { type: "string" },
           maxScore: { type: "number" },
           rubricJson: { type: "object" },
           teacherSolution: { type: "string" },
+          starterCode: { type: "string" },
+          language: { type: "string", description: "Programming language for code questions; structural comparison is lexical unless a parser is explicitly integrated." },
           options: { type: "array", items: { type: "string" } },
           isSelfCorrecting: { type: "boolean" },
           assessableSourceId: { type: "string" },
@@ -1360,6 +1364,70 @@ export function createMcpServer(service = new TeacherService(), { authorizeTeach
           reason: { type: "string", description: "Reason for reissuing the credential" }
         },
         required: ["credentialId"],
+        additionalProperties: false
+      }
+    },
+    {
+      name: 'list_student_submissions',
+      description: 'Lists teacher-visible submission status and essential grading metadata without response text or teacher notes.',
+      annotations: { readOnlyHint: true, destructiveHint: false, openWorldHint: false },
+      inputSchema: {
+        type: 'object',
+        properties: { assessmentId: { type: 'string' } },
+        required: ['assessmentId'],
+        additionalProperties: false
+      }
+    },
+    {
+      name: 'get_submission_detail',
+      description: 'Retrieves a submission, its answers, item context, feedback, and evaluation history for the explicitly authorized teacher principal.',
+      annotations: { readOnlyHint: true, destructiveHint: false, openWorldHint: false },
+      inputSchema: {
+        type: 'object',
+        properties: { submissionId: { type: 'string' } },
+        required: ['submissionId'],
+        additionalProperties: false
+      }
+    },
+    {
+      name: 'grade_submission_ai',
+      description: 'Creates a non-final grading proposal through the existing grading service. Real student content is not sent to external AI unless TEACHER_SERVICE_ALLOW_EXTERNAL_STUDENT_GRADING is separately enabled; deterministic items need no external processing.',
+      annotations: { readOnlyHint: false, destructiveHint: false, openWorldHint: false },
+      inputSchema: {
+        type: 'object',
+        properties: {
+          submissionId: { type: 'string' },
+          model: { type: 'string', description: 'Optional configured OmniRoute model' }
+        },
+        required: ['submissionId'],
+        additionalProperties: false
+      }
+    },
+    {
+      name: 'analyze_integrity_evidence',
+      description: 'Runs a deterministic, local comparison of finalized submissions and exact published assessment sources. It emits interpretable observations only, never a probability or disciplinary conclusion.',
+      annotations: { readOnlyHint: true, destructiveHint: false, openWorldHint: false },
+      inputSchema: {
+        type: 'object',
+        properties: { assessmentId: { type: 'string' } },
+        required: ['assessmentId'],
+        additionalProperties: false
+      }
+    },
+    {
+      name: 'record_integrity_review',
+      description: 'Appends a teacher-only review state for an existing evidence record; it never changes grading or applies a sanction.',
+      annotations: { readOnlyHint: false, destructiveHint: false, openWorldHint: false },
+      inputSchema: {
+        type: 'object',
+        properties: {
+          assessmentId: { type: 'string' },
+          evidenceId: { type: 'string' },
+          decision: { type: 'string', enum: ['pending', 'reviewed_no_action', 'needs_follow_up'] },
+          note: { type: 'string' },
+          idempotencyKey: { type: 'string', minLength: 8, maxLength: 200 }
+        },
+        required: ['assessmentId', 'evidenceId', 'decision', 'idempotencyKey'],
         additionalProperties: false
       }
     }
@@ -1618,11 +1686,37 @@ export function createMcpServer(service = new TeacherService(), { authorizeTeach
         case "get_submission":
           result = service.getSubmission(args.submissionId);
           break;
+        case "get_submission_detail":
+          result = service.getSubmission(args.submissionId);
+          break;
         case "list_submissions":
           result = service.listSubmissions(args.assessmentId);
           break;
+        case "list_student_submissions":
+          result = service.listStudentSubmissions(args.assessmentId);
+          break;
         case "grade_submission":
           result = await service.gradeSubmission(args);
+          break;
+        case "grade_submission_ai":
+          result = await service.gradeSubmissionAi({
+            submissionId: args.submissionId,
+            model: args.model,
+            evaluator: actor.actorId || actor.principal || 'teacher'
+          });
+          break;
+        case "analyze_integrity_evidence":
+          result = service.analyzeIntegrityEvidence(args.assessmentId);
+          break;
+        case "record_integrity_review":
+          result = service.recordIntegrityReview({
+            assessmentId: args.assessmentId,
+            evidenceId: args.evidenceId,
+            decision: args.decision,
+            note: args.note,
+            idempotencyKey: args.idempotencyKey,
+            actor: actor.actorId || actor.principal
+          });
           break;
         case "review_grading":
           result = service.reviewGrading(args);

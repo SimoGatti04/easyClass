@@ -472,4 +472,25 @@ CREATE TABLE IF NOT EXISTS student_activity_credentials (
 CREATE INDEX IF NOT EXISTS idx_student_cred_assessment ON student_activity_credentials(assessment_id);
 CREATE INDEX IF NOT EXISTS idx_student_cred_code ON student_activity_credentials(access_code);
 CREATE INDEX IF NOT EXISTS idx_student_cred_token ON student_activity_credentials(token);
+
+-- Integrity decisions are teacher-only and append-only. Analysis reports are
+-- computed on demand; answer text is deliberately not persisted here.
+CREATE TABLE IF NOT EXISTS integrity_review_events (
+  id TEXT PRIMARY KEY,
+  assessment_id TEXT NOT NULL REFERENCES assessments(id) ON DELETE CASCADE,
+  evidence_id TEXT NOT NULL,
+  evidence_type TEXT NOT NULL,
+  item_id TEXT NOT NULL,
+  submission_ids_json TEXT NOT NULL,
+  analysis_version TEXT NOT NULL,
+  decision TEXT NOT NULL CHECK (decision IN ('pending', 'reviewed_no_action', 'needs_follow_up')),
+  note TEXT NOT NULL DEFAULT '',
+  actor TEXT NOT NULL,
+  idempotency_key TEXT NOT NULL,
+  created_at TEXT NOT NULL,
+  UNIQUE (assessment_id, evidence_id, idempotency_key)
+);
+
+CREATE INDEX IF NOT EXISTS idx_integrity_review_evidence
+  ON integrity_review_events(assessment_id, evidence_id, created_at);
 `;

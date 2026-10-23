@@ -1347,12 +1347,29 @@ async function handleRestApi(req, res, pathname, parsedUrl, service, authResult,
       return;
     }
 
-    // GET /api/assessments/:id/integrity-preview (Preview of integrity signals / seat adjacency)
+    // Teacher-only integrity analysis. Reports are computed on demand; the
+    // persisted record contains review decisions, not answer excerpts.
     if (pathname.match(/^\/api\/assessments\/([^/]+)\/integrity-preview$/) && req.method === 'GET') {
       const id = pathname.split('/')[3];
-      const integrityData = service.getIntegrityPreviewData(id);
-      res.writeHead(200);
-      res.end(JSON.stringify({ integrityPreview: integrityData }));
+      const integrityAnalysis = service.analyzeIntegrityEvidence(id);
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ integrityAnalysis }));
+      return;
+    }
+
+    if (pathname.match(/^\/api\/assessments\/([^/]+)\/integrity-reviews$/) && req.method === 'POST') {
+      const assessmentId = pathname.split('/')[3];
+      const review = service.recordIntegrityReview({
+        assessmentId,
+        evidenceId: parsedBody?.evidenceId,
+        decision: parsedBody?.decision,
+        note: parsedBody?.note,
+        idempotencyKey: parsedBody?.idempotencyKey,
+        actor: authResult.principal
+      });
+      const integrityAnalysis = service.analyzeIntegrityEvidence(assessmentId);
+      res.writeHead(201, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ review, integrityAnalysis }));
       return;
     }
 

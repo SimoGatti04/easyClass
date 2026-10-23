@@ -16,6 +16,7 @@ const testFiles = [
   'tests/unit/attachment-transport.test.js',
   'tests/unit/attachment-parsers.test.js',
   'tests/unit/assessment-grading.test.js',
+  'tests/unit/integrity-analysis.test.js',
   'tests/unit/teacher-authorization.test.js',
   'tests/mcp/mcp-server.test.js',
   'tests/mcp/attachment-mcp.test.js',

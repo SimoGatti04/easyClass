@@ -1,7 +1,7 @@
 # Teacher Service — Stato operativo
 
 **Aggiornato:** 2026-10-23 (Europe/Rome)
-**Fase attiva:** C5 completato localmente; C6 è il prossimo checkpoint PLANNED (Supervisione: ChatGPT)
+**Fase attiva:** C6 implementato e verificato localmente; C7 PLANNED (Supervisione: ChatGPT)
 **Perimetro:** Workspace locale `teacher-service-design`.
 **Fonte normativa:** `docs/` e decisioni del Domain Owner (13 ottobre 2026); **evidenze storiche:** `validation/results/`.
 
@@ -671,3 +671,29 @@ Risoluzione definitiva delle discrepanze individuate dalla revisione indipendent
 - **MCP:** mantenuto il servizio applicativo condiviso; aggiornato il contratto `reopen_submission` per motivazione, idempotency key e tempo aggiuntivo facoltativo. Nessuna modifica a endpoint o autenticazione OAuth MCP. Le nuove viste non introducono business logic MCP-only.
 - **Test eseguiti:** `pnpm test` — 24 suite passate, 150 test passati, 0 falliti, 1 test loopback opt-in saltato dalla policy sandbox; esecuzione isolata di `node --test tests/mcp/http-loopback-integration.test.js` con permesso loopback — 1/1 pass (protocollo locale, non ChatGPT remoto); `pnpm run test:browser:c4` — 1/1 pass; `pnpm run test:browser:c5` — 1/1 pass; ciascun browser test ha anche ricostruito la SPA. C5 ha usato dati sintetici, SQLite/FileStore temporanei e AI mock.
 - **Limiti:** viewport mobili/tablet verificati in Chromium simulato, non su dispositivi fisici; nessun invio di dati studente a provider esterni e nessun test AI live; nessuna modifica o verifica di produzione. C6 (analisi integrità e ampliamento MCP) è il prossimo checkpoint pianificato; nessun lavoro C6 incluso.
+
+## Checkpoint C6 — MCP Assessment & Integrity Evidence (23 ottobre 2026)
+
+**Stato:** implementato e verificato localmente sul branch `codex/teacher-service-c6`, derivato da C5 `b66a4da`; modifiche registrate nella cronologia Git locale, non pushate e non rilasciate. C7 resta **PLANNED**; nessuna modifica a produzione, Cloudflare, DNS, Tunnel, GHCR o K3s.
+
+### Funzionalità effettivamente implementate
+
+- **MCP assessment/grading:** aggiunti/completati `list_student_submissions(assessmentId)` (metadati senza risposte), `get_submission_detail(submissionId)` (dettaglio docente tramite `AssessmentService`), `grade_submission_ai(submissionId, model)` (proposta non finale), `analyze_integrity_evidence(assessmentId)` e `record_integrity_review(...)`. Restano riutilizzati i tool C5 per valutazione, revisione e export: non è stata duplicata la logica di grading. Le chiamate MCP continuano a richiedere un grant esplicito del teacher principal.
+- **Privacy del grading:** l'uso di un provider esterno per risposte reali è negato in assenza dell'opt-in `TEACHER_SERVICE_ALLOW_EXTERNAL_STUDENT_GRADING=true`; il default è disabilitato. I test usano adapter mock e dati sintetici.
+- **Analisi locale on-demand:** confronta soltanto consegne definitive, testo di risposta e codice testuale; usa le versioni dei materiali pubblicati esplicitamente associate ai quesiti. Risposte brevi, testo della traccia e sovrapposizioni con fonte didattica vengono esclusi o mostrati come contesto legittimo ove riconosciuti. Seat Map è soltanto contesto interpretativo, mai evidenza autonoma. Non sono emessi probabilità, verdetti di copiatura o sanzioni.
+- **Limiti misurabili:** il confronto testo è lessicale e non rileva parafrasi; il codice JavaScript/TypeScript/Python viene normalizzato lessicalmente, senza AST né analisi algoritmica. Gli altri linguaggi e gli allegati binari sono dichiarati non analizzati. Non è implementato un rilevatore autonomo di errori rari/codice superfluo né un confronto con fonti Web. Le attuali guardie sono euristiche fisse e non calibrate: confronto di frasi da 5 token con almeno 3 termini informativi, esclusione di identità testuali sotto 16 parole, minimo di 12 token per il confronto del codice. Non rappresentano una scala di rischio; vanno rivalutate con il Domain Owner prima di qualsiasi uso decisionale.
+- **Review e retention:** i report sono ricalcolati a richiesta e gli estratti non vengono persistiti. Il database conserva eventi append-only di review separati dal grading, con riferimenti a consegne/evidenza, versione dell'analisi, decisione, nota limitata, principal docente e idempotency key; non memorizza il contenuto delle risposte nel registro review.
+- **Dataset sintetico di controllo:** ripetizione di una frase distintiva in risposte estese e codice con identificatori rinominati producono osservazioni; risposta standard breve identica non ne produce; una coppia vicina con risposte diverse genera solo contesto Seat Map; una coppia lontana con risposte diverse resta controllo negativo. La versione Student Material pubblicata è riconosciuta come contesto legittimo e contenuti Teacher-only/soluzioni riservate non compaiono nel report.
+- **UI docente:** la scheda C6 usa le API HTTP protette esistenti per selezione classe/verifica, filtri per tipologia e review, confronto delle risposte e registrazione/consultazione dello storico decisionale. Non è una schermata demo; non modifica voto o condotta dello studente.
+
+### Moduli e verifiche
+
+- Moduli aggiornati: `src/services/integrity-analysis-service.js` (nuovo), `src/services/assessment-service.js`, `src/services/teacher-service.js`, `src/db/schema.js`, `src/server/http.js`, `src/mcp/server.js`, `client/src/components/IntegrityPreviewView.js`, `client/src/components/TeacherArea.js`, `client/app.css` e bundle `client/dist/`.
+- Test aggiunti/aggiornati: `tests/unit/integrity-analysis.test.js`, `tests/unit/assessment-grading.test.js`, `tests/browser/integrity-c6-browser.test.js`, `tests/server/student-api.test.js`, `tests/mcp/http-loopback-integration.test.js`, `tests/run-all.js` e `tests/unit/run-unit.js`.
+- `pnpm test`: **25 suite PASS, 0 FAIL** (incluse le regressioni C6); l'esito conclusivo è stato verificato localmente. Il test MCP Streamable HTTP su loopback è stato eseguito separatamente con autorizzazione di rete locale; tool discovery/invocazione, analisi/review e diniego REST anonimo verificati.
+- `pnpm run test:browser:c4`: **1 test PASS** (due studenti, viewport responsive, ripristino offline, allegati, timer e consegna); `pnpm run test:browser:c5`: **1 test PASS** (docente, monitoraggio, grading e export); `pnpm run test:browser:c6`: **1 test PASS** (dashboard reale, review persistita, diniego anonimo e viewport smartphone). E2E Chromium locale con database/FileStore sintetici isolati; nessun dispositivo fisico.
+- Build Vite: **PASS**, 32 moduli trasformati. Nessun provider AI/Web reale e nessuna connessione remota ChatGPT sono stati usati o dichiarati.
+
+### Readiness e lavoro residuo
+
+C6 soddisfa localmente il flusso minimo MCP/UI per consultare consegne, ottenere proposte di grading non definitive e registrare review di evidenze comparative. È possibile avviare **C7 come checkpoint di verifica**, non come rilascio: il gate dovrà rivalutare le euristiche fisse, confermare i controlli di autorizzazione/runtime e decidere esplicitamente se AST/semantica, fonti Web, allegati e analisi degli errori rari restano fuori perimetro o debbano precedere il rilascio. ChatGPT remoto e sistemi produttivi non sono stati testati in questo checkpoint.

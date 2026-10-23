@@ -2493,3 +2493,67 @@ select:focus, input:focus, textarea:focus {
   .submission-summary-main,
   .submission-summary-actions { align-items: flex-start; flex-direction: column; }
 }
+
+/* C6 — teacher-only integrity review workspace */
+.integrity-page { display: grid; gap: 1rem; width: min(100%, 1180px); margin: 0 auto; padding: 1rem; }
+.integrity-intro { display: grid; gap: 1rem; padding: clamp(1rem, 2.5vw, 1.6rem); }
+.integrity-intro-heading { display: flex; gap: 1rem; align-items: flex-start; }
+.integrity-symbol { display: grid; place-items: center; flex: 0 0 3rem; width: 3rem; height: 3rem; border-radius: 1rem; background: var(--primary-light); color: var(--primary); font-size: 1.7rem; font-weight: 800; }
+.integrity-intro h1 { margin: 0.1rem 0 0.25rem; font-size: clamp(1.5rem, 3vw, 2.1rem); line-height: 1.2; }
+.integrity-intro .text-muted { max-width: 70ch; }
+.integrity-principle { padding: 0.8rem 1rem; border: 1px solid #f3d28a; border-radius: var(--radius-md); background: var(--warning-light); color: #713f12; font-size: 0.9rem; }
+.integrity-controls { padding: 1rem; }
+.integrity-controls-grid { display: grid; grid-template-columns: minmax(180px, 0.8fr) minmax(260px, 1.5fr) auto; gap: 0.85rem; align-items: end; }
+.integrity-controls .form-group, .integrity-filter-row .form-group, .integrity-review-form .form-group { margin: 0; min-width: 0; }
+.integrity-refresh { min-height: 42px; }
+.integrity-report { display: grid; gap: 1rem; min-width: 0; }
+.integrity-summary { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.8rem; }
+.integrity-summary-card { display: grid; gap: 0.2rem; padding: 1rem; color: var(--text-muted); }
+.integrity-summary-card strong { color: var(--text-main); font-size: 1.6rem; }
+.integrity-evidence-section, .integrity-context-section, .integrity-limitations { display: grid; gap: 1rem; padding: clamp(0.9rem, 2vw, 1.25rem); }
+.integrity-section-heading { display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem; }
+.integrity-section-heading h2, .integrity-limitations h2 { font-size: 1.12rem; margin: 0 0 0.2rem; }
+.integrity-filter-row { display: grid; grid-template-columns: repeat(2, minmax(180px, 1fr)); gap: 0.75rem; max-width: 650px; }
+.integrity-evidence-list, .integrity-context-list { display: grid; gap: 0.85rem; }
+.integrity-evidence-card { display: grid; gap: 0.8rem; min-width: 0; padding: 1rem; border: 1px solid var(--border); border-radius: var(--radius-md); background: #fff; box-shadow: var(--shadow-sm); }
+.integrity-evidence-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 0.8rem; }
+.integrity-evidence-header h3 { margin-top: 0.45rem; font-size: 1rem; line-height: 1.4; overflow-wrap: anywhere; }
+.integrity-status-badge { flex: 0 0 auto; padding: 0.25rem 0.55rem; border: 1px solid var(--border); border-radius: 999px; color: var(--secondary); background: var(--bg-subtle); font-size: 0.75rem; }
+.integrity-participants { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.65rem; }
+.integrity-participant { min-width: 0; display: grid; gap: 0.35rem; padding: 0.75rem; border-radius: var(--radius-sm); background: var(--bg-subtle); }
+.integrity-participant p { max-height: 9rem; overflow: auto; white-space: pre-wrap; overflow-wrap: anywhere; font-family: var(--font-mono); font-size: 0.82rem; }
+.integrity-observation, .integrity-method, .integrity-interpretation, .integrity-context-note { overflow-wrap: anywhere; }
+.integrity-method, .integrity-interpretation, .integrity-context-note { font-size: 0.86rem; color: var(--text-muted); }
+.integrity-interpretation { padding: 0.7rem 0.8rem; border-left: 3px solid var(--primary); background: var(--primary-light); color: #1e3a8a; }
+.integrity-review-form { display: grid; grid-template-columns: minmax(170px, 0.8fr) minmax(220px, 1.4fr) auto; gap: 0.7rem; align-items: end; padding-top: 0.8rem; border-top: 1px solid var(--border); }
+.integrity-note-field textarea { display: block; width: 100%; min-height: 2.9rem; resize: vertical; padding: 0.65rem 0.75rem; border: 1px solid var(--border-strong); border-radius: var(--radius-sm); font: inherit; font-size: 0.86rem; }
+.integrity-note-field textarea:focus { outline: 2px solid var(--primary); outline-offset: 1px; }
+.integrity-history { color: var(--text-muted); font-size: 0.82rem; }
+.integrity-history summary { cursor: pointer; font-weight: 700; color: var(--secondary); }
+.integrity-history ol { display: grid; gap: 0.3rem; padding: 0.7rem 0 0 1.25rem; overflow-wrap: anywhere; }
+.integrity-empty { padding: 1.2rem; border: 1px dashed var(--border-strong); border-radius: var(--radius-md); color: var(--text-muted); text-align: center; }
+.integrity-empty p { margin-top: 0.3rem; }
+.integrity-source-context { display: grid; grid-template-columns: minmax(120px, 0.7fr) minmax(180px, 1fr); gap: 0.35rem 0.8rem; padding: 0.8rem; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--success-light); }
+.integrity-source-context p, .integrity-source-context small { grid-column: 1 / -1; overflow-wrap: anywhere; }
+.integrity-source-context small { color: var(--text-muted); }
+.integrity-seat-list, .integrity-limitations ul { display: grid; gap: 0.45rem; padding-left: 1.2rem; color: var(--text-muted); font-size: 0.88rem; }
+.integrity-policy { padding-top: 0.7rem; border-top: 1px solid var(--border); font-size: 0.9rem; font-weight: 600; }
+
+@media (max-width: 900px) {
+  .integrity-controls-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .integrity-refresh { grid-column: 1 / -1; justify-self: start; }
+  .integrity-review-form { grid-template-columns: minmax(0, 1fr) minmax(0, 1.5fr); }
+  .integrity-review-form .btn { grid-column: 1 / -1; justify-self: start; }
+}
+@media (max-width: 640px) {
+  .integrity-page { padding: 0.6rem; gap: 0.75rem; }
+  .integrity-intro-heading { gap: 0.7rem; }
+  .integrity-symbol { flex-basis: 2.5rem; width: 2.5rem; height: 2.5rem; }
+  .integrity-controls-grid, .integrity-summary, .integrity-filter-row, .integrity-participants, .integrity-review-form { grid-template-columns: 1fr; }
+  .integrity-refresh, .integrity-review-form .btn { width: 100%; grid-column: auto; }
+  .integrity-evidence-header { flex-direction: column; }
+  .integrity-source-context { grid-template-columns: 1fr; }
+  .integrity-source-context p, .integrity-source-context small { grid-column: auto; }
+  .integrity-section-heading { flex-direction: column; }
+  .integrity-summary-card { padding: 0.75rem; }
+}

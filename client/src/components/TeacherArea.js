@@ -45,7 +45,7 @@ export function TeacherArea({ onNavigate }) {
     },
     {
       label: 'Checkpoint successivo',
-      items: [{ id: 'integrity', label: 'Anteprima integrità · C6', icon: '◇' }]
+      items: [{ id: 'integrity', label: 'Integrità ed evidenze', icon: '◇' }]
     }
   ];
   const navItems = navGroups.flatMap(group => group.items);

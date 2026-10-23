@@ -22,6 +22,7 @@ import { AiRuleService } from './ai-rule-service.js';
 import { SourceService } from './source-service.js';
 import { FileService } from './file-service.js';
 import { AssessmentService } from './assessment-service.js';
+import { IntegrityAnalysisService } from './integrity-analysis-service.js';
 import { GenerationService } from './generation-service.js';
 
 export class TeacherService {
@@ -38,6 +39,7 @@ export class TeacherService {
     omniRouteClient = null,
     webResearchClient = null,
     mockAi = false,
+    allowExternalStudentGrading = process.env.TEACHER_SERVICE_ALLOW_EXTERNAL_STUDENT_GRADING === 'true',
     fileServiceOptions = {}
   } = {}) {
     this.dbManager = dbManager || createProductionDatabase();
@@ -53,7 +55,8 @@ export class TeacherService {
     this.webResearch = webResearchClient || new WebResearchClient();
     this.sources = new SourceService(this.dbManager, this.materials, this.org, this.webResearch);
     this.fileService = new FileService(this.materials, this.fileStore, fileServiceOptions);
-    this.assessments = new AssessmentService(this.dbManager, this.materials, this.ai, this.aiRules, this.fileStore);
+    this.assessments = new AssessmentService(this.dbManager, this.materials, this.ai, this.aiRules, this.fileStore, { allowExternalStudentGrading });
+    this.integrity = new IntegrityAnalysisService({ dbManager: this.dbManager, assessmentService: this.assessments, materialService: this.materials });
     this.generation = new GenerationService(this.ai, this.materials, this.org, this.aiRules, this.assessments, this.sources);
     this._activeArtifactLocks = new Set();
   }
@@ -198,7 +201,25 @@ export class TeacherService {
   importSubmission(data) { return this.assessments.importSubmission(data); }
   getSubmission(id) { return this.assessments.getSubmission(id); }
   listSubmissions(assessmentId) { return this.assessments.listSubmissions(assessmentId); }
+  listStudentSubmissions(assessmentId) {
+    return this.assessments.listSubmissions(assessmentId).map((submission) => ({
+      id: submission.id,
+      assessment_id: submission.assessment_id,
+      student_id: submission.student_id,
+      student_name: submission.student_name,
+      submitted_at: submission.submitted_at,
+      attempt_status: submission.attempt_status,
+      last_saved_at: submission.last_saved_at,
+      revision: submission.revision,
+      status: submission.status,
+      proposed_grade: submission.proposed_grade,
+      final_grade: submission.final_grade
+    }));
+  }
   gradeSubmission(data) { return this.assessments.gradeSubmission(data); }
+  gradeSubmissionAi({ submissionId, model, evaluator = 'teacher-ai' }) {
+    return this.assessments.gradeSubmission({ submissionId, model, evaluator });
+  }
   reviewGrading(data) { return this.assessments.reviewGrading(data); }
   exportAssessmentResults(assessmentId, format) { return this.assessments.exportAssessmentResults(assessmentId, format); }
 
@@ -549,6 +570,9 @@ export class TeacherService {
   getStudentSubmission(assessmentId, studentId) { return this.assessments.getStudentSubmission(assessmentId, studentId); }
   saveDraftSubmission(params) { return this.assessments.saveDraftSubmission(params); }
   getLiveMonitoringData(assessmentId) { return this.assessments.getLiveMonitoringData(assessmentId); }
-  getIntegrityPreviewData(assessmentId) { return this.assessments.getIntegrityPreviewData(assessmentId); }
+  analyzeIntegrityEvidence(assessmentId) { return this.integrity.analyzeAssessment(assessmentId); }
+  recordIntegrityReview(data) { return this.integrity.recordReview(data); }
+  getIntegrityReviewHistory(assessmentId, evidenceId) { return this.integrity.getReviewHistory(assessmentId, evidenceId); }
+  getIntegrityPreviewData(assessmentId) { return this.analyzeIntegrityEvidence(assessmentId); }
 
 }

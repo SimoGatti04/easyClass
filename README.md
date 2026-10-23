@@ -15,10 +15,15 @@ grading while preserving teacher control and provenance.
   portale-classi PostgreSQL/uploads. Do not restart or reconnect those runtimes.
   The repository's local `.env.local` and local SQLite remain for development
   only.
-- **CURRENT — local product UI:** C3/C4 student flows and the C5 teacher
-  workspace (activity queues, live monitoring, submissions, grading and results)
-  are implemented and locally verified. C5 has not been released to production.
-- **PLANNED — C6:** integrity-evidence analysis and expanded MCP workflows.
+- **CURRENT — local product UI:** C3/C4 student flows, the C5 teacher
+  workspace, and the C6 integrity-evidence review view are implemented and
+  locally verified. C5/C6 have not been released to production.
+- **CURRENT — C6 local capability:** teacher-only MCP submission listing/detail,
+  AI grading proposals, deterministic integrity comparisons, and append-only
+  teacher review decisions. C6 is explicitly limited to lexical code comparison
+  and exact published assessment-source versions; see `STATUS.md` for gaps.
+- **PLANNED — C7:** production-route/runtime verification and any separately
+  authorized release decision.
 
 ## Current capabilities
 
@@ -29,6 +34,10 @@ grading while preserving teacher control and provenance.
   provenance through the OmniRoute adapter.
 - Assessment blueprints, protected teacher solutions, student submissions,
   grading proposals, teacher review, and exports.
+- Teacher-only integrity evidence generated on demand from finalized submissions,
+  including textual/code comparisons, published-source context, Seat Map context,
+  interpretable limitations, and a separate review history. The analysis is not
+  a misconduct finding and never applies a sanction.
 - MCP stdio and Streamable HTTP transports with Cloudflare Access identity
   verification and a separate explicit teacher allowlist.
 

@@ -182,7 +182,8 @@ test('loopback Streamable HTTP MCP supports mapped teacher CRUD, contextual gene
     'create_class', 'create_subject', 'create_lesson', 'create_material', 'get_material',
     'set_ai_rule', 'resolve_effective_ai_rules', 'search_sources', 'search_web_sources',
     'generate_lesson_plan', 'revise_material', 'get_source_history', 'generate_assessment_draft',
-    'grade_submission', 'publish_material', 'unpublish_material'
+    'grade_submission', 'list_student_submissions', 'get_submission_detail', 'grade_submission_ai',
+    'analyze_integrity_evidence', 'record_integrity_review', 'publish_material', 'unpublish_material'
   ]) assert.ok(toolNames.includes(name), `tools/list omitted ${name}`);
 
   const restAllowed = await fetch(`${baseUrl}/api/materials`, { headers: { 'Cf-Access-Jwt-Assertion': teacherJwt } });
@@ -263,6 +264,71 @@ test('loopback Streamable HTTP MCP supports mapped teacher CRUD, contextual gene
   assert.equal(generationRequests.length, 2);
   assert.equal((await callTool('get_material', { id: generated.material.id, versionNumber: 1 })).selected_version, 1);
   assert.equal((await callTool('get_material', { id: generated.material.id, versionNumber: 2 })).sourceSet.version_number, 2);
+
+  // C6: execute assessment, grading, and integrity tools through the real
+  // authenticated Streamable HTTP transport using synthetic learner work.
+  const integritySource = await callTool('create_material', {
+    title: 'Dispensa sintetica C6',
+    contentText: 'Una chiave primaria identifica in modo univoco ogni riga. Il registro secondario collega due tabelle tramite valori corrispondenti.',
+    pedagogicalRole: 'student_material', classId: classRecord.id, subjectId: subject.id, lessonId: lesson.id
+  });
+  await callTool('publish_material', { resourceId: integritySource.id, versionNumber: 1 });
+  const c6Assessment = await callTool('create_assessment', {
+    title: 'Attività sintetica C6', classId: classRecord.id, subjectId: subject.id, lessonId: lesson.id, maxScore: 10
+  });
+  const c6OpenItem = await callTool('add_assessment_item', {
+    assessmentId: c6Assessment.id, type: 'open_extended', questionText: 'Descrivi un comportamento anomalo nel trasferimento.',
+    maxScore: 5, teacherSolution: 'Soluzione riservata al docente.', assessableSourceId: integritySource.id, assessableSourceVersion: 1
+  });
+  const c6CodeItem = await callTool('add_assessment_item', {
+    assessmentId: c6Assessment.id, type: 'code', questionText: 'Scrivi una funzione per sommare i valori di una lista.',
+    maxScore: 5, language: 'javascript', starterCode: '', teacherSolution: 'Implementazione con ciclo o reduce.',
+    assessableSourceId: integritySource.id, assessableSourceVersion: 1
+  });
+  const c6Responses = [
+    { itemId: c6OpenItem.id, responseText: 'Nel passaggio il cursore supera la soglia viola, altera il registro circolare e lascia il buffer con un valore residuo inatteso.' },
+    { itemId: c6CodeItem.id, responseText: 'function calculate(values) { let result = 0; for (let index = 0; index < values.length; index++) { result += values[index]; } return result; }' }
+  ];
+  const c6SubmissionA = await callTool('import_submission', {
+    assessmentId: c6Assessment.id, studentId: 'synthetic-c6-a', studentName: 'Studente Demo A', responses: c6Responses
+  });
+  const c6SubmissionB = await callTool('import_submission', {
+    assessmentId: c6Assessment.id, studentId: 'synthetic-c6-b', studentName: 'Studente Demo B', responses: [
+      { itemId: c6OpenItem.id, responseText: 'Il cursore supera la soglia viola e il registro circolare viene alterato, lasciando nel buffer un valore residuo inatteso prima del completamento.' },
+      { itemId: c6CodeItem.id, responseText: 'function sum(items) { let total = 0; for (let i = 0; i < items.length; i++) { total += items[i]; } return total; }' }
+    ]
+  });
+  const submissionList = await callTool('list_student_submissions', { assessmentId: c6Assessment.id });
+  assert.equal(submissionList.length, 2);
+  assert.ok(submissionList.every((item) => !Object.hasOwn(item, 'responses')), 'list operation must not expose response text');
+  const submissionDetail = await callTool('get_submission_detail', { submissionId: c6SubmissionA.id });
+  assert.equal(submissionDetail.responses.length, 2);
+
+  const integrityReport = await callTool('analyze_integrity_evidence', { assessmentId: c6Assessment.id });
+  assert.ok(integrityReport.evidence.some((entry) => entry.itemId === c6OpenItem.id || entry.itemId === c6CodeItem.id));
+  assert.equal(integrityReport.scope.submittedAttempts, 2);
+  const c6Evidence = integrityReport.evidence[0];
+  assert.ok(c6Evidence, 'synthetic pair should produce an interpretable evidence record');
+  await callTool('record_integrity_review', {
+    assessmentId: c6Assessment.id, evidenceId: c6Evidence.id, decision: 'reviewed_no_action',
+    note: 'Controllo MCP sintetico.', idempotencyKey: 'mcp-c6-review-0001'
+  });
+  const reviewedReport = await callTool('analyze_integrity_evidence', { assessmentId: c6Assessment.id });
+  assert.equal(reviewedReport.evidence.find((entry) => entry.id === c6Evidence.id).review.decision, 'reviewed_no_action');
+
+  // Explicitly flip the injected test adapter into its documented offline mock
+  // mode; this proves proposal plumbing without sending synthetic student work
+  // to a real AI provider or altering a final teacher grade.
+  service.ai.mockOffline = true;
+  const proposal = await callTool('grade_submission_ai', { submissionId: c6SubmissionA.id, model: 'mock/c6-grading' });
+  assert.equal(proposal.submissionId, c6SubmissionA.id);
+  assert.ok(proposal.evaluationRound >= 1);
+  const gradedDetail = await callTool('get_submission_detail', { submissionId: c6SubmissionA.id });
+  assert.equal(gradedDetail.final_grade, null, 'AI grading must remain a proposal, not a final grade');
+  assert.ok(gradedDetail.proposed_grade);
+
+  assert.equal((await fetch(`${baseUrl}/api/assessments/${encodeURIComponent(c6Assessment.id)}/integrity-preview`)).status, 401,
+    'teacher-only integrity REST route must reject unauthenticated clients');
 
   const hijack = await postMcp({ jsonrpc: '2.0', method: 'tools/list', id: 99, params: {} }, { jwt: secondTeacherJwt, session: sessionId });
   assert.equal(hijack.response.status, 403, 'a different mapped teacher must not reuse another principal’s session');

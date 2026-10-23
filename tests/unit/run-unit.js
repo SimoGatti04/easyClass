@@ -13,6 +13,7 @@ const files = [
   'tests/unit/attachment-transport.test.js',
   'tests/unit/attachment-parsers.test.js',
   'tests/unit/assessment-grading.test.js',
+  'tests/unit/integrity-analysis.test.js',
   'tests/unit/teacher-authorization.test.js'
 ];
 for (const file of files) {

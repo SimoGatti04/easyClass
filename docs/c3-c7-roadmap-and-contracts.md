@@ -43,12 +43,12 @@ Il sistema Teacher Service si estende oltre la preparazione lezioni ("Tomorrow i
 | **Registro Studenti (Docente)** | **CURRENT** | Inserimento singolo, importazione massiva un nominativo per riga, rimozione. |
 | **Monitoraggio Live d'Aula (Seat Map & Roster)** | **CURRENT** | Seat Map e roster, presenti/non iniziati/in corso/consegnati/ritirati, timestamp ultimo autosave confermato dal server, conteggio risposte, stato timer e segnalazione singola delle nuove consegne; polling ogni 10s. Assenza di aggiornamenti non è interpretata come inattività o condotta scorretta. |
 | **Gestione Consegne e Revisione Voto Docente (C5)** | **CURRENT** | Correzione per studente e per quesito, punteggi/feedback/note, proposte deterministiche/AI non definitive, conferma docente, cronologia non distruttiva, statistiche e export CSV/JSON/Markdown. Le metriche usano soltanto voti definitivi confermati e dichiarano il denominatore. |
-| **Anteprima Architettura Integrità (C6)** | **CURRENT (DEMO/UI)** | Scheda illustrativa/disclaimer e anteprima limitata; non equivale a confronto completo, Integrity Evidence operativa o giudizio automatico. |
+| **Integrity Evidence & UI Docente (C6)** | **CURRENT — LOCALE** | Vista funzionale collegata alle API protette: evidenze on-demand, filtri per tipo/revisione, confronto contestuale di risposte, review docente append-only. Nessuna decisione o sanzione automatica; non rilasciato in produzione. |
 | **Ambiente di Anteprima Locale Isolato (`pnpm dev:preview`)** | **CURRENT** | Esecuzione locale e su LAN Wi-Fi (0.0.0.0), storage isolato in `.tmp/dev-preview/`, seed dati dimostrativi, cleanup sicuro. |
 | **Test browser C4** | **CURRENT** | Flusso Playwright reale su Chromium locale con due studenti e viewport mobile/tablet/desktop, autosave, interruzione/ripristino offline, timer, allegati e verifica docente. Emulazione viewport, non collaudo su dispositivi fisici. |
 | **Test browser C5** | **CURRENT** | Flusso Playwright reale su frontend e HTTP locale: docente crea/attiva, due studenti lavorano, monitoraggio, tempo extra idempotente, consegna, ritiro/riapertura, correzione per quesito, conferma voti, statistiche ed export; viewport desktop/tablet/mobile. Dati SQLite/FileStore sintetici isolati e AI mock. |
 | **Operazioni Docente Durante la Prova (C5)** | **CURRENT** | Tempo extra configurabile e azione rapida; ritiro docente distinto dalla consegna volontaria; riapertura con motivazione e controllo di scadenza/sessione. Operazioni idempotenti, condizionali e registrate nell'audit; nessuna risposta già salvata viene eliminata. |
-| **Valutazione Comparativa MCP & Analisi Semantica AST (C6)** | **PLANNED** | Tool MCP dedicati per analisi di similarità strutturale su codice e testi, incroci con Seat Map. |
+| **MCP Assessment & Integrity Evidence (C6)** | **CURRENT — LOCALE** | Tool teacher-authorized per elenco/dettaglio consegne, proposta di grading AI non finale, analisi deterministica e registrazione della review. Il confronto codice è lessicale (JavaScript/TypeScript/Python), non AST; semantica, Web e allegati non sono analizzati. |
 | **Deployment e Rilascio Infrastrutturale K3s (C7)** | **PLANNED** | Verifica su ingress cluster K3s, aggiornamento manifesti se necessario, test in ambiente reale. |
 | **Proctoring Invasivo / Tracciamento Webcam / Keylogger** | **DEPRECATED / PROHIBITED** | Rigorosamente escluso e vietato da policy etica e normativa scolastica. |
 | **Vecchia Dashboard Monolitica T1 senza schede** | **DEPRECATED** | Sostituita dal router e dalla shell modulare multi-scheda. |
@@ -78,20 +78,22 @@ Il sistema Teacher Service si estende oltre la preparazione lezioni ("Tomorrow i
 - **Correzione:** modalità per studente e per quesito. Override di punteggio per quesito, feedback, annotazioni e voto finale con history progressiva; le proposte automatiche/AI non finalizzano il voto e una valutazione definitiva non viene sovrascritta da elaborazioni successive. Le statistiche includono conteggi, media, deviazione standard di popolazione e distribuzione, usando soltanto voti definitivi confermati e riportando il denominatore. Export CSV, JSON e Markdown riutilizza il servizio applicativo.
 - **Verifica browser:** `pnpm run test:browser:c5` esercita il frontend reale e il server HTTP con due studenti sintetici, azioni docente, correzione, conferma, statistiche ed export a viewport desktop/tablet/mobile; SQLite e FileStore sono sotto `.tmp/dev-preview/` e vengono rimossi dal test. AI mock solo per questo test.
 
-### Checkpoint C6 — Estensioni MCP, Confronti Semantici/Strutturali, Integrity Evidence & Fonti
-- **Obiettivo**: Esporre le funzionalità di assessment, monitoraggio e analisi anticopiatura a ChatGPT tramite MCP.
-- **Contratti Tool MCP**:
-  - `list_student_submissions(assessmentId)`: recupera le consegne per l'attività.
-  - `get_submission_detail(submissionId)`: recupera il dettaglio completo con risposte e soluzioni docente.
-  - `grade_submission_ai(submissionId, model)`: esegue la correzione automatica assistita.
-  - `analyze_integrity_evidence(assessmentId)`: esegue la scansione incrociata su 5 pilastri:
-    1. *Seat Map Proximity*: confronta risposte tra banchi vicini (stessa fila, banchi adiacenti, dichiarazioni reciproche).
-    2. *Rare Errors & Superfluous Code*: evidenzia errori specifici non comuni o porzioni di codice/commenti identici non richiesti.
-    3. *AST & Semantic Similarity*: calcola indici di similarità strutturale su codice e similarità concettuale su testo libero.
-    4. *Curriculum & Web Grounding*: verifica se passaggi di testo provengono verbatim da dispense di classe o fonti web.
-    5. *Teacher Reserved Audit Log*: genera report riservato per il docente con raccomandazioni, senza sanzioni automatiche.
-- **Invarianti di Sicurezza**:
-  - Zero allucinazioni su fonti esterne; nessun invio di dati personali degli studenti a servizi non conformi GDPR.
+### Checkpoint C6 — MCP Assessment & Integrity Evidence
+
+**Stato: CURRENT — implementato e verificato localmente; nessun rilascio produttivo.** Il ramo di lavoro C6 è derivato dal commit C5 `b66a4da`; i dettagli finali di commit sono riportati in `STATUS.md`.
+
+- **Contratti MCP esposti dal server esistente:**
+  - `list_student_submissions(assessmentId)`: metadati/stato di ogni consegna senza testo delle risposte o note interne.
+  - `get_submission_detail(submissionId)`: dettaglio per il docente autorizzato, riusando il servizio assessment.
+  - `grade_submission_ai(submissionId, model)`: proposta tramite il grading esistente; non promuove la proposta a voto definitivo. L’invio a un provider esterno dei contenuti delle risposte resta disabilitato salvo opt-in esplicito di configurazione.
+  - `analyze_integrity_evidence(assessmentId)`: confronto locale on-demand dei tentativi definitivi e delle fonti di valutabilità associate.
+  - `record_integrity_review(assessmentId, evidenceId, decision, idempotencyKey)`: decisione docente append-only, distinta dal grading e senza conseguenze disciplinari automatiche.
+- Tutte le invocazioni MCP e le nuove route HTTP passano l’autorizzazione teacher-principal già esistente; autenticazione senza grant docente non basta. Le API studente non restituiscono report, risposte altrui, rubriche o soluzioni riservate.
+- **Evidence implementate:** similarità testuale per risposte estese con estratti minimi; confronto lessicale normalizzato del codice per JavaScript, TypeScript e Python; contesto di prossimità Seat Map; sovrapposizione legittima con la specifica versione Student/Support Material pubblicata e associata al quesito. Risposte brevi, traccia e porzioni di fonte sono escluse dalle osservazioni comparative ove riconosciute. Le fonti esterne non vengono consultate e i contenuti non sono inviati a ricerca Web o AI durante l’analisi.
+- **Persistenza e minimizzazione:** i report vengono ricalcolati on-demand e non persistono gli estratti delle risposte. Sono persistiti soltanto eventi di review con ID/versione analisi, riferimenti alle consegne, decisione, nota limitata, principal, timestamp e chiave idempotente.
+- **Limiti espliciti (PLANNED/non implementati):** parser AST, confronto semantico/parafrasi, rilevamento autonomo di errori rari o codice superfluo, confronto con fonti Web e analisi del contenuto binario degli allegati. La normalizzazione lessicale non è un’analisi strutturale e i suoi filtri deterministici non sono soglie di probabilità o indicatori di colpevolezza; restano euristiche non calibrate. Le osservazioni non attestano copiatura.
+- La UI docente usa i dati delle API protette e salva le review separatamente; la verifica browser C6 copre rendering desktop/mobile, persistenza della review e diniego anonimo. Test AI solo con adapter mock e dati sintetici; nessun test ChatGPT remoto, provider AI reale o dati scolastici reali.
+- **Readiness per C7:** C6 fornisce una base locale utilizzabile per il checkpoint di verifica C7. Non è autorizzato né dichiarato un rilascio: C7 dovrà validare i controlli end-to-end e decidere esplicitamente se accettare questi limiti o estendere prima l’analisi strutturale/semantica. C7 resta PLANNED.
 
 ### Checkpoint C7 — Test Completi, Verifica K3s & Rilascio Infrastrutturale
 - **Obiettivo**: Validazione finale end-to-end, conformità dev-env e verifica del runtime K3s di produzione.
