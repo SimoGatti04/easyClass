@@ -146,6 +146,12 @@ export async function createHttpApp(options = {}) {
     const parsedUrl = new URL(req.url, `http://${req.headers.host || '127.0.0.1'}`);
     const pathname = parsedUrl.pathname;
 
+    // API and MCP responses can contain student or teacher-only records. Never
+    // allow browsers, shared devices, reverse proxies, or intermediaries to cache them.
+    if (pathname.startsWith('/api/') || pathname === '/mcp' || pathname.startsWith('/mcp/')) {
+      res.setHeader('Cache-Control', 'no-store');
+    }
+
     // CORS preflight (OPTIONS)
     if (req.method === 'OPTIONS') {
       const origin = req.headers['origin'];
@@ -1610,7 +1616,13 @@ async function handleRestApi(req, res, pathname, parsedUrl, service, authResult,
     res.writeHead(404);
     res.end(JSON.stringify({ error: 'Endpoint not found', path: pathname }));
   } catch (err) {
-    const statusCode = err.name === 'NotFoundError' ? 404 : (err.name === 'ValidationError' ? 400 : (err.name === 'ConflictError' ? 409 : 500));
+    const statusCode = err.statusCode || (
+      err instanceof NotFoundError ? 404 :
+      err instanceof ValidationError ? 400 :
+      err instanceof ConflictError ? 409 :
+      err instanceof AuthorizationError ? (err.statusCode || 403) :
+      err instanceof SecurityError ? 400 : 500
+    );
     res.writeHead(statusCode);
     res.end(JSON.stringify({ error: err.name || 'Error', message: err.message }));
   }

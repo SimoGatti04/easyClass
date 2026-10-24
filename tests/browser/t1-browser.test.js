@@ -88,8 +88,7 @@ test('Browser End-to-End Test: T1 "Tomorrow is ready" Workflow on Compiled React
     const { chromium } = await import('playwright');
     browser = await chromium.launch({
       headless: true,
-      executablePath: '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
-      args: ['--headless=new', '--no-sandbox', '--disable-gpu']
+      args: ['--no-sandbox', '--disable-gpu']
     });
 
     const context = await browser.newContext();
@@ -108,15 +107,22 @@ test('Browser End-to-End Test: T1 "Tomorrow is ready" Workflow on Compiled React
 
 
 
-    // 1. Load Dashboard
+    // 1. Confirm the public portal loads, then navigate to the protected teacher area.
     const resp = await page.goto(`${url}/`);
-    
-    await page.waitForSelector('.header-title');
-    const titleText = await page.textContent('.header-title');
-    assert.match(titleText, /Teacher Service/);
-    console.log('✔ 1. Dashboard SPA loaded with compiled React bundle');
+    assert.equal(resp?.status(), 200);
+    await page.getByRole('heading', { name: 'Area Studenti' }).waitFor();
+    await page.getByRole('button', { name: /Accedi alla Dashboard Docente/ }).click();
 
-    // 2. Context Navigation & Creation: Create Class
+    await page.waitForSelector('.teacher-portal-layout .portal-branding .brand-title');
+    const titleText = await page.textContent('.teacher-portal-layout .portal-branding .brand-title');
+    assert.match(titleText, /Teacher Service/);
+    console.log('✔ 1. Public portal and protected teacher dashboard route load from the compiled React bundle');
+
+    // 2. Open the existing T1 lesson-preparation workspace inside the new teacher shell.
+    await page.getByRole('button', { name: 'Preparazione lezioni' }).click();
+    await page.waitForSelector('#btn-new-class');
+
+    // 3. Context Navigation & Creation: Create Class
     await page.click('#btn-new-class');
     await page.waitForSelector('#class-name');
     await page.fill('#class-name', '4B Telecomunicazioni');

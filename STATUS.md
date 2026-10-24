@@ -1,7 +1,7 @@
 # Teacher Service — Stato operativo
 
-**Aggiornato:** 2026-10-23 (Europe/Rome)
-**Fase attiva:** C6 implementato e verificato localmente; C7 PLANNED (Supervisione: ChatGPT)
+**Aggiornato:** 2026-10-24 (Europe/Rome)
+**Fase attiva:** C7A validazione completata; C7B BLOCKED/PLANNED e non autorizzato (Supervisione: ChatGPT)
 **Perimetro:** Workspace locale `teacher-service-design`.
 **Fonte normativa:** `docs/` e decisioni del Domain Owner (13 ottobre 2026); **evidenze storiche:** `validation/results/`.
 
@@ -697,3 +697,12 @@ Risoluzione definitiva delle discrepanze individuate dalla revisione indipendent
 ### Readiness e lavoro residuo
 
 C6 soddisfa localmente il flusso minimo MCP/UI per consultare consegne, ottenere proposte di grading non definitive e registrare review di evidenze comparative. È possibile avviare **C7 come checkpoint di verifica**, non come rilascio: il gate dovrà rivalutare le euristiche fisse, confermare i controlli di autorizzazione/runtime e decidere esplicitamente se AST/semantica, fonti Web, allegati e analisi degli errori rari restano fuori perimetro o debbano precedere il rilascio. ChatGPT remoto e sistemi produttivi non sono stati testati in questo checkpoint.
+
+### C7A — Pre-release validation & deployment readiness (24 ottobre 2026)
+
+- Eseguite le regressioni C3–C6/T1 su soli dati sintetici. `TEACHER_SERVICE_ALLOW_EXTERNAL_STUDENT_GRADING=false pnpm test`: **25 suite PASS, 0 FAIL**, incluso MCP Streamable HTTP TCP loopback senza skip. `tests/server/student-api.test.js`: **37/37 pass**. I quattro test browser Playwright Chromium C4/C5/C6/T1 passano; build Vite e build/smoke container locale `linux/amd64` passano. I sottoflussi usano fixture separate: il percorso unico C4→C5→C6 sullo stesso assessment non è verificato. Nessun provider AI/Web o ChatGPT remoto reale testato.
+- In `/src/server/http.js` le risposte REST/MCP sono `no-store`; gli errori di autorizzazione REST mantengono HTTP 403. Regressioni MCP dimostrano che il grading esterno disabilitato rifiuta REST/MCP prima del provider, senza valutazioni parziali. Il test rispetta la variabile d'ambiente `false`.
+- Solo osservazione read-only K3s: Deployment `class` 1/1, Pod Running 1/1, Service e HTTPRoute web/MCP presenti, entrambi i PVC teacher Bound. Il cluster esegue ancora l'immagine T1 `20261020-f962706`; il Pod mostra 4 restart, non analizzati. Nessun dato PVC/secret è stato letto.
+- Verifica infra statica `domain-check`/`exposure-dry-run`: PASS, nessun file cambiato. La proposta C3.1 Cloudflare è marcata come draft non applicabile: usa hash route non visibili all'edge, propone bypass/HCL non allineato al manifest-driven Terraform e cita un file HTTPRoute inesistente. `docs/operations.md` distingue ora API studente da API docente/MCP.
+- **C7A Software Readiness: BLOCKED per rollout controllato**: test/build locali PASS, ma l'edge non può distinguere i percorsi docente/studente con hash routing e il flusso unico C4→C5→C6 sullo stesso assessment è NOT VERIFIED. **C7B Production Readiness: BLOCKED** per stato Cloudflare live non verificato, runtime ancora T1, 4 restart non analizzati e assenza di prova backup/restore e rollback DB+FileStore. Nessuna pubblicazione GHCR, modifica Cloudflare, deploy K3s o migrazione produttiva.
+- Rapporto completo: [`docs/c7a-pre-release-readiness.md`](docs/c7a-pre-release-readiness.md). C0–C13 e le modifiche OmniRoute concorrenti in `infra` preservate; i container di smoke sono stati fermati e i dati test restano isolati.

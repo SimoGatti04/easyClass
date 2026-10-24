@@ -3,7 +3,7 @@
 **Checkpoint:** C3.1 Final Hardening & Gate C4
 **Ruolo:** Software Engineering / Infrastructure Architecture
 **Supervisione:** ChatGPT
-**Stato:** **PROPOSTA TECNICA E PIANO IaC PER CHECKPOINT C7** — *Nessuna modifica a Cloudflare, Tunnel, DNS o K3s applicata in questo checkpoint.*
+**Stato storico:** proposta C3.1, revisionata in C7A il 24 ottobre 2026. **NON APPLICARE**: il draft IaC sotto è obsoleto e non conforme all’attuale routing React/manifest infra. Nessuna modifica a Cloudflare, Tunnel, DNS o K3s è stata applicata.
 **Riferimenti normativi:**
 - `~/Workspace/infra/AGENTS.md`
 - `~/Workspace/infra/docs/10-cloudflare-domain-management.md`
@@ -13,21 +13,23 @@
 
 ---
 
+> **Esito della revisione C7A — BLOCKED / non eseguibile.** I blocchi e i requisiti per una nuova proposta sono riportati in [`c7a-pre-release-readiness.md`](c7a-pre-release-readiness.md). Le sezioni HCL/YAML successive sono conservate come evidenza storica C3.1, non come istruzioni operative. In particolare, non usare la policy `bypass everyone`, non aggiungere `access-class.tf` e non applicare path che presumono route browser non esistenti.
+
 ## 1. Analisi dello Stato Attuale & Problema Tecnico
 
-### 1.1 Configurazione Attuale in Produzione
-Nel cluster K3s (`infra/k3s/apps/class/` e `infra/config/exposure.yaml`):
-1. **Dominio Principale (`class.simogatti.it`)**:
-   - Definito in `infra/config/exposure.yaml` con `profile: teacher-web` e `primary_path: ""`.
-   - Genera un'applicazione Cloudflare Zero Trust Access di tipo `self_hosted` sull'intero FQDN `class.simogatti.it/*`.
-   - Il profilo `teacher-web` autorizza unicamente l'IDP del docente (`aff7d56e-3243-4631-b862-e7288539bf81`).
+### 1.1 Configurazione dichiarata dal manifest (stato Cloudflare live non verificato)
+Questa sezione descrive esclusivamente il desired state versionato in `infra/k3s/apps/class/` e `infra/config/exposure.yaml`, insieme al codice Terraform. Lo stato effettivamente applicato e le policy attive sul provider Cloudflare non sono stati interrogati in C7A.
+1. **Dominio principale (`class.simogatti.it`)**:
+   - `infra/config/exposure.yaml` dichiara `profile: teacher-web` e `primary_path: ""`.
+   - `terraform/cloudflare/access.tf` include le entry del manifest nell'inventory Terraform per un'applicazione Zero Trust Access `self_hosted` sul dominio e sul path dichiarati. Ciò descrive il piano di configurazione, non prova che l'applicazione sia stata creata o sia attualmente attiva nel provider.
+   - Il profilo versionato `teacher-web` dichiara l'IDP docente (`aff7d56e-3243-4631-b862-e7288539bf81`); l'associazione effettiva non è stata verificata live.
 2. **Dominio MCP (`mcp-teacher.simogatti.it`)**:
-   - Gestito con HTTPRoute K3s e protetto da Bearer token / Cloudflare Access service tokens. Rimane invariato e operativo.
+   - Il repository contiene una route K3s dedicata e configurazione di accesso separata. Questa revisione non ha verificato la connettività remota o lo stato della policy Cloudflare; non usarla come prova di operatività live.
 
 ### 1.2 Limiti Insuperabili del Routing Hash-based (`#/studente`) come Protezione Perimetrale
 - Secondo lo standard **RFC 3986 §3.5**, il fragment identifier (la porzione di URI dopo `#`) è gestito **esclusivamente dal browser (client-side)** e **non viene mai trasmesso** nelle intestazioni HTTP verso l'edge o verso il server origin.
 - Una richiesta a `https://class.simogatti.it/#/studente` genera all'edge la richiesta `GET / HTTP/2`.
-- L'edge di Cloudflare Access vede unicamente la richiesta per la radice `/` e, non trovando un token di sessione Zero Trust valido, reindirizza immediatamente il browser alla schermata di login del docente (Google IDP).
+- L'edge riceve la richiesta per la radice `/`; non riceve il fragment `#/studente`. **Se** l'applicazione e la policy Access dichiarate nel manifest sono effettivamente applicate come descritto, Access valuterà la richiesta sulla route radice secondo quelle policy. C7A non ha interrogato lo stato Cloudflare live e quindi non afferma che oggi la richiesta venga reindirizzata al login o che la policy sia effettivamente attiva.
 - **Conclusione tecnica:** Il routing client-side `#` non costituisce e non può costituire una misura di isolamento perimetrale.
 
 ### 1.3 Criticità della Bozza Precedente ("Bypass Everyone" Globale)
@@ -78,7 +80,7 @@ Se il Domain Owner preferisce una separazione fisica e DNS totale:
 
 ---
 
-## 3. Specifiche Tecniche IaC per Opzione 1
+## 3. Specifiche tecniche IaC per Opzione 1 — DEPRECATED / NON APPLICARE
 
 ### 3.1 Aggiornamento a `infra/config/exposure.yaml`
 ```yaml

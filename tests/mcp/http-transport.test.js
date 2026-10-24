@@ -8,6 +8,9 @@ import { setTestAuthKeys, clearJwksCache } from '../../src/server/auth.js';
 import { DatabaseManager } from '../../src/db/database.js';
 import { FileStore } from '../../src/storage/filestore.js';
 import { TeacherService } from '../../src/services/teacher-service.js';
+import { createMcpServer } from '../../src/mcp/server.js';
+import { CallToolRequestSchema } from '@modelcontextprotocol/sdk/types.js';
+import { ItemTypes } from '../../src/core/contracts.js';
 import fs from 'node:fs';
 import path from 'node:path';
 
@@ -166,6 +169,7 @@ test('MCP Streamable HTTP Transport & Auth Tests', async (t) => {
         headers: { Authorization: `Bearer ${bearerToken}`, 'x-role': 'student' }
       });
       assert.equal(authenticated.statusCode, 200);
+      assert.equal(authenticated.headers['cache-control'], 'no-store', 'teacher API payloads must never be cached');
       const body = JSON.parse(authenticated.body);
       assert.match(body.material.content, /Riservato al docente/);
     }
@@ -242,6 +246,7 @@ test('MCP Streamable HTTP Transport & Auth Tests', async (t) => {
         }
       }, mappedApp);
       assert.equal(initialized.statusCode, 200);
+      assert.equal(initialized.headers['cache-control'], 'no-store', 'MCP teacher data must never be cached');
       const sessionId = initialized.headers['mcp-session-id'];
       assert.ok(sessionId);
 
@@ -460,4 +465,89 @@ test('MCP Streamable HTTP Transport & Auth Tests', async (t) => {
     });
     assert.equal(res.statusCode, 200);
   });
+  await t.test('external student grading disabled blocks both REST and MCP before provider invocation', async () => {
+    let providerCalls = 0;
+    const guardedClient = {
+      mockOffline: false,
+      async complete() {
+        providerCalls += 1;
+        throw new Error('provider must not be called when the privacy gate is disabled');
+      }
+    };
+    const previousExternalGradingSetting = process.env.TEACHER_SERVICE_ALLOW_EXTERNAL_STUDENT_GRADING;
+    process.env.TEACHER_SERVICE_ALLOW_EXTERNAL_STUDENT_GRADING = 'false';
+    const guardedDb = new DatabaseManager(':memory:').init();
+    const guardedService = new TeacherService({
+      dbManager: guardedDb,
+      fileStore: new FileStore(tmpDir),
+      omniRouteClient: guardedClient
+    });
+    assert.equal(guardedService.assessments.allowExternalStudentGrading, false);
+    const guardedApp = await createHttpApp({
+      service: guardedService,
+      authMode: 'strict',
+      authorizeTeacher: async () => true,
+      authConfig: { bearerToken, expectedAud: 'test-audience-aud-123' }
+    });
+
+    try {
+      const classroom = guardedService.createClass({ name: 'C7A grading privacy', academicYear: '2026/2027' });
+      const learner = guardedService.addStudent({ classId: classroom.id, firstName: 'Synthetic', lastName: 'Learner' });
+      const source = guardedService.createMaterial({
+        title: 'Synthetic published grounding',
+        contentText: 'A synthetic reference used only to test grading privacy.',
+        pedagogicalRole: 'student_material'
+      });
+      guardedService.publishMaterial(source.id, { versionNumber: 1 });
+      const assessment = guardedService.createAssessment({
+        title: 'Synthetic grading privacy check',
+        classId: classroom.id,
+        status: 'active',
+        items: [{
+          type: ItemTypes.OPEN_QUESTION,
+          questionText: 'Explain a synthetic concept.',
+          maxScore: 5,
+          teacherSolution: 'Synthetic solution.',
+          assessableSourceId: source.id,
+          assessableSourceVersion: 1
+        }]
+      });
+      const submission = guardedService.importSubmission({
+        assessmentId: assessment.id,
+        studentId: learner.id,
+        responses: [{ itemId: assessment.items[0].id, responseText: 'Synthetic student response.' }]
+      });
+
+      const rest = await executeVirtualRequest({
+        method: 'POST',
+        url: '/api/submissions/' + submission.id + '/grade',
+        headers: { Host: '127.0.0.1', Authorization: 'Bearer ' + bearerToken },
+        body: { evaluator: 'synthetic-c7a-check' }
+      }, guardedApp);
+      assert.equal(rest.statusCode, 403, JSON.stringify(rest));
+      assert.match(JSON.parse(rest.body).message, /External AI processing of student submissions is disabled/);
+
+      const mcp = createMcpServer(guardedService, { authorizeTeacher: async () => true });
+      const toolHandler = mcp._requestHandlers.get(CallToolRequestSchema.shape.method.value);
+      const mcpResult = await toolHandler({
+        method: 'tools/call',
+        params: { name: 'grade_submission_ai', arguments: { submissionId: submission.id } }
+      });
+      assert.equal(mcpResult.isError, true);
+      assert.match(mcpResult.content[0].text, /External AI processing of student submissions is disabled/);
+      assert.equal(providerCalls, 0);
+      assert.equal(guardedDb.prepare('SELECT COUNT(*) AS count FROM evaluations WHERE submission_id = ?').get(submission.id).count, 0);
+    } finally {
+      try {
+        await guardedApp.close();
+      } finally {
+        if (previousExternalGradingSetting === undefined) {
+          delete process.env.TEACHER_SERVICE_ALLOW_EXTERNAL_STUDENT_GRADING;
+        } else {
+          process.env.TEACHER_SERVICE_ALLOW_EXTERNAL_STUDENT_GRADING = previousExternalGradingSetting;
+        }
+      }
+    }
+  });
+
 });

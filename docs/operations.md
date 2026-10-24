@@ -78,8 +78,17 @@ volume consumers are detached and verified absent.
 - Cloudflare Access assertion validation and teacher identity mapping are
   enforced in the application; an authenticated identity without an explicit
   teacher mapping is not a teacher.
-- `/api/*` and `/mcp` share the same fail-closed teacher authorization. Do not
-  add role headers/query parameters or share a non-teacher bearer token.
+- Teacher REST routes under `/api/*`, except the isolated `/api/student/*`
+  surface, require authentication plus explicit teacher membership. The public
+  student route uses revocable, expiring application sessions and server-side
+  class/submission checks; it does not accept a client-supplied `studentId` as
+  identity proof. `/mcp` keeps its existing separate transport/authentication
+  contract and also requires teacher authorization for teacher-only tools.
+- Do not add role headers/query parameters or share a non-teacher bearer token.
+  Edge routing is a separate control: local hash routing does not protect
+  routes at Cloudflare, and this runbook does not prove student-public/teacher-
+  protected Cloudflare path behavior. See the C7A readiness report and the
+  routing proposal's non-executable status before any C7B change.
 - The plugin endpoint remains `https://mcp-teacher.simogatti.it/mcp`.
   Local protocol tests are not evidence of authenticated ChatGPT connectivity;
   report remote ChatGPT as verified only after a real authenticated client
