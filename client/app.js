@@ -11,34 +11,57 @@ import { StudentArea } from "./src/components/StudentArea.js";
 import { TeacherArea } from "./src/components/TeacherArea.js";
 
 export function App() {
-  const getRouteFromHash = () => {
-    const hash = window.location.hash || "#/";
-    if (hash.startsWith("#/studente")) return "student";
-    if (hash.startsWith("#/docente")) return "teacher";
+  const getRouteFromPath = () => {
+    const pathname = window.location.pathname.replace(/\/+$/, "") || "/";
+    if (pathname === "/studente" || pathname.startsWith("/studente/")) return "student";
+    if (pathname === "/docente" || pathname.startsWith("/docente/")) return "teacher";
     return "home";
   };
 
-  const [route, setRoute] = useState(getRouteFromHash);
+  const [route, setRoute] = useState(getRouteFromPath);
 
   useEffect(() => {
-    const handleHashChange = () => {
-      setRoute(getRouteFromHash());
-    };
+    // Old QR codes used hash routes. Normalize them with a full navigation so
+    // a /docente link is re-evaluated by Cloudflare Access at the HTTP layer.
+    // Never render the teacher dashboard from a public-root hash URL.
+    if (window.location.pathname === "/") {
+      const legacyRoute = window.location.hash || "";
+      if (legacyRoute.startsWith("#/docente")) {
+        window.location.replace(`/docente${window.location.search}`);
+        return;
+      }
+      if (legacyRoute.startsWith("#/studente")) {
+        const suffix = legacyRoute.slice("#/studente".length);
+        const studentQuery = suffix.startsWith("?") ? suffix : "";
+        const fragment = suffix.startsWith("#") ? suffix : "";
+        window.location.replace(`/studente${window.location.search}${studentQuery}${fragment}`);
+        return;
+      }
+    }
 
-    window.addEventListener("hashchange", handleHashChange);
-    return () => window.removeEventListener("hashchange", handleHashChange);
+    const handleNavigation = () => setRoute(getRouteFromPath());
+    window.addEventListener("popstate", handleNavigation);
+    return () => window.removeEventListener("popstate", handleNavigation);
   }, []);
 
   const navigate = (target) => {
-    if (target.startsWith("#/")) {
-      window.location.hash = target;
+    let destination = target;
+    if (target.startsWith("#/studente")) {
+      const suffix = target.slice("#/studente".length);
+      destination = `/studente${suffix.startsWith("?") ? suffix : ""}`;
+    } else if (target.startsWith("#/docente")) {
+      destination = "/docente";
     } else if (target === "student") {
-      window.location.hash = "#/studente";
+      destination = "/studente";
     } else if (target === "teacher") {
-      window.location.hash = "#/docente";
-    } else {
-      window.location.hash = "#/";
+      destination = "/docente";
+    } else if (target === "home" || target === "#/" || target === "") {
+      destination = "/";
     }
+
+    // A document navigation is intentional: teacher navigation must pass the
+    // edge Access policy instead of changing only a browser-side fragment.
+    window.location.assign(destination);
   };
 
   return h("div", { className: "teacher-service-root" }, [

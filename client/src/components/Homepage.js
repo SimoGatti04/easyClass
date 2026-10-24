@@ -35,7 +35,7 @@ export function Homepage({ onNavigate }) {
           h('button', {
             type: 'button',
             className: 'portal-btn btn-student',
-            onClick: () => onNavigate('#/studente')
+            onClick: () => onNavigate('/studente')
           }, 'Entra come Studente →')
         ])
       ]),
@@ -62,7 +62,7 @@ export function Homepage({ onNavigate }) {
           h('button', {
             type: 'button',
             className: 'portal-btn btn-teacher',
-            onClick: () => onNavigate('#/docente')
+            onClick: () => onNavigate('/docente')
           }, 'Accedi alla Dashboard Docente →')
         ])
       ])

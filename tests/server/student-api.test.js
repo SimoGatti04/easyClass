@@ -1212,9 +1212,11 @@ test('Student Public API & Teacher Live Monitor HTTP Suite', async (t) => {
       const failRes = await executeVirtualRequest({
         method: "POST",
         url: "/api/student/claim-code",
+        remoteAddress: fakeIp,
         headers: {
           "Content-Type": "application/json",
-          "X-Forwarded-For": fakeIp
+          // Direct peer is authoritative; this client-controlled header is ignored.
+          "X-Forwarded-For": "192.0.2.77"
         },
         body: { accessCode: "WRONG" + i }
       });
@@ -1225,9 +1227,10 @@ test('Student Public API & Teacher Live Monitor HTTP Suite', async (t) => {
     const fifthFail = await executeVirtualRequest({
       method: "POST",
       url: "/api/student/claim-code",
+      remoteAddress: fakeIp,
       headers: {
         "Content-Type": "application/json",
-        "X-Forwarded-For": fakeIp
+        "X-Forwarded-For": "192.0.2.77"
       },
       body: { accessCode: "WRONG5" }
     });
@@ -1237,9 +1240,10 @@ test('Student Public API & Teacher Live Monitor HTTP Suite', async (t) => {
     const blockedRes = await executeVirtualRequest({
       method: "POST",
       url: "/api/student/claim-code",
+      remoteAddress: fakeIp,
       headers: {
         "Content-Type": "application/json",
-        "X-Forwarded-For": fakeIp
+        "X-Forwarded-For": "192.0.2.77"
       },
       body: { accessCode: "WRONG6" }
     });

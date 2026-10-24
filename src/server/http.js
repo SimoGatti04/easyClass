@@ -18,6 +18,7 @@ import { authenticateRequest, SessionPrincipalRegistry, validateCsrf } from './a
 import { parseMultipartFormData } from './multipart.js';
 import { createStaticFileHandler } from './static.js';
 import path from 'node:path';
+import { resolveClientIp } from './client-ip.js';
 import { createTeacherPrincipalAuthorizer } from './teacher-authorization.js';
 import { TeacherService } from '../services/teacher-service.js';
 import { PedagogicalRoles } from '../core/contracts.js';
@@ -108,6 +109,8 @@ export async function createHttpApp(options = {}) {
       ? process.env.TEACHER_SERVICE_ALLOWED_ORIGINS.split(',').map(s => s.trim())
       : DEFAULT_ALLOWED_ORIGINS
   );
+  const trustedProxyCidrs = options.trustedProxyCidrs ??
+    (process.env.TEACHER_SERVICE_TRUSTED_PROXY_CIDRS || '').split(',').map(value => value.trim()).filter(Boolean);
 
   const mcpAud = options.authConfig?.mcpAud
     || (options.authConfig?.webAud ? null : options.authConfig?.expectedAud)
@@ -262,7 +265,7 @@ export async function createHttpApp(options = {}) {
 
       // Branch 3a: Student API (/api/student/*) — Public Student Space, zero teacher privilege
       if (pathname.startsWith('/api/student/')) {
-        return handleStudentApi(req, res, pathname, parsedUrl, service, parsedBody, multipartData);
+        return handleStudentApi(req, res, pathname, parsedUrl, service, parsedBody, multipartData, trustedProxyCidrs);
       }
 
       // Branch 3b: Protected Teacher REST API (/api/*) — Strict authentication & teacher authorization
@@ -576,7 +579,7 @@ const claimRateLimitMap = new Map();
 const MAX_FAILED_CLAIM_ATTEMPTS = 5;
 const CLAIM_BLOCK_WINDOW_MS = 5 * 60 * 1000;
 
-export async function handleStudentApi(req, res, pathname, parsedUrl, service, parsedBody, multipartData) {
+export async function handleStudentApi(req, res, pathname, parsedUrl, service, parsedBody, multipartData, trustedProxyCidrs = []) {
   res.setHeader('Content-Type', 'application/json');
 
   const normalizeStudentResponses = (responses) => {
@@ -621,27 +624,10 @@ export async function handleStudentApi(req, res, pathname, parsedUrl, service, p
   try {
     // POST /api/student/claim-code (Access via 6-char code / QR)
     if (pathname === '/api/student/claim-code' && req.method === 'POST') {
-      const remoteAddr = req.socket?.remoteAddress || '127.0.0.1';
-      const isLocalOrPrivate = (
-        remoteAddr === '127.0.0.1' ||
-        remoteAddr === '::1' ||
-        remoteAddr === '::ffff:127.0.0.1' ||
-        remoteAddr.startsWith('10.') ||
-        remoteAddr.startsWith('192.168.') ||
-        remoteAddr.startsWith('172.') ||
-        remoteAddr.startsWith('::ffff:10.') ||
-        remoteAddr.startsWith('::ffff:192.168.') ||
-        remoteAddr.startsWith('::ffff:172.')
-      );
-      let clientIp = remoteAddr || 'unknown';
-      if (isLocalOrPrivate) {
-        if (req.headers['cf-connecting-ip']) {
-          clientIp = String(req.headers['cf-connecting-ip']).trim();
-        } else if (req.headers['x-forwarded-for']) {
-          const firstIp = String(req.headers['x-forwarded-for']).split(',')[0].trim();
-          if (firstIp) clientIp = firstIp;
-        }
-      }
+      // Forwarded client IPs are trusted only when the immediate TCP peer is
+      // explicitly configured as a reverse proxy. In particular, private
+      // address space alone is not evidence that a forwarded header is safe.
+      const clientIp = resolveClientIp(req, trustedProxyCidrs);
 
       const now = Date.now();
       const ipRecord = claimRateLimitMap.get(clientIp);

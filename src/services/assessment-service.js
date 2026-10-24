@@ -1043,7 +1043,10 @@ Risposta fornita dallo studente:
         assessmentId,
         assessment,
         statistics,
-        submissions,
+        // The JSON export is the complete teacher-side record, including exact
+        // answer/item lineage and attachment references. The route and MCP tool
+        // are teacher-authorized; student-facing APIs use a separate projection.
+        submissions: submissions.map((submission) => this.getSubmission(submission.id)),
         exportedAt: new Date().toISOString()
       };
     }

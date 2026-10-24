@@ -761,7 +761,7 @@ export function ActivitiesView({ onSelectLiveMonitor }) {
                 ])
               ]),
               h('tbody', null, credentialsList.map(c => {
-                const directUrl = `${window.location.origin}/#/studente?code=${c.accessCode}`;
+                const directUrl = `${window.location.origin}/studente?code=${c.accessCode}`;
                 return h('tr', { key: c.id }, [
                   h('td', { className: 'font-semibold' }, c.studentName),
                   h('td', null, [

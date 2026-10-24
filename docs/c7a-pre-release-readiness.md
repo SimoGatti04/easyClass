@@ -95,3 +95,90 @@ Nessuno di questi passaggi di rilascio è stato eseguito.
 
 **Remote ChatGPT:** `NOT VERIFIED`.
 **Stato operativo:** nessun rilascio; nessun cambiamento a produzione/infra.
+
+---
+
+# C7A-R1 — Blocker Resolution Addendum (24 ottobre 2026)
+
+**Baseline di questo addendum:** `codex/teacher-service-c6` @
+`f901a9f8ccfdf935cd83c6430a5f03dbcb19b4bb`. Il riferimento baseline
+`e2d8c7cb...` nel rapporto audit precedente descriveva un controllo diverso;
+non è la baseline di C7A-R1. Il worktree infra è rimasto su `main` @
+`659a04c6b0ffc18bec79a5864cf2631c70f2bbe9` e le modifiche concorrenti OmniRoute
+sono state preservate. C7A-R1 non ha eseguito push, apply, deploy, build/publish
+GHCR, modifiche a Cloudflare/DNS/Tunnel/K3s, letture PVC o letture di Secret.
+
+## Esito sintetico
+
+L'E2E unificato sullo stesso assessment è **PASS** in ambiente locale isolato:
+una sola istanza applicativa, un solo SQLite temporaneo, un solo FileStore
+sintetico, due sessioni browser individuali, mock AI e nessun dato reale. Le
+risposte e gli identificativi sono confrontati fra API docente, database,
+export e MCP; l'analisi C6 e la review docente riguardano le stesse consegne.
+
+Il routing basato su path HTTP è implementato e verificato localmente, ma il
+confine Cloudflare non è stato applicato né verificato live. La procedura di
+snapshot/restore è implementata e provata su fixture; recuperabilità, backup e
+rollback produttivi non sono dimostrati. **C7B rimane BLOCKED e non autorizzato.**
+
+## Matrice dei blocchi
+
+| Blocco iniziale | Correzione / evidenza | Stato | Decisione o blocco residuo |
+|---|---|---|---|
+| C4, C5, C6 e MCP provati solo con fixture disgiunte | `tests/browser/c7a-unified-browser.test.js`: stesso assessment e app, SQLite/FileStore unici, due browser/studenti; risposte a scelta multipla, aperte, codice e allegato; offline/reconnect, autosave/consegna, tempo extra, monitoraggio, grading/review, statistiche, export, MCP e review C6. ID e contenuti sono confrontati con SQLite, REST, JSON export e MCP. | **PASS — 1/1 browser E2E** | Nessun dato produttivo usato. AI mock esplicito; non è un test di provider esterno. |
+| Distinzione delle superfici basata solo su hash UI | Frontend instradato da `/`, `/studente`, `/docente`; fallback SPA per deep link/refresh; vecchi hash normalizzati con navigazione HTTP; REST `/api/*` rimane autenticata/applicativamente autorizzata; `/api/student/*` usa sessione studente. | **PASS locale** | La protezione Edge Cloudflare non è implicata dal routing applicativo. |
+| Configurazione Access root impedisce la homepage studente pubblica | Proposta statica in `docs/cloudflare-routing-iac-proposal.md`: mantenere una sola app Access docente per `/docente` e `/api/*`, con app Bypass più specifica limitata a `/api/student/*`; root e `/studente` senza app Access; hostname MCP invariato. Verificata contro manifest locale, HCL presente e schema provider bloccato 5.24.0. | **PASS statico; live NOT VERIFIED** | Repo infra non modificato per le variazioni concorrenti OmniRoute. Nessun piano Terraform o stato Cloudflare live consultato; richiede review e autorizzazione C7B. |
+| Quattro restart del pod T1 senza causa accertata | Diagnostica K3s read-only: deployment 1/1 Ready; ultimo container terminato `reason=Error`, `exitCode=137` il 23 ottobre 2026 13:27:25 UTC, nuovo avvio 13:27:28 UTC; nessun evento pod trovato. Nodo osservato `Ready`, senza Memory/Disk/PIDPressure; metriche correnti ~2.9 GiB RAM (37%), pod ~29 MiB. Gli eventi `FreeDiskSpaceFailed` iniziano il 23 ottobre 14:13:43 UTC, dopo l'ultimo restart, e proseguono fino al 24 ottobre 10:48:45 UTC (248 eventi). | **NOT VERIFIED — causa non determinata** | `137` non prova OOM; Kubernetes ha registrato `Error`, non `OOMKilled`. Mancano dettagli storici delle terminazioni precedenti e log/eventi al momento del restart. Nessuna correlazione causale con eventi successivi. |
+| SQLite + FileStore senza procedura di recovery provata | CLI locale snapshot/verify/restore; `VACUUM INTO`, inventory SHA-256, integrity/FK check, restore solo su destinazioni nuove. `tests/integration/store-snapshot.test.js` ripristina contenuto/versioni T1/C6 e byte allegato. | **PASS su fixture isolata** | **Backup produzione NOT VERIFIED; restore produzione NOT VERIFIED.** Nessun PVC letto o scritto; destinazione e retention produttive non definite. Il rischio single-node resta. |
+| Compatibilità T1 → C6 e rollback immagine non provati su dati veri | Test `migration-additive` conserva fixture legacy con migrazioni additive; snapshot fixture conserva due versioni e allegato. Runbook aggiornato: niente downgrade distruttivo; provare l'immagine precedente su una copia ripristinata prima di riutilizzarla. | **PASS fixture; production NOT VERIFIED** | Nessuna prova su DB/PVC T1 reale, né compatibilità del precedente container con il DB migrato. |
+| IP reale e rate-limit del claim-code dietro Cloudflare/Traefik | Resolver e test anti-spoofing verificati localmente; il manifest K3s corrente non dichiara `TEACHER_SERVICE_TRUSTED_PROXY_CIDRS`, e l'indirizzo immediatamente visto dal Pod non è stato verificato. | **NOT VERIFIED in produzione** | Non fidarsi degli header client. Prima di C7B rilevare il peer proxy autorizzato e configurare solo la sua CIDR; altrimenti più studenti potrebbero condividere un bucket rate-limit del proxy. |
+| Regressioni applicative e test integrati | `pnpm test`: 28 suite / 158 test PASS; browser C4, C5, C6, unificato C7A e T1: 1 test ciascuno PASS; build frontend eseguite nei runner browser. | **PASS locale** | I test sintetici non provano Cloudflare live, ChatGPT remoto o produzione. |
+| Limiti d'uso C6 per il primo rilascio | Raccomandazione tecnica: Opzione B, mantenere C6 nascosto dalla UI produttiva finché limiti e comunicazione sperimentale non siano approvati; preservare codice e audit. Nessun provider AI esterno o decisione automatica è stata abilitata da questo checkpoint. | **BLOCKED — decisione del proprietario** | La schermata docente C6 e i tool MCP risultano nel codice corrente. L'Opzione B è una raccomandazione, non una modifica applicata; il proprietario deve decidere anche se i tool C6 MCP rimangono disponibili ai docenti. |
+| Gate di rilascio | Separazione Access live, audience web, recuperabilità produttiva e decisione C6 non dimostrate. | **C7B BLOCKED / non autorizzato** | Nessun rilascio o mutazione infrastrutturale è parte di C7A-R1. |
+
+## Moduli e file modificati
+
+- Routing/path: `client/app.js`, `client/src/components/Homepage.js`,
+  `client/src/components/ActivitiesView.js`, `src/server/static.js`.
+- Rate-limit IP e integrazione handler: `src/server/client-ip.js`,
+  `src/server/http.js`; test anti-spoofing adeguati affinché l'IP di test sia
+  il peer reale e gli header inoltrati falsificabili non determinino il bucket.
+- Coerenza delle esportazioni complete usate per confrontare il dataset:
+  `src/services/assessment-service.js`.
+- Recovery: `src/storage/store-snapshot.js`,
+  `bin/teacher-service-store-snapshot.js`,
+  `tests/integration/store-snapshot.test.js`.
+- Verifica: `tests/server/application-routing.test.js`,
+  `tests/server/client-ip.test.js`,
+  `tests/browser/c7a-unified-browser.test.js`, `tests/run-all.js`,
+  `package.json` (`test:browser:c7a`).
+- Documentazione: questo addendum, `docs/operations.md` e la sezione C7A-R1
+  di `docs/cloudflare-routing-iac-proposal.md`.
+
+## Piano concreto per C7B — non eseguito
+
+1. Ottenere la decisione scritta del proprietario su C6 UI/MCP e il consenso
+   separato per un piano Cloudflare; identificare un target snapshot/retention
+   senza presumere che le PVC locali siano backup indipendenti. Determinare il
+   peer/CIDR proxy effettivo del Pod e configurare la allowlist trusted-proxy
+   solo su evidenza runtime approvata.
+2. In un worktree infra autorizzato e senza toccare il lavoro OmniRoute, cambiare
+   il manifest Access e il mapping `access.policy` seguendo la proposta. Eseguire
+   solo validazioni statiche prima di generare un piano salvato con wrapper
+   canonico; verificare che non tocchi DNS, Tunnel, altri host o MCP. Fermarsi
+   prima dell'apply e sottoporre il piano al proprietario.
+3. Verificare dal piano se l'app `class` viene aggiornata o sostituita. Se cambia
+   `aud`, pianificare insieme l'aggiornamento della ConfigMap non-secret
+   `TEACHER_SERVICE_WEB_CF_ACCESS_AUD`, preservando l'audience MCP.
+4. Prima di migrare dati, ottenere un target di recovery approvato e una finestra
+   di quiescenza. Provare snapshot/verify/restore e la migrazione T1→C6 su copie
+   isolate, quindi testare l'immagine precedente contro la copia. Senza questi
+   esiti non procedere al rollout.
+5. Solo dopo autorizzazione separata: applicare l'eventuale piano Access e il
+   rollout K3s in fasi reversibili; verificare anonimo `/`, `/studente`,
+   `/api/student/*`, redirect docente, API gestionale, audience, MCP invariato,
+   PVC, salute e smoke test. Nessun apply/deploy è stato eseguito in C7A-R1.
+
+**Software Readiness:** routing applicativo ed E2E unificato **PASS**.
+**Infrastructure Readiness:** Access live, produzione backup/restore e rollback
+su DB migrato **NOT VERIFIED/BLOCKED**. **Non dichiarare C7B pronto.**

@@ -46,7 +46,8 @@ export function createStaticFileHandler({
 
     let safePath = path.normalize(path.join(effectiveRoot, cleanPath));
 
-    if (!safePath.startsWith(effectiveRoot)) {
+    const relativePath = path.relative(effectiveRoot, safePath);
+    if (relativePath.startsWith('..') || path.isAbsolute(relativePath)) {
       res.writeHead(403, { "Content-Type": "text/plain" });
       res.end("Forbidden");
       return true;

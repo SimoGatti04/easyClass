@@ -25,11 +25,14 @@ const testFiles = [
   'tests/mcp/http-transport.test.js',
   'tests/server/api-t1.test.js',
   'tests/server/pre-release-corrections.test.js',
+  'tests/server/client-ip.test.js',
+  'tests/server/application-routing.test.js',
   'tests/server/student-api.test.js',
   'tests/unit/migration-additive.test.js',
   'tests/integration/e2e.test.js',
   'tests/integration/t1-workflow.test.js',
-  'tests/integration/dev-preview.test.js'
+  'tests/integration/dev-preview.test.js',
+  'tests/integration/store-snapshot.test.js'
 ];
 
 console.log('====================================================');

@@ -1,7 +1,7 @@
 # Teacher Service — Stato operativo
 
 **Aggiornato:** 2026-10-24 (Europe/Rome)
-**Fase attiva:** C7A validazione completata; C7B BLOCKED/PLANNED e non autorizzato (Supervisione: ChatGPT)
+**Fase attiva:** C7A-R1 correzioni mirate completate localmente; C7B BLOCKED/PLANNED e non autorizzato (Supervisione: ChatGPT)
 **Perimetro:** Workspace locale `teacher-service-design`.
 **Fonte normativa:** `docs/` e decisioni del Domain Owner (13 ottobre 2026); **evidenze storiche:** `validation/results/`.
 
@@ -706,3 +706,78 @@ C6 soddisfa localmente il flusso minimo MCP/UI per consultare consegne, ottenere
 - Verifica infra statica `domain-check`/`exposure-dry-run`: PASS, nessun file cambiato. La proposta C3.1 Cloudflare è marcata come draft non applicabile: usa hash route non visibili all'edge, propone bypass/HCL non allineato al manifest-driven Terraform e cita un file HTTPRoute inesistente. `docs/operations.md` distingue ora API studente da API docente/MCP.
 - **C7A Software Readiness: BLOCKED per rollout controllato**: test/build locali PASS, ma l'edge non può distinguere i percorsi docente/studente con hash routing e il flusso unico C4→C5→C6 sullo stesso assessment è NOT VERIFIED. **C7B Production Readiness: BLOCKED** per stato Cloudflare live non verificato, runtime ancora T1, 4 restart non analizzati e assenza di prova backup/restore e rollback DB+FileStore. Nessuna pubblicazione GHCR, modifica Cloudflare, deploy K3s o migrazione produttiva.
 - Rapporto completo: [`docs/c7a-pre-release-readiness.md`](docs/c7a-pre-release-readiness.md). C0–C13 e le modifiche OmniRoute concorrenti in `infra` preservate; i container di smoke sono stati fermati e i dati test restano isolati.
+
+
+### C7A-R1 — Risoluzione blocchi pre-release (24 ottobre 2026)
+
+**Baseline verificata:** branch `codex/teacher-service-c6`, HEAD iniziale
+`f901a9f8ccfdf935cd83c6430a5f03dbcb19b4bb`. Il report C7A precedente conserva
+il suo baseline storico; questo checkpoint parte da `f901a9f`. Il worktree infra
+è rimasto su `main` @ `659a04c6b0ffc18bec79a5864cf2631c70f2bbe9`; modifiche
+concorrenti OmniRoute lasciate intatte.
+
+#### Implementato e verificato localmente
+
+- SPA usa path HTTP reali: `/` homepage pubblica, `/studente` ingresso studenti,
+  `/docente` ingresso docente, fallback per deep link e refresh; i vecchi hash
+  eseguono redirect HTTP affinché `/docente` sia valutato all'edge. È una
+  correzione applicativa, non prova della policy Cloudflare live.
+- `/api/student/*` riceve le CIDR proxy fidate configurate esplicitamente;
+  header IP inoltrati sono accettati solo quando il peer è in una CIDR proxy
+  configurata. Fixture rate-limit usa l'IP peer effettivo e verifica che
+  `X-Forwarded-For` falsificato non cambi il bucket. Il bundle K3s corrente non
+  dichiara `TEACHER_SERVICE_TRUSTED_PROXY_CIDRS`, quindi peer/bucket reali in
+  produzione sono NOT VERIFIED e restano gate prima di C7B.
+- E2E browser unificato: un'istanza HTTP/MCP, un assessment, SQLite e FileStore
+  temporanei condivisi, due studenti e identità docenti sintetici. Verificati
+  quattro tipi di quesito, pubblicazione, sessioni, autosave, allegato,
+  disconnessione/riconciliazione, monitoraggio, tempo extra, consegna, grading e
+  review docente, statistiche, export e C6. ID e contenuti coincidono fra
+  database, REST, export JSON e MCP; C6 e review leggono/registrano evidenze
+  delle medesime consegne.
+- CLI di snapshot/verify/restore SQLite + FileStore. Restore solo verso nuove
+  destinazioni; fixture sintetica conserva contenuti T1/C6, versioni materiale
+  e byte allegati, con hash, integrity check e foreign key check validi.
+- Proposta Cloudflare concreta in `docs/cloudflare-routing-iac-proposal.md`,
+  verificata staticamente rispetto al manifest dichiarato e alla versione
+  Cloudflare provider 5.24.0. Nessuna modifica infra o Cloudflare applicata.
+- Diagnostica read-only K3s registrata in `docs/c7a-pre-release-readiness.md`.
+  Quattro restart presenti; ultima terminazione osservata `Error/137`, non
+  classificata automaticamente OOM. Causa non determinata.
+
+#### Test eseguiti
+
+- `pnpm test`: **28 suite, 158 test PASS, 0 FAIL** (dati sintetici e storage
+  isolato; loopback HTTP/MCP eseguito con permesso locale).
+- `pnpm run test:browser:c4`, `:c5`, `:c6`, `:c7a` e
+  `node --test tests/browser/t1-browser.test.js`: **1/1 PASS ciascuno**; suite
+  browser ricostruiscono il client.
+- `tests/browser/c7a-unified-browser.test.js`: **1/1 PASS**, prova integrata
+  del medesimo dataset browser/API/SQLite/export/MCP.
+- `tests/integration/store-snapshot.test.js`: **1/1 PASS** attraverso la CLI,
+  con restore fixture e verifica delle versioni/allegati.
+- Test separati `tests/server/student-api.test.js`: **37/37 PASS**;
+  routing HTTP **1/1**; IP proxy **2/2**.
+- Nessun provider AI/Web reale, ChatGPT remoto o credenziale produttiva
+  utilizzati; mock AI esplicito e grading esterno studente disabilitato.
+
+#### Distinzione readiness e blocchi residui
+
+- **Software Readiness — PASS locale:** test API, MCP, sicurezza e browser
+  sintetici; routing applicativo path-based ed E2E unico verificati.
+- **Infrastructure Readiness — BLOCKED / NOT VERIFIED:** Cloudflare live e
+  audience edge non lette, piano Terraform non creato, nessun accesso studente
+  pubblico live verificato; CIDR del proxy visto dal Pod non verificata;
+  backup/restore e migrazione/rollback su PVC produttivi non eseguiti. I PVC
+  restano node-local, senza backup indipendente per decisione del Domain Owner.
+- **C6:** raccomandata Opzione B (nascondere C6 dalla UI produttiva finché il
+  perimetro sperimentale non sia approvato), ma non applicata. C6 resta nel
+  codice UI e MCP; serve decisione esplicita del proprietario, inclusa la
+  disponibilità dei tool MCP.
+- **C7B resta BLOCKED e non autorizzato.** Non sono stati eseguiti push, merge,
+  build/publish GHCR, Terraform apply, deploy o modifiche a Cloudflare, DNS,
+  Tunnel, K3s, PVC o dati produttivi. Nessun accesso a log didattici o segreti.
+
+I dettagli, le evidenze e il piano C7B non eseguito sono in
+`docs/c7a-pre-release-readiness.md`; il runbook di persistence/recovery è in
+`docs/operations.md`.

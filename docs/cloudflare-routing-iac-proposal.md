@@ -245,3 +245,148 @@ Qualora durante l'apply in C7 si riscontrassero problemi di instradamento o anom
 - **Proposta tecnica priva di comandi Terraform diretti** e pienamente allineata ai Makefile wrapper di `infra`.
 - **Eliminata qualsiasi regola Bypass Everyone globale non protetta da path scoping**.
 - **Pronta per implementazione controllata in C7**.
+
+## 2. C7A-R1 — proposta statica verificata (24 ottobre 2026, NON applicata)
+
+Questa sezione sostituisce il draft C3.1 obsoleto come proposta per la futura
+revisione C7B. Non modifica il desired state in `infra` e non prova lo stato
+Cloudflare live.
+
+### 2.1 Stato dichiarativo osservato
+
+- `infra/config/exposure.yaml` dichiara attualmente `access.class` sul dominio
+  root `class.simogatti.it` (`primary_path: ""`), quindi l'Access application
+  copre l'host intero.
+- `infra/terraform/cloudflare/access.tf` crea le destinazioni pubbliche da
+  `access.destinations`, ma al momento collega ogni Access application alla
+  policy `cloudflare_access`; il campo logico `access.policy` nel manifest non
+  seleziona la policy.
+- Il provider dichiarato e bloccato nel lockfile è
+  `cloudflare/cloudflare` **5.24.0**. Lo schema documenta `domain` con path,
+  `destinations[].uri` pubbliche con wildcard e policy con decisione `bypass`.
+- Le regole Access su path condivisi seguono la regola più specifica; la regola
+  specifica sostituisce quella più ampia e non ne eredita le policy. Quindi
+  `/api/student/*` può essere un'eccezione esplicita e più specifica rispetto a
+  `/api/*`. `bypass` disattiva i controlli e i log Access sul traffico che
+  corrisponde: va limitato esclusivamente all'API studente, che resta protetta
+  da sessione applicativa nel backend.
+
+Riferimenti di schema e comportamento: Terraform Registry, risorsa
+`cloudflare_zero_trust_access_application` e `cloudflare_zero_trust_access_policy`
+(provider 5.24.0); Cloudflare One, [Application paths](https://developers.cloudflare.com/cloudflare-one/access-controls/policies/app-paths/)
+e [Access policies](https://developers.cloudflare.com/cloudflare-one/access-controls/policies/).
+
+### 2.2 Desired state proposto
+
+Conservare host, DNS, Tunnel, HTTPRoute e Service esistenti. Sostituire
+l'applicazione `class` root con una sola applicazione protetta condivisa per UI
+docente e API gestionali, e aggiungere una sola app pubblica strettamente
+scoped all'API studente. Non creare un'app Access sul root pubblico.
+
+La trasformazione di `infra/config/exposure.yaml` è:
+
+```yaml
+access:
+  class:
+    host: class
+    policy: cloudflare_access
+    profile: teacher-web
+    primary_path: /docente
+    destinations:
+      - /docente
+      - /docente/*
+      - /api
+      - /api/*
+
+  class-student-api:
+    host: class
+    policy: teacher_service_student_api_public
+    profile: teacher-web
+    primary_path: /api/student
+    destinations:
+      - /api/student
+      - /api/student/*
+```
+
+Effetto richiesto:
+
+| Percorso su `class.simogatti.it` | Access | Verifica applicativa |
+|---|---|---|
+| `/` | Nessuna app Access; homepage pubblica | Routing pubblico |
+| `/studente` e `/studente/*` | Nessuna app Access | Codice/sessione per attività |
+| `/docente` e `/docente/*` | App `class`, policy esistente Cloudflare Access | Principal docente autorizzato lato app |
+| `/api` e `/api/*` | App `class`, policy esistente Cloudflare Access | Autorizzazione docente lato app |
+| `/api/student` e `/api/student/*` | Eccezione più specifica, Bypass solo per questa app | Sessione applicativa richiesta sugli endpoint protetti |
+| `/api/<percorso non previsto>` | App `class`, quindi Access prima dell'origine | Backend fail-closed / 404 |
+| `mcp-teacher.simogatti.it/mcp` | Invariato | OAuth/sessione MCP esistente |
+
+Il root e `/studente` non sono eccezioni Bypass: non hanno un'Access
+application associata. L'unica policy Bypass proposta è sull'applicazione
+`class-student-api`, con `Everyone`, associata ai soli due pattern dichiarati.
+
+### 2.3 Adeguamento Terraform necessario
+
+In `infra/terraform/cloudflare/access.tf`, sostituire il riferimento hard-coded
+alla policy con una mappa chiusa di chiavi logiche, senza fallback permissivo:
+
+```hcl
+locals {
+  access_policy_ids = {
+    cloudflare_access = cloudflare_zero_trust_access_policy.cloudflare_access.id
+    teacher_service_student_api_public = cloudflare_zero_trust_access_policy.teacher_service_student_api_public.id
+  }
+
+      policies = [
+        {
+          id = local.access_policy_ids[access.policy]
+        },
+      ]
+}
+```
+
+In `infra/terraform/cloudflare/access-policies.tf`, aggiungere la policy account
+riutilizzabile ma collegata **solo** all'app path-scoped sopra:
+
+```hcl
+resource "cloudflare_zero_trust_access_policy" "teacher_service_student_api_public" {
+  account_id = local.managed_account_id
+  name       = "Teacher Service student API public path"
+  decision   = "bypass"
+  include    = [{ everyone = {} }]
+
+  lifecycle {
+    prevent_destroy = true
+  }
+}
+```
+
+La validazione statica C7A-R1 ha verificato i campi contro la versione provider
+bloccata e le pagine Cloudflare ufficiali. **Non** è stato modificato il repo
+infra e non è stato creato un piano Terraform: il worktree infra contiene lavoro
+concorrente OmniRoute e lo stato live non è stato letto.
+
+### 2.4 Gate e rollback richiesti in C7B
+
+Prima di ogni applicazione, il Domain Owner deve autorizzare separatamente il
+piano. Il piano approvato dovrà mostrare soltanto l'aggiornamento dell'Access
+application `class`, l'aggiunta della policy/app `class-student-api` e gli
+eventuali soli cambi di audience/config strettamente conseguenti. Qualsiasi
+variazione a DNS, Tunnel, route, altri host o app MCP blocca il piano.
+
+L'audience `TEACHER_SERVICE_WEB_CF_ACCESS_AUD` configurata oggi deve continuare
+a corrispondere all'app `class` per **entrambi** `/docente` e `/api/*`. Se il
+provider prevede la sostituzione dell'Access application e quindi un nuovo `aud`,
+il cambio va pianificato insieme all'aggiornamento della ConfigMap e testato in
+una finestra coordinata; non si deve lasciare la pagina docente autenticata ma
+le API in 401. L'audience MCP separata non va modificata.
+
+Test pre/post di rete richiesti: browser anonimo su `/` e `/studente`; claim-code
+con sessione studente; redirect Access su `/docente`, `/api/classes` e
+`/api/unplanned`; accesso docente alle API; sessione studente che non riceve
+soluzioni; hostname MCP e OAuth invariati. Salvare piano immutabile, eseguire
+review indipendente e predisporre rollback del solo Access manifest prima di
+ogni apply. Nessun comando apply è autorizzato da questa proposta.
+
+**Stato finale C7A-R1:** proposta concreta e controllata staticamente; Cloudflare
+live, piano Terraform, accesso remoto, audience transition e rollback live
+**NOT VERIFIED**.
