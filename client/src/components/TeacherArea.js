@@ -1,4 +1,4 @@
-import React, { createElement as h, useState } from 'react';
+import React, { createElement as h, useState, useEffect } from 'react';
 
 import { TeacherPreparationView } from './TeacherPreparationView.js';
 import { ActivitiesView } from './ActivitiesView.js';
@@ -12,6 +12,16 @@ export function TeacherArea({ onNavigate }) {
   const [activeTab, setActiveTab] = useState('overview');
   const [selectedAssessmentId, setSelectedAssessmentId] = useState('');
   const [selectedSubmissionId, setSelectedSubmissionId] = useState('');
+  const [features, setFeatures] = useState({ integrityAnalysis: false });
+
+  useEffect(() => {
+    fetch('/api/auth/me')
+      .then(r => r.ok ? r.json() : null)
+      .then(data => {
+        if (data?.features) setFeatures(data.features);
+      })
+      .catch(() => {});
+  }, []);
 
   const navigate = (tab, assessmentId = '') => {
     setActiveTab(tab);
@@ -43,10 +53,10 @@ export function TeacherArea({ onNavigate }) {
         { id: 'reviewed', label: 'Valutazioni concluse', icon: '✓' }
       ]
     },
-    {
+...(features.integrityAnalysis ? [{
       label: 'Checkpoint successivo',
       items: [{ id: 'integrity', label: 'Integrità ed evidenze', icon: '◇' }]
-    }
+    }] : [])
   ];
   const navItems = navGroups.flatMap(group => group.items);
 
@@ -83,7 +93,7 @@ export function TeacherArea({ onNavigate }) {
       });
       break;
     case 'integrity':
-      content = h(IntegrityPreviewView, null);
+      content = features.integrityAnalysis ? h(IntegrityPreviewView, null) : h(TeacherOverviewView, { onNavigate: navigate });
       break;
     case 'prep':
     default:

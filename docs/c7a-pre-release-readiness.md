@@ -1,6 +1,6 @@
 # C7A — Pre-release validation & deployment readiness
 
-**Data di verifica:** 24 ottobre 2026 (Europe/Rome)
+**Data di verifica:** 24 ottobre 2026 (Europe/Rome) — Revisione C7A-R2: Infrastructure Readiness & Release Decision Packet
 **Scope:** validazione locale C3–C6 e sola osservazione del runtime K3s.
 **Decisione:** C7A completato; **C7B non avviato e non autorizzato**.
 

@@ -40,6 +40,7 @@ export class TeacherService {
     webResearchClient = null,
     mockAi = false,
     allowExternalStudentGrading = process.env.TEACHER_SERVICE_ALLOW_EXTERNAL_STUDENT_GRADING === 'true',
+    enableIntegrityAnalysis = process.env.TEACHER_SERVICE_ENABLE_INTEGRITY_ANALYSIS === 'true',
     fileServiceOptions = {}
   } = {}) {
     this.dbManager = dbManager || createProductionDatabase();
@@ -56,6 +57,7 @@ export class TeacherService {
     this.sources = new SourceService(this.dbManager, this.materials, this.org, this.webResearch);
     this.fileService = new FileService(this.materials, this.fileStore, fileServiceOptions);
     this.assessments = new AssessmentService(this.dbManager, this.materials, this.ai, this.aiRules, this.fileStore, { allowExternalStudentGrading });
+    this.enableIntegrityAnalysis = Boolean(enableIntegrityAnalysis);
     this.integrity = new IntegrityAnalysisService({ dbManager: this.dbManager, assessmentService: this.assessments, materialService: this.materials });
     this.generation = new GenerationService(this.ai, this.materials, this.org, this.aiRules, this.assessments, this.sources);
     this._activeArtifactLocks = new Set();
@@ -570,8 +572,18 @@ export class TeacherService {
   getStudentSubmission(assessmentId, studentId) { return this.assessments.getStudentSubmission(assessmentId, studentId); }
   saveDraftSubmission(params) { return this.assessments.saveDraftSubmission(params); }
   getLiveMonitoringData(assessmentId) { return this.assessments.getLiveMonitoringData(assessmentId); }
-  analyzeIntegrityEvidence(assessmentId) { return this.integrity.analyzeAssessment(assessmentId); }
-  recordIntegrityReview(data) { return this.integrity.recordReview(data); }
+  analyzeIntegrityEvidence(assessmentId) {
+    if (!this.enableIntegrityAnalysis) {
+      throw new ValidationError("L'analisi dell'integrità è disabilitata in questo ambiente (TEACHER_SERVICE_ENABLE_INTEGRITY_ANALYSIS=false)");
+    }
+    return this.integrity.analyzeAssessment(assessmentId);
+  }
+  recordIntegrityReview(data) {
+    if (!this.enableIntegrityAnalysis) {
+      throw new ValidationError("L'analisi dell'integrità è disabilitata in questo ambiente (TEACHER_SERVICE_ENABLE_INTEGRITY_ANALYSIS=false)");
+    }
+    return this.integrity.recordReview(data);
+  }
   getIntegrityReviewHistory(assessmentId, evidenceId) { return this.integrity.getReviewHistory(assessmentId, evidenceId); }
   getIntegrityPreviewData(assessmentId) { return this.analyzeIntegrityEvidence(assessmentId); }
 

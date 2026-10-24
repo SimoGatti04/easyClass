@@ -26,7 +26,7 @@ test('C6 integrity dashboard renders real teacher-only evidence and works on a p
   fs.mkdirSync(runRoot, { recursive: true, mode: 0o700 });
   const dbManager = new DatabaseManager(path.join(runRoot, 'teacher-c6-e2e.sqlite')).init();
   const fileStore = new FileStore(path.join(runRoot, 'filestore'));
-  const service = new TeacherService({ dbManager, fileStore, mockAi: true });
+  const service = new TeacherService({ dbManager, fileStore, mockAi: true, enableIntegrityAnalysis: true });
   const classroom = service.createClass({ name: '4A Sintetica C6', academicYear: '2026/2027' });
   const subject = service.createSubject({ classId: classroom.id, name: 'Informatica C6' });
   const lesson = service.createLesson({ classId: classroom.id, subjectId: subject.id, title: 'Reti sintetiche', orderIndex: 1 });

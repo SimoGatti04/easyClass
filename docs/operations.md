@@ -193,3 +193,31 @@ The production runbook remains K3s-only. For local development, use the pinned
 project Node/pnpm versions, `.env.local` (owner-only and ignored), and the
 commands in `README.md`. Local SQLite and FileStore are separate development
 state; never copy production data into local tests.
+
+## Rate Limiting & Proxy Trust Configuration (C7A-R2)
+
+- Student claim code endpoint (`POST /api/student/claim-code`) enforces multi-tiered rate limits persisted in SQLite (`student_claim_rate_limits`):
+  - `TEACHER_SERVICE_CLAIM_RATE_LIMIT_DEVICE_MAX`: 5 consecutive failures per device (header `X-Student-Device-Id`).
+  - `TEACHER_SERVICE_CLAIM_RATE_LIMIT_CODE_MAX`: 5 failures per IP + code.
+  - `TEACHER_SERVICE_CLAIM_RATE_LIMIT_IP_MAX`: 60 failures per 5 minutes per IP (allowing 30 students under same classroom NAT with minor typos).
+  - `TEACHER_SERVICE_CLAIM_RATE_LIMIT_IP_BURST`: 35 failures per 10 seconds per IP (blocking rapid brute-force bots).
+- Proxy trust is governed by `TEACHER_SERVICE_TRUSTED_PROXY_CIDRS`. In production, this must match only the specific, verified peer IP of Traefik or the Tunnel egress. If unset or non-matching, `resolveClientIp` falls back fail-closed to the direct TCP socket address, preventing any IP header spoofing.
+
+## Feature Gates & Operational Controls (C7A-R2)
+
+- `TEACHER_SERVICE_ENABLE_INTEGRITY_ANALYSIS`: Defaults to `false` in production.
+  - When disabled:
+    - Integrity analysis tab in Teacher web UI is hidden.
+    - REST endpoints (`/api/assessments/:id/integrity-preview`, `/api/assessments/:id/integrity-reviews`) return 404 Not Found.
+    - MCP tools (`analyze_integrity_evidence`, `record_integrity_review`) are removed from `tools/list` and reject invocations.
+    - Core teacher monitoring, live exam operations, extra time, manual submission withdrawal, and grading remain fully enabled.
+- `TEACHER_SERVICE_ENABLE_STUDENT_EXTERNAL_GRADING`: Defaults to `false` in production. Student submissions are graded internally via local rules and rubrics; external LLM submission processing requires explicit configuration.
+
+## Data-Loss Policy & Rollback Principles
+
+- **Pre-cutover Rollback:** During the maintenance window, before live student/teacher traffic is routed to the new release, rolling back to the pre-deployment snapshot is completely non-destructive (zero data loss).
+- **Post-cutover Rollback:** Once real classroom examinations occur or teacher grades are recorded, restoring the pre-deployment database snapshot would permanently overwrite and destroy newly created student submissions and evaluations.
+  - Never blindly restore a pre-deployment database snapshot on a live running system.
+  - In emergency post-cutover rollback, always perform a delta export/snapshot of all new data first.
+  - The SQLite schema migration is additive (columns with defaults, new non-conflicting tables), allowing older T1 versions of the service to read existing baseline records without failure.
+  - If a PVC restoration is ever executed on K3s/Longhorn, restore into a NEW isolated volume or path. Never overwrite the original PVCs in-place.

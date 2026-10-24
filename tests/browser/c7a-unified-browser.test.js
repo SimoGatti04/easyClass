@@ -50,7 +50,7 @@ test('C7A unified same-assessment flow: teacher API, two real browser sessions, 
       };
     }
   };
-  const service = new TeacherService({ dbManager, fileStore, omniRouteClient: aiMock, mockAi: true, allowExternalStudentGrading: false });
+  const service = new TeacherService({ dbManager, fileStore, omniRouteClient: aiMock, mockAi: true, allowExternalStudentGrading: false, enableIntegrityAnalysis: true });
   const { publicKey, privateKey } = crypto.generateKeyPairSync('rsa', { modulusLength: 2048 });
   const kid = `c7a-unified-${process.pid}`;
   setTestAuthKeys({ keys: new Map([[kid, publicKey]]) });
@@ -76,7 +76,17 @@ test('C7A unified same-assessment flow: teacher API, two real browser sessions, 
     fs.rmSync(runRoot, { recursive: true, force: true });
   });
 
-  const { url } = await app.start(0, '127.0.0.1');
+  let started;
+  try {
+    started = await app.start(0, '127.0.0.1');
+  } catch (error) {
+    if (error?.code === 'EPERM') {
+      t.skip('Sandbox policy denied loopback bind; run this browser E2E on the host to verify HTTP.');
+      return;
+    }
+    throw error;
+  }
+  const { url } = started;
   const baseUrl = `http://127.0.0.1:${app.server.address().port}`;
   const teacherApi = async (route, { method = 'GET', body } = {}) => {
     const response = await fetch(`${baseUrl}${route}`, {

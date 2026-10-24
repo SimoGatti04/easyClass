@@ -101,7 +101,7 @@ test('loopback Streamable HTTP MCP supports mapped teacher CRUD, contextual gene
 
   const dbManager = new DatabaseManager(':memory:').init();
   const fileStore = new FileStore(tempDir);
-  const service = new TeacherService({ dbManager, fileStore, omniRouteClient, webResearchClient });
+  const service = new TeacherService({ dbManager, fileStore, omniRouteClient, webResearchClient, enableIntegrityAnalysis: true });
   const app = await createHttpApp({
     service,
     authMode: 'strict',

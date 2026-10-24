@@ -113,6 +113,20 @@ test('T1 -> C6 migration and rollback drill on synthetic isolated store', () => 
   // Verify restored files
   assert.equal(fs.readFileSync(path.join(restoredFilesPath, 'sample_attachment.txt'), 'utf8'), 'Sample synthetic attachment content');
 
+
+  // 5. Test T1 runtime compatibility on both restored store and post-migration store
+  // 5a. Post-migration store: T1 baseline queries succeed (additive migration preserves T1 reads)
+  const postMigrationDb = new DatabaseSync(dbPath);
+  const t1LessonsPostMig = postMigrationDb.prepare("SELECT id, title, description, class_id, subject_id FROM lessons WHERE id = ?").get("les-drill-1");
+  assert.equal(t1LessonsPostMig.title, "Crittografia e Zero Trust");
+  postMigrationDb.close();
+
+  // 5b. Restored target store: T1 baseline queries succeed in full pristine T1 state
+  const restoredDbCheck = new DatabaseSync(restoredDbPath);
+  const t1LessonsRestored = restoredDbCheck.prepare("SELECT id, title, description, class_id, subject_id FROM lessons WHERE id = ?").get("les-drill-1");
+  assert.equal(t1LessonsRestored.title, "Crittografia e Zero Trust");
+  restoredDbCheck.close();
+
   // Cleanup
   fs.rmSync(tmpRoot, { recursive: true, force: true });
 });

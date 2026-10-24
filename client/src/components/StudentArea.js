@@ -125,10 +125,22 @@ export function StudentArea({ onNavigate }) {
     }
 
     setErrorMessage('');
+    let studentDeviceId = "";
+    try {
+      studentDeviceId = localStorage.getItem("teacher_service_device_id");
+      if (!studentDeviceId) {
+        studentDeviceId = (typeof crypto !== "undefined" && crypto.randomUUID) ? crypto.randomUUID() : ("dev-" + Date.now() + "-" + Math.random().toString(36).slice(2, 9));
+        localStorage.setItem("teacher_service_device_id", studentDeviceId);
+      }
+    } catch {}
+
     fetch('/api/student/claim-code', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ accessCode: code })
+      headers: {
+        'Content-Type': 'application/json',
+        ...(studentDeviceId ? { 'X-Student-Device-Id': studentDeviceId } : {})
+      },
+      body: JSON.stringify({ accessCode: code, deviceId: studentDeviceId })
     })
       .then(res => {
         if (!res.ok) {

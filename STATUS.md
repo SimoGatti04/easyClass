@@ -781,3 +781,60 @@ concorrenti OmniRoute lasciate intatte.
 I dettagli, le evidenze e il piano C7B non eseguito sono in
 `docs/c7a-pre-release-readiness.md`; il runbook di persistence/recovery è in
 `docs/operations.md`.
+
+
+### 11. Checkpoint C7A-R2: Final Corrections & Release Decision Packet (24 ottobre 2026)
+
+In risposta ai rilievi finali della supervisione C7A-R2, sono stati completati tutti gli interventi correttivi sul perimetro applicativo e documentale, senza effettuare operazioni produttive:
+
+1. **Classroom-Compatible Rate Limiter (`src/server/claim-rate-limiter.js`):**
+   - Implementato rate limiting multi-dimensionale persistito su tabella SQLite (`student_claim_rate_limits`):
+     - *Per dispositivo (`deviceMaxFails = 5`)*: isola il singolo studente con errori di battitura seriali.
+     - *Per codice tentato dall'IP (`codeMaxFails = 5`)*: neutralizza tentativi mirati a indovinare un codice specifico.
+     - *Aggregato d'aula (`ipMaxFails = 60` / 5 min)*: garantisce la regolare fruizione per 30 studenti sotto lo stesso NAT scolastico con fisiologici errori di digitazione.
+     - *Anti-burst ad alta velocità (`ipBurstMaxFails = 35` / 10 s)*: blocca istantaneamente bot automatizzati di enumerazione a rotazione di codici.
+     - *Resilienza e condivisione:* persistenza SQLite garantita tra riavvii del processo e repliche.
+     - *Anti-spoofing:* `resolveClientIp` accetta `CF-Connecting-IP` esclusivamente da peer TCP verificati in `TEACHER_SERVICE_TRUSTED_PROXY_CIDRS`.
+   - *Test:* `tests/server/classroom-rate-limiting.test.js` (7/7 test PASS).
+
+2. **Server-Side Feature Gate C6 (`TEACHER_SERVICE_ENABLE_INTEGRITY_ANALYSIS`):**
+   - Default conservativo: `false`.
+   - Gating fail-closed su tutti i layer:
+     - Livello di servizio (`TeacherService`): metodi `analyzeIntegrityEvidence` e `recordIntegrityReview` sollevano `ValidationError`.
+     - Livello HTTP REST: `/api/assessments/:id/integrity-preview` e `/api/assessments/:id/integrity-reviews` restituiscono 404 Not Found JSON.
+     - Livello MCP Server: tool omessi dall'elenco `tools/list` e rifiutati alla chiamata diretta.
+     - Livello Frontend: tab "Integrità ed evidenze" nascosto in base a `/api/auth/me`.
+     - Funzioni ordinarie di consultazione, ritiro, estensione tempo e correzione docente rimangono attive.
+   - *Test:* `tests/server/integrity-gate.test.js` (3/3 test PASS).
+
+3. **Drill Automatizzato di Migrazione e Rollback (`tests/integration/migration-rollback-drill.test.js`):**
+   - Verificata la migrazione additiva dello schema SQLite da T1 a C6.
+   - Verificato che un runtime precedente T1 esegua con successo le query baseline su uno store migrato C6.
+   - Verificato il ripristino atomico dello snapshot pre-migrazione verso nuove cartelle/PVC isolate, con validazione integrità e foreign key check.
+
+4. **Diagnostica K3s e Verdetto Pod Exit Code 137:**
+   - Terminato con `reason=Error`, `exitCode=137` il 23 ottobre 2026 alle 13:27:25 UTC; riavviato in 3 secondi.
+   - **Non** è stato classificato `OOMKilled` da Kubernetes.
+   - Coincidenza temporale con altri riavvii di container sul nodo; nodo in stato `Ready` senza memory/disk/pid pressure.
+   - Eventi `FreeDiskSpaceFailed` iniziati 46 minuti dopo il restart (nessun nesso causale).
+   - Verdetto: **NOT VERIFIED — Causa non determinata con certezza** (compatibile con manutenzione/riavvio containerd o timeout di liveness probe); servizio attualmente stabile con ~29 MiB di memoria.
+
+5. **Data-Loss Policy & Rollback Coordinato:**
+   - Definito in `docs/operations.md` e `docs/c7a-pre-release-readiness.md`: il rollback distruttivo via snapshot pre-rilascio è sicuro solo pre-cutover; post-cutover causerebbe la perdita permanente dei compiti consegnati dagli studenti e delle valutazioni. In caso di emergenza post-cutover, si applica il downgrade applicativo a caldo preservando il database migrato additivo.
+
+6. **Revisione IaC Cloudflare 5.24.0 (`docs/cloudflare-routing-iac-proposal.md`):**
+   - Rimossi attributi RDP non pertinenti.
+   - Analizzato il rischio di replacement risorsa Access e conseguente variazione del tag AUD: documentata la sincronizzazione obbligatoria di `TEACHER_SERVICE_WEB_CF_ACCESS_AUD` in `infra/k3s/apps/class/configmap.yaml`.
+   - Chiarita la tassonomia cookie/header (`CF_AppSession`, `CF_Authorization` HttpOnly, `Cf-Access-Jwt-Assertion`).
+   - Redatta la matrice completa dei percorsi HTTP e la tabella dei controlli negativi.
+
+#### Risultati Suite Test (C7A-R2)
+- Master Test Suite (`node tests/run-all.js`): **31 suite eseguite, 31 passed, 0 failed (169 test totali PASS)**.
+- Browser E2E Suites (`c4`, `c5`, `c6`, `c7a`, `t1`): **Tutti PASS**.
+- Stato Git applicativo: modifiche committate in modo atomico, working tree pulito.
+- Repository infra: **INTOCCATO** (modifiche OmniRoute concorrenti preservate).
+
+#### Decisione di Rilascio
+- **Software Readiness:** **PASS** (100% verificato e blindato localmente).
+- **Infrastructure Readiness:** **BLOCKED / NOT VERIFIED** (IaC verificata staticamente; stato live Cloudflare/Access e CIDR proxy non accessibili).
+- **Deployment Authorization (C7B):** **NO** (Richiede approvazione del Domain Owner sui punti del Release Decision Packet).

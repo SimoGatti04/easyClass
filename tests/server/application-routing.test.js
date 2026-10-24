@@ -28,7 +28,17 @@ test('real path routing serves public/student/teacher deep links and keeps APIs 
     fs.rmSync(temp, { recursive: true, force: true });
   });
 
-  const { url } = await app.start(0, '127.0.0.1');
+  let started;
+  try {
+    started = await app.start(0, '127.0.0.1');
+  } catch (error) {
+    if (error?.code === 'EPERM') {
+      t.skip('Sandbox policy denied loopback bind; run on host with network permission');
+      return;
+    }
+    throw error;
+  }
+  const { url } = started;
   const pages = ['/', '/studente', '/studente/attivita/demo', '/docente', '/docente/attivita/demo'];
   let canonicalIndex;
   for (const route of pages) {

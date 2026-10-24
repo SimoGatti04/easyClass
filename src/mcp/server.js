@@ -1403,34 +1403,36 @@ export function createMcpServer(service = new TeacherService(), { authorizeTeach
         additionalProperties: false
       }
     },
-    {
-      name: 'analyze_integrity_evidence',
-      description: 'Runs a deterministic, local comparison of finalized submissions and exact published assessment sources. It emits interpretable observations only, never a probability or disciplinary conclusion.',
-      annotations: { readOnlyHint: true, destructiveHint: false, openWorldHint: false },
-      inputSchema: {
-        type: 'object',
-        properties: { assessmentId: { type: 'string' } },
-        required: ['assessmentId'],
-        additionalProperties: false
+    ...(service.enableIntegrityAnalysis ? [
+      {
+        name: 'analyze_integrity_evidence',
+        description: 'Runs a deterministic, local comparison of finalized submissions and exact published assessment sources. It emits interpretable observations only, never a probability or disciplinary conclusion.',
+        annotations: { readOnlyHint: true, destructiveHint: false, openWorldHint: false },
+        inputSchema: {
+          type: 'object',
+          properties: { assessmentId: { type: 'string' } },
+          required: ['assessmentId'],
+          additionalProperties: false
+        }
+      },
+      {
+        name: 'record_integrity_review',
+        description: 'Appends a teacher-only review state for an existing evidence record; it never changes grading or applies a sanction.',
+        annotations: { readOnlyHint: false, destructiveHint: false, openWorldHint: false },
+        inputSchema: {
+          type: 'object',
+          properties: {
+            assessmentId: { type: 'string' },
+            evidenceId: { type: 'string' },
+            decision: { type: 'string', enum: ['pending', 'reviewed_no_action', 'needs_follow_up'] },
+            note: { type: 'string' },
+            idempotencyKey: { type: 'string', minLength: 8, maxLength: 200 }
+          },
+          required: ['assessmentId', 'evidenceId', 'decision', 'idempotencyKey'],
+          additionalProperties: false
+        }
       }
-    },
-    {
-      name: 'record_integrity_review',
-      description: 'Appends a teacher-only review state for an existing evidence record; it never changes grading or applies a sanction.',
-      annotations: { readOnlyHint: false, destructiveHint: false, openWorldHint: false },
-      inputSchema: {
-        type: 'object',
-        properties: {
-          assessmentId: { type: 'string' },
-          evidenceId: { type: 'string' },
-          decision: { type: 'string', enum: ['pending', 'reviewed_no_action', 'needs_follow_up'] },
-          note: { type: 'string' },
-          idempotencyKey: { type: 'string', minLength: 8, maxLength: 200 }
-        },
-        required: ['assessmentId', 'evidenceId', 'decision', 'idempotencyKey'],
-        additionalProperties: false
-      }
-    }
+    ] : [])
   ];
 
   server.setRequestHandler(ListToolsRequestSchema, async () => {
@@ -1706,9 +1708,15 @@ export function createMcpServer(service = new TeacherService(), { authorizeTeach
           });
           break;
         case "analyze_integrity_evidence":
+          if (!service.enableIntegrityAnalysis) {
+            throw new ValidationError("L'analisi dell'integrità è disabilitata in questo ambiente (TEACHER_SERVICE_ENABLE_INTEGRITY_ANALYSIS=false)");
+          }
           result = service.analyzeIntegrityEvidence(args.assessmentId);
           break;
         case "record_integrity_review":
+          if (!service.enableIntegrityAnalysis) {
+            throw new ValidationError("L'analisi dell'integrità è disabilitata in questo ambiente (TEACHER_SERVICE_ENABLE_INTEGRITY_ANALYSIS=false)");
+          }
           result = service.recordIntegrityReview({
             assessmentId: args.assessmentId,
             evidenceId: args.evidenceId,

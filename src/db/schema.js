@@ -493,4 +493,19 @@ CREATE TABLE IF NOT EXISTS integrity_review_events (
 
 CREATE INDEX IF NOT EXISTS idx_integrity_review_evidence
   ON integrity_review_events(assessment_id, evidence_id, created_at);
+
+-- 26. Student Claim Rate Limits (Shared across instances and restarts)
+CREATE TABLE IF NOT EXISTS student_claim_rate_limits (
+  scope TEXT NOT NULL,
+  identifier TEXT NOT NULL,
+  failed_count INTEGER NOT NULL DEFAULT 0,
+  first_attempt_at INTEGER NOT NULL,
+  last_attempt_at INTEGER NOT NULL,
+  blocked_until INTEGER NOT NULL DEFAULT 0,
+  PRIMARY KEY (scope, identifier)
+);
+
+CREATE INDEX IF NOT EXISTS idx_claim_rate_limits_blocked
+  ON student_claim_rate_limits(scope, identifier, blocked_until);
+
 `;

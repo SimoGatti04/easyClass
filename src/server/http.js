@@ -19,6 +19,7 @@ import { parseMultipartFormData } from './multipart.js';
 import { createStaticFileHandler } from './static.js';
 import path from 'node:path';
 import { resolveClientIp } from './client-ip.js';
+import { ClaimRateLimiter } from './claim-rate-limiter.js';
 import { createTeacherPrincipalAuthorizer } from './teacher-authorization.js';
 import { TeacherService } from '../services/teacher-service.js';
 import { PedagogicalRoles } from '../core/contracts.js';
@@ -109,6 +110,7 @@ export async function createHttpApp(options = {}) {
       ? process.env.TEACHER_SERVICE_ALLOWED_ORIGINS.split(',').map(s => s.trim())
       : DEFAULT_ALLOWED_ORIGINS
   );
+  const claimRateLimiter = options.claimRateLimiter || new ClaimRateLimiter(service.dbManager, options.rateLimiterOptions);
   const trustedProxyCidrs = options.trustedProxyCidrs ??
     (process.env.TEACHER_SERVICE_TRUSTED_PROXY_CIDRS || '').split(',').map(value => value.trim()).filter(Boolean);
 
@@ -265,7 +267,7 @@ export async function createHttpApp(options = {}) {
 
       // Branch 3a: Student API (/api/student/*) — Public Student Space, zero teacher privilege
       if (pathname.startsWith('/api/student/')) {
-        return handleStudentApi(req, res, pathname, parsedUrl, service, parsedBody, multipartData, trustedProxyCidrs);
+        return handleStudentApi(req, res, pathname, parsedUrl, service, parsedBody, multipartData, trustedProxyCidrs, claimRateLimiter);
       }
 
       // Branch 3b: Protected Teacher REST API (/api/*) — Strict authentication & teacher authorization
@@ -288,7 +290,11 @@ export async function createHttpApp(options = {}) {
             principal: authResult.principal,
             user: authResult.user || null,
             teacherAuthorized: false,
-            role: 'unauthorized'
+            role: 'unauthorized',
+            features: {
+              integrityAnalysis: Boolean(service.enableIntegrityAnalysis),
+              allowExternalStudentGrading: Boolean(service.assessments?.allowExternalStudentGrading)
+            }
           }));
           return;
         }
@@ -579,7 +585,8 @@ const claimRateLimitMap = new Map();
 const MAX_FAILED_CLAIM_ATTEMPTS = 5;
 const CLAIM_BLOCK_WINDOW_MS = 5 * 60 * 1000;
 
-export async function handleStudentApi(req, res, pathname, parsedUrl, service, parsedBody, multipartData, trustedProxyCidrs = []) {
+export async function handleStudentApi(req, res, pathname, parsedUrl, service, parsedBody, multipartData, trustedProxyCidrs = [], rateLimiter = null) {
+  const activeRateLimiter = rateLimiter || new ClaimRateLimiter(service.dbManager);
   res.setHeader('Content-Type', 'application/json');
 
   const normalizeStudentResponses = (responses) => {
@@ -627,41 +634,41 @@ export async function handleStudentApi(req, res, pathname, parsedUrl, service, p
       // Forwarded client IPs are trusted only when the immediate TCP peer is
       // explicitly configured as a reverse proxy. In particular, private
       // address space alone is not evidence that a forwarded header is safe.
-      const clientIp = resolveClientIp(req, trustedProxyCidrs);
-
+            const clientIp = resolveClientIp(req, trustedProxyCidrs);
+      const accessCode = parsedBody?.accessCode;
+      const rawDeviceId = req.headers["x-student-device-id"] || req.headers["x-device-id"] || parsedBody?.deviceId;
+      let cookieDeviceId = null;
+      if (req.headers["cookie"]) {
+        const match = req.headers["cookie"].match(/(?:^|;\s*)ts_device_id=([^;]*)/);
+        if (match) cookieDeviceId = decodeURIComponent(match[1].trim());
+      }
+      const clientDeviceId = (typeof rawDeviceId === "string" && rawDeviceId.trim().length > 0)
+        ? rawDeviceId.trim()
+        : (cookieDeviceId || null);
+      const deviceId = clientDeviceId ? `dev:${clientDeviceId}` : `anon:${clientIp}`;
       const now = Date.now();
-      const ipRecord = claimRateLimitMap.get(clientIp);
-      if (ipRecord && ipRecord.blockedUntil && ipRecord.blockedUntil > now) {
-        const remainingSec = Math.ceil((ipRecord.blockedUntil - now) / 1000);
+
+      const blockInfo = activeRateLimiter.checkLimit({ ip: clientIp, deviceId, code: accessCode, now });
+      if (blockInfo?.blocked) {
         res.writeHead(429, {
-          'Content-Type': 'application/json',
-          'Retry-After': String(remainingSec)
+          "Content-Type": "application/json",
+          "Retry-After": String(blockInfo.remainingSec)
         });
         res.end(JSON.stringify({
-          error: 'TooManyRequests',
-          message: 'Troppi tentativi falliti di riscatto codice. Riprova tra qualche minuto.'
+          error: "TooManyRequests",
+          message: blockInfo.message || "Troppi tentativi falliti di riscatto codice. Riprova tra qualche minuto."
         }));
         return;
       }
 
-      const accessCode = parsedBody?.accessCode;
       try {
         const session = service.claimStudentSession(accessCode);
-        claimRateLimitMap.delete(clientIp);
+        activeRateLimiter.recordSuccess({ ip: clientIp, deviceId, code: accessCode });
         res.writeHead(200);
         res.end(JSON.stringify({ status: "ok", session }));
         return;
       } catch (err) {
-        const rec = claimRateLimitMap.get(clientIp) || { count: 0, firstAttempt: now };
-        if (now - rec.firstAttempt > CLAIM_BLOCK_WINDOW_MS) {
-          rec.count = 0;
-          rec.firstAttempt = now;
-        }
-        rec.count += 1;
-        if (rec.count >= MAX_FAILED_CLAIM_ATTEMPTS) {
-          rec.blockedUntil = now + CLAIM_BLOCK_WINDOW_MS;
-        }
-        claimRateLimitMap.set(clientIp, rec);
+        activeRateLimiter.recordFailure({ ip: clientIp, deviceId, code: accessCode, now });
         throw err;
       }
     }
@@ -1000,7 +1007,11 @@ async function handleRestApi(req, res, pathname, parsedUrl, service, authResult,
         principal: authResult.principal,
         user: authResult.user || null,
         teacherAuthorized: true,
-        role: callerRole
+        role: callerRole,
+        features: {
+          integrityAnalysis: Boolean(service.enableIntegrityAnalysis),
+          allowExternalStudentGrading: Boolean(service.assessments?.allowExternalStudentGrading)
+        }
       }));
       return;
     }
@@ -1342,6 +1353,11 @@ async function handleRestApi(req, res, pathname, parsedUrl, service, authResult,
     // Teacher-only integrity analysis. Reports are computed on demand; the
     // persisted record contains review decisions, not answer excerpts.
     if (pathname.match(/^\/api\/assessments\/([^/]+)\/integrity-preview$/) && req.method === 'GET') {
+      if (!service.enableIntegrityAnalysis) {
+        res.writeHead(404, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: 'Not Found', message: "L'analisi dell'integrità è disabilitata in questo ambiente (TEACHER_SERVICE_ENABLE_INTEGRITY_ANALYSIS=false)" }));
+        return;
+      }
       const id = pathname.split('/')[3];
       const integrityAnalysis = service.analyzeIntegrityEvidence(id);
       res.writeHead(200, { 'Content-Type': 'application/json' });
@@ -1350,6 +1366,11 @@ async function handleRestApi(req, res, pathname, parsedUrl, service, authResult,
     }
 
     if (pathname.match(/^\/api\/assessments\/([^/]+)\/integrity-reviews$/) && req.method === 'POST') {
+      if (!service.enableIntegrityAnalysis) {
+        res.writeHead(404, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: 'Not Found', message: "L'analisi dell'integrità è disabilitata in questo ambiente (TEACHER_SERVICE_ENABLE_INTEGRITY_ANALYSIS=false)" }));
+        return;
+      }
       const assessmentId = pathname.split('/')[3];
       const review = service.recordIntegrityReview({
         assessmentId,

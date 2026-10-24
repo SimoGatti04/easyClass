@@ -57,6 +57,21 @@ export class DatabaseManager {
     ensureColumn('sources', 'authority_basis', 'TEXT');
     ensureColumn('lessons', 'duration_minutes', 'INTEGER DEFAULT 60');
 
+    this.db.exec(`
+      CREATE TABLE IF NOT EXISTS student_claim_rate_limits (
+        scope TEXT NOT NULL,
+        identifier TEXT NOT NULL,
+        failed_count INTEGER NOT NULL DEFAULT 0,
+        first_attempt_at INTEGER NOT NULL,
+        last_attempt_at INTEGER NOT NULL,
+        blocked_until INTEGER NOT NULL DEFAULT 0,
+        PRIMARY KEY (scope, identifier)
+      );
+      CREATE INDEX IF NOT EXISTS idx_claim_rate_limits_blocked
+        ON student_claim_rate_limits(scope, identifier, blocked_until);
+    `);
+
+
     
     ensureColumn('assessments', 'activity_type', "TEXT NOT NULL DEFAULT 'test'");
     ensureColumn('assessments', 'is_active', 'INTEGER NOT NULL DEFAULT 1');
