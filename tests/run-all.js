@@ -32,7 +32,8 @@ const testFiles = [
   'tests/integration/e2e.test.js',
   'tests/integration/t1-workflow.test.js',
   'tests/integration/dev-preview.test.js',
-  'tests/integration/store-snapshot.test.js'
+  'tests/integration/store-snapshot.test.js',
+  'tests/integration/migration-rollback-drill.test.js'
 ];
 
 console.log('====================================================');
