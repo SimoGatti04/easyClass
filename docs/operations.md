@@ -199,8 +199,8 @@ state; never copy production data into local tests.
 - Student claim code endpoint (`POST /api/student/claim-code`) enforces multi-tiered rate limits persisted in SQLite (`student_claim_rate_limits`):
   - `TEACHER_SERVICE_CLAIM_RATE_LIMIT_DEVICE_MAX`: 5 consecutive failures per device (header `X-Student-Device-Id`).
   - `TEACHER_SERVICE_CLAIM_RATE_LIMIT_CODE_MAX`: 5 failures per IP + code.
-  - `TEACHER_SERVICE_CLAIM_RATE_LIMIT_IP_MAX`: 60 failures per 5 minutes per IP (allowing 30 students under same classroom NAT with minor typos).
-  - `TEACHER_SERVICE_CLAIM_RATE_LIMIT_IP_BURST`: 35 failures per 10 seconds per IP (blocking rapid brute-force bots).
+  - `TEACHER_SERVICE_CLAIM_RATE_LIMIT_IP_MAX`: 120 failures per 5 minutes per IP (tuned in C7B-P0 to prevent collective lockout for 30-35 students under shared NAT router making 2-3 typos each).
+  - `TEACHER_SERVICE_CLAIM_RATE_LIMIT_IP_BURST`: 75 failures per 10 seconds per IP (protects against automated burst enumeration while absorbing simultaneous classroom submissions).
 - Proxy trust is governed by `TEACHER_SERVICE_TRUSTED_PROXY_CIDRS`. In production, this must match only the specific, verified peer IP of Traefik or the Tunnel egress. If unset or non-matching, `resolveClientIp` falls back fail-closed to the direct TCP socket address, preventing any IP header spoofing.
 
 ## Feature Gates & Operational Controls (C7A-R2)
@@ -221,3 +221,25 @@ state; never copy production data into local tests.
   - In emergency post-cutover rollback, always perform a delta export/snapshot of all new data first.
   - The SQLite schema migration is additive (columns with defaults, new non-conflicting tables), allowing older T1 versions of the service to read existing baseline records without failure.
   - If a PVC restoration is ever executed on K3s/Longhorn, restore into a NEW isolated volume or path. Never overwrite the original PVCs in-place.
+
+## Non-Atomic Store Recovery Mechanics & Partial Failure Handling (C7B-P0)
+
+- **Non-Atomic Filesystem Invariant:**
+  SQLite snapshot (`VACUUM INTO`) and FileStore replication (`fs.cpSync`) do **not** constitute a single POSIX atomic transaction. An interruption (process kill, disk full, node failure) between or during these operations could leave an incomplete snapshot or mismatched data versions.
+- **Defensive Safeguards in Tooling (`src/storage/store-snapshot.js`):**
+  - *Snapshot Isolation:* Snapshots are initially assembled in an isolated temporary staging directory (`.teacher-service-snapshot-<uuid>`). The database and all attachment files are checksummed into an immutable SHA-256 `manifest.json`. Only after strict manifest self-verification succeeds is the directory renamed to the target destination path. On failure or error, staging artifacts are immediately removed.
+  - *Non-Overwrite Guarantee:* Restore operations strictly refuse to overwrite existing database files or non-empty directories (`Refusing to overwrite existing target...`).
+  - *Rollback Cleanup Handlers:* During restore, staging copies and newly installed targets are tracked with atomic cleanup rollback hooks (`dbInstalled`, `filesInstalled`). If a database verification, manifest integrity check, or FileStore copy fails midway, all installed targets in the restore destination are unlinked and cleaned, guaranteeing no partial or corrupted store state remains.
+  - *Verified in Automated Suites:* `tests/integration/snapshot-partial-failures.test.js` (6/6 tests PASS).
+
+## Verified T1 Container Rollback Compatibility (C7B-P0)
+
+- The real production T1 container image (`ghcr.io/simogatti04/class:20261020-f962706`, Linux amd64) was booted and executed in isolated environments against:
+  1. A pre-migration baseline store.
+  2. A store migrated forward with C6 schema changes.
+  3. A store restored from a pre-migration snapshot into clean target volumes.
+- In all three scenarios, the legacy T1 runtime:
+  - Responded `200 OK` on `/health`.
+  - Initialized SQLite and passed all foreign-key and integrity pragma checks.
+  - Successfully queried and resolved classes, subjects, lessons, materials, specific versions, and FileStore raw attachments without SQL errors.
+- Proves that the schema migration is strictly backward-compatible with the T1 binary, enabling instant container image rollback if needed during pre-cutover verification.

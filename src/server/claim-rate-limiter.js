@@ -10,8 +10,8 @@
 
 export const DEVICE_MAX_FAILS = Number(process.env.TEACHER_SERVICE_CLAIM_RATE_LIMIT_DEVICE_MAX || 5);
 export const CODE_MAX_FAILS = Number(process.env.TEACHER_SERVICE_CLAIM_RATE_LIMIT_CODE_MAX || 5);
-export const IP_MAX_FAILS = Number(process.env.TEACHER_SERVICE_CLAIM_RATE_LIMIT_IP_MAX || 60);
-export const IP_BURST_MAX_FAILS = Number(process.env.TEACHER_SERVICE_CLAIM_RATE_LIMIT_IP_BURST || 35);
+export const IP_MAX_FAILS = Number(process.env.TEACHER_SERVICE_CLAIM_RATE_LIMIT_IP_MAX || 120);
+export const IP_BURST_MAX_FAILS = Number(process.env.TEACHER_SERVICE_CLAIM_RATE_LIMIT_IP_BURST || 75);
 export const CLAIM_WINDOW_MS = Number(process.env.TEACHER_SERVICE_CLAIM_RATE_LIMIT_WINDOW_MS || 5 * 60 * 1000);
 export const CLAIM_BLOCK_MS = Number(process.env.TEACHER_SERVICE_CLAIM_RATE_LIMIT_BLOCK_MS || 5 * 60 * 1000);
 export const BURST_WINDOW_MS = 10 * 1000;

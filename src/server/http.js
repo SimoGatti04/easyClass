@@ -642,6 +642,9 @@ export async function handleStudentApi(req, res, pathname, parsedUrl, service, p
         const match = req.headers["cookie"].match(/(?:^|;\s*)ts_device_id=([^;]*)/);
         if (match) cookieDeviceId = decodeURIComponent(match[1].trim());
       }
+      // Note: X-Student-Device-Id is an untrusted client hint used solely for localized
+      // device rate-limiting bucketing so an individual student does not exhaust the room quota.
+      // It is never treated as an authentication token, authorization credential, or security boundary.
       const clientDeviceId = (typeof rawDeviceId === "string" && rawDeviceId.trim().length > 0)
         ? rawDeviceId.trim()
         : (cookieDeviceId || null);

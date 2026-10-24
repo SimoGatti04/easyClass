@@ -838,3 +838,45 @@ In risposta ai rilievi finali della supervisione C7A-R2, sono stati completati t
 - **Software Readiness:** **PASS** (100% verificato e blindato localmente).
 - **Infrastructure Readiness:** **BLOCKED / NOT VERIFIED** (IaC verificata staticamente; stato live Cloudflare/Access e CIDR proxy non accessibili).
 - **Deployment Authorization (C7B):** **NO** (Richiede approvazione del Domain Owner sui punti del Release Decision Packet).
+
+### 12. Checkpoint C7B-P0: Release Preparation Only (24 ottobre 2026)
+
+In adempimento delle disposizioni di supervisione C7B-P0, sono state completate tutte le verifiche preparatorie al rilascio senza apportare alcuna modifica all'infrastruttura produttiva o ai dati reali:
+
+1. **Rafforzamento Rate Limiting d'Aula:**
+   - Aggiornate le soglie di default in `src/server/claim-rate-limiter.js`:
+     - `IP_MAX_FAILS = 120` (finestra 5 min): previene il blocco collettivo di un'aula di 30-35 studenti sotto lo stesso IP pubblico/NAT scolastico che commettono fisiologici errori multipli di battitura (2-3 typo ciascuno).
+     - `IP_BURST_MAX_FAILS = 75` (finestra 10 s): assorbe picchi di invio simultaneo d'aula ma blocca istantaneamente bot automatizzati di enumerazione rapida.
+     - `DEVICE_MAX_FAILS = 5` e `CODE_MAX_FAILS = 5`: isolano rigorosamente il singolo studente o il singolo codice tentato.
+   - Documentato in `src/server/http.js` che `X-Student-Device-Id` è un mero hint client non autenticato per il bucketing di protezione locale, non un perimetro o token di sicurezza.
+   - Suite test `tests/server/classroom-rate-limiting.test.js` estesa a 8 scenari esaustivi (30 studenti con 2 typo ciascuno, tentativi burst, codici rotanti, ID dispositivo falsificati, anti-spoofing proxy e persistenza SQLite).
+
+2. **Verifica Compatibilità Rollback su Container T1 Reale:**
+   - Avviata e collaudata in ambiente isolato la vera immagine di produzione T1 (`ghcr.io/simogatti04/class:20261020-f962706`, Linux amd64) contro:
+     a. Store sintetico baseline pre-migrazione.
+     b. Medesimo store migrato in avanti con lo schema C6.
+     c. Store ripristinato dallo snapshot pre-migrazione verso nuove destinazioni.
+   - Esito: l'immagine T1 reale ha superato l'avvio, risposto con `200 OK` a `/health`, superato `PRAGMA integrity_check` e `foreign_key_check`, e letto con successo classi, lezioni, materiali, dettagli di versione ed estratti binari da FileStore senza alcun errore o incompatibilità.
+
+3. **Recovery e Gestione dei Fallimenti Parziali:**
+   - Formalizzato e documentato in `docs/operations.md` che SQLite (`VACUUM INTO`) e FileStore non costituiscono una singola transazione atomica a livello di filesystem.
+   - Validati i meccanismi difensivi di `src/storage/store-snapshot.js`:
+     - Staging temporaneo isolato con verifica manifest SHA-256 prima della ridenominazione atomica finale.
+     - Rifiuto assoluto di sovrascrittura di target esistenti (`Refusing to overwrite existing target...`).
+     - Hook di rollback e cleanup immediato in caso di interruzione o corruzione durante il restore (`dbInstalled`, `filesInstalled`).
+   - Implementata la suite dedicata `tests/integration/snapshot-partial-failures.test.js` (6/6 test PASS).
+
+4. **Stato Worktree Infra e Gating:**
+   - Validazioni statiche del repository `infra` verificate ed eseguite con esito PASS (`domain-check.py` ed `exposure-check.py`).
+   - Repository canonico `infra/main` preservato e non modificato (inclusi i lavori concorrenti per OmniRoute).
+   - In conformità con le istruzioni del Domain Owner, la generazione del saved plan Cloudflare reale rimane gated fino al conferimento esplicito del token unificato `CLOUDFLARE_TERRAFORM_API_TOKEN` e all'autorizzazione specifica alla preparazione del plan.
+
+#### Risultati Suite Test (C7B-P0)
+- Master Test Suite (`node tests/run-all.js`): **32 suite eseguite, 32 passed, 0 failed (178 test totali PASS)**.
+- Browser E2E Suites (`c4`, `c5`, `c6`, `c7a`, `t1`): **Tutti PASS**.
+- Stato Git applicativo: modifiche committate in modo atomico, working tree pulito.
+
+#### Decisione di Rilascio C7B-P0
+- **Software Readiness:** **PASS** (100% verificato a livello di codice, container rollback reale e recovery).
+- **Infrastructure Readiness:** **BLOCKED / GATED** (In attesa di autorizzazione Domain Owner per la generazione del saved plan Cloudflare).
+- **Deployment Authorization (C7B):** **NO** (Nessuna operazione produttiva, apply Terraform o cutover eseguito).
