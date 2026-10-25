@@ -243,3 +243,20 @@ state; never copy production data into local tests.
   - Initialized SQLite and passed all foreign-key and integrity pragma checks.
   - Successfully queried and resolved classes, subjects, lessons, materials, specific versions, and FileStore raw attachments without SQL errors.
 - Proves that the schema migration is strictly backward-compatible with the T1 binary, enabling instant container image rollback if needed during pre-cutover verification.
+
+## Cloudflare Edge & Application Cutover Sequence (C7B-P0 Reconciliation)
+
+- **Strict Phasing Invariant:**
+  The Cloudflare Terraform saved plan must be generated, inspected, and approved *before* the maintenance window begins. However, the edge change that opens student routes (`/studente`, `/api/student/*`) must **never** be applied before the new application runtime is deployed, initialized, and verified healthy. Exposing paths prior to container readiness risks exposing a failing backend or routing student traffic to an incompatible container.
+- **Access Application Replacement & AUD Rotation Safeguard:**
+  - With Cloudflare provider 5.24.0, changing the path scope or configuration of `cloudflare_zero_trust_access_application.k3s["class"]` can trigger a resource replacement (`destroy and then create replacement`).
+  - Resource replacement **rotates the Cloudflare Access Application AUD**.
+  - If the AUD rotates, the existing Pod running with the old `TEACHER_SERVICE_WEB_CF_ACCESS_AUD` will reject all valid teacher JWT assertions with `401 Unauthorized` (fail-closed behavior).
+  - **Coordinated Cutover Procedure:**
+    1. *Pre-Maintenance:* Generate and review saved plans for Access and routing. Identify whether `class` application shows `~ update in-place` or `-/+ destroy and then create replacement`.
+    2. *Maintenance Start:* Quiesce traffic, execute SQLite + FileStore snapshot, verify integrity.
+    3. *Workload Deploy:* Apply K3s deployment manifest with the new container image tag. Verify Pod enters `Running`, readiness probes pass, and `curl http://127.0.0.1:8770/health` returns `200 OK`.
+    4. *Edge Apply:* Apply Cloudflare Access plan.
+    5. *AUD Reconciliation:* If the Access application was replaced, read the new AUD from the Terraform output/state, update `TEACHER_SERVICE_WEB_CF_ACCESS_AUD` in `infra/k3s/apps/class/configmap.yaml`, apply the ConfigMap, and restart the Pod.
+    6. *Post-Cutover Smoke Tests:* Validate teacher login on `/docente`, student access on `/studente`, claim API on `/api/student/claim-code`, and MCP on `https://mcp-teacher.simogatti.it/mcp`.
+    7. *Emergency Abort:* If cutover fails smoke testing, immediately re-apply the previous Cloudflare Access plan to restore full-domain root protection on `class.simogatti.it`, ensuring zero unprotected paths.

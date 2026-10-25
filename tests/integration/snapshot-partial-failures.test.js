@@ -163,4 +163,32 @@ test('Snapshot & Restore partial failure handling, cleanup, and retry suite', as
     assert.equal(classes[0].name, 'Partial Failure 4B');
     restoredService.close();
   });
+  await t.test('7. Fault injection / crash during FileStore install rolls back database and leaves zero partial state', () => {
+    const originalRename = fs.renameSync;
+    let renameCalls = 0;
+    fs.renameSync = function(from, to) {
+      renameCalls++;
+      if (renameCalls === 2) {
+        throw new Error('Simulated I/O crash during filesStage rename');
+      }
+      return originalRename.apply(this, arguments);
+    };
+
+    const targetDb = path.join(root, 'crash-test-dest', 'teacher.sqlite');
+    const targetFiles = path.join(root, 'crash-test-dest', 'files');
+
+    assert.throws(() => {
+      restoreStoreSnapshot({
+        snapshotPath,
+        databasePath: targetDb,
+        fileStorePath: targetFiles
+      });
+    }, /Simulated I\/O crash during filesStage rename/);
+
+    fs.renameSync = originalRename;
+
+    // Both targetDb and targetFiles must NOT exist because rollback hook cleaned up targetDb!
+    assert.equal(fs.existsSync(targetDb), false, "targetDb must be uninstalled if FileStore install fails");
+    assert.equal(fs.existsSync(targetFiles), false, "targetFiles must not exist");
+  });
 });

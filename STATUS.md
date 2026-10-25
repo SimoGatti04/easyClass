@@ -880,3 +880,19 @@ In adempimento delle disposizioni di supervisione C7B-P0, sono state completate 
 - **Software Readiness:** **PASS** (100% verificato a livello di codice, container rollback reale e recovery).
 - **Infrastructure Readiness:** **BLOCKED / GATED** (In attesa di autorizzazione Domain Owner per la generazione del saved plan Cloudflare).
 - **Deployment Authorization (C7B):** **NO** (Nessuna operazione produttiva, apply Terraform o cutover eseguito).
+
+#### Addendum C7B-P0 Reconciliation (25 ottobre 2026)
+In riscontro alla review indipendente della pianificazione di rilascio, sono stati finalizzati i seguenti allineamenti:
+1. **Sequenza Cloudflare e Applicazione:**
+   - Formalizzato il principio vincolante: il piano Cloudflare deve essere preparato e approvato prima del fermo, ma il cambiamento edge che apre i percorsi studente (`/studente*`, `/api/student/*`) va applicato solo dopo che il runtime applicativo è avviato, sano e verificato.
+   - Esplicitata la gestione dell'eventuale sostituzione (`replacement`) dell'applicazione Access `class` con conseguente rotazione dell'AUD e aggiornamento immediato della ConfigMap K3s per preservare l'accesso docente senza aperture accidentali (fail-closed).
+2. **Matrice di Collaudo Reale Allineata:**
+   - Eliminati tutti i riferimenti a endpoint fittizi; allineati esclusivamente i percorsi reali (`/api/student/claim-code`, `/api/student/activities/:id`, `/api/student/activities/:id/start`, `/api/student/activities/:id/autosave`, `/api/student/activities/:id/submit`, `/api/student/attachment`, `/api/student/upload`).
+   - Distinto rigorosamente il controllo Access edge (Cloudflare) da quello applicativo Node.js (`validateStudentSession`, `authenticateRequest`, `authorizeTeacher`).
+   - Distinto il fallback SPA (rotte non-API e non-estensioni servite con `200 OK index.html`) dal `404 Not Found JSON` per le API o file statici mancanti.
+3. **Verifica Ripristino Parziale e Fault Injection:**
+   - Aggiunto test n. 7 a `tests/integration/snapshot-partial-failures.test.js`: simula un crash I/O durante l'installazione del FileStore post-database. Verificato che l'hook di rollback ripulisca immediatamente il database e rimuova ogni traccia parziale.
+   - Ribadito che SQLite e FileStore non costituiscono transazione filesystem atomica singola; è richiesta la verifica integrale preventiva prima del ripristino in produzione.
+4. **Evidenza Container T1 Reale:**
+   - Documentati immagine (`ghcr.io/simogatti04/class:20261020-f962706`), digest immutabile (`sha256:79d7c084233c60049c18e24459fde84160178cdf58b9e52461c97906180b455c`), architettura (`linux/amd64`) ed esecuzione in OrbStack.
+   - Chiarito che il downgrade tecnico del container a T1 è sicuro e non corrompe il database migrato, ma un container T1 non può gestire o visualizzare le verifiche C4–C6 svolte dagli studenti post-migrazione.

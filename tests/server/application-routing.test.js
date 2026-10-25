@@ -55,6 +55,23 @@ test('real path routing serves public/student/teacher deep links and keeps APIs 
   const studentApi = await fetch(`${url}/api/student/activities/not-a-session/submission`);
   assert.equal(studentApi.status, 401, 'student API is routed to session checks rather than the SPA fallback');
 
+  // Unrecognized API path returns 404 JSON, never SPA HTML
+  const unknownStudentApi = await fetch(`${url}/api/student/unknown-endpoint`);
+  assert.equal(unknownStudentApi.status, 404, "unrecognized student API path must return 404 JSON");
+  assert.match(unknownStudentApi.headers.get("content-type") || "", /application\/json/);
+  const unknownStudentJson = await unknownStudentApi.json();
+  assert.match(unknownStudentJson.message || "", /Route studente non trovata/);
+
+  // Missing static asset with extension returns 404 JSON, never SPA fallback
+  const missingAsset = await fetch(`${url}/assets/nonexistent-file.css`);
+  assert.equal(missingAsset.status, 404, "missing asset with extension must return 404");
+  assert.match(missingAsset.headers.get("content-type") || "", /application\/json/);
+
+  // Deep client-side SPA route without extension returns 200 HTML
+  const deepSpaRoute = await fetch(`${url}/studente/qualche/percorso`);
+  assert.equal(deepSpaRoute.status, 200, "deep client SPA route must return 200 HTML");
+  assert.match(deepSpaRoute.headers.get("content-type") || "", /text\/html/);
+
   // Legacy teacher hashes must make a new HTTP request to /docente; they may
   // never render the teacher route while remaining on the public root path.
   browser = await chromium.launch({ headless: true });
