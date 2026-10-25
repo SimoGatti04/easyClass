@@ -1,459 +1,145 @@
-import test from "node:test";
-import assert from "node:assert/strict";
-import http from "node:http";
-import { EventEmitter } from "node:events";
-import fs from "node:fs";
-import os from "node:os";
-import path from "node:path";
-import crypto from "node:crypto";
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import http from 'node:http';
+import { EventEmitter } from 'node:events';
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
 
-import { createHttpApp } from "../../src/server/http.js";
-import { DatabaseManager } from "../../src/db/database.js";
-import { FileStore } from "../../src/storage/filestore.js";
-import { TeacherService } from "../../src/services/teacher-service.js";
-import { ClaimRateLimiter } from "../../src/server/claim-rate-limiter.js";
+import { createHttpApp } from '../../src/server/http.js';
+import { DatabaseManager } from '../../src/db/database.js';
+import { FileStore } from '../../src/storage/filestore.js';
+import { TeacherService } from '../../src/services/teacher-service.js';
 
-test("Classroom-compatible claim code rate limiting suite", async (t) => {
-  const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "classroom-rate-limit-"));
-  const dbPath = path.join(tmpDir, "teacher.sqlite");
-  const dbManager = new DatabaseManager(dbPath).init();
-  const fileStore = new FileStore(path.join(tmpDir, "files"));
-  const service = new TeacherService({ dbManager, fileStore, mockAi: true });
-
-  const testClass = service.createClass({ name: "5A Informatica", academicYear: "2026/2027" });
-  const testSubject = service.createSubject({ classId: testClass.id, name: "Telecomunicazioni" });
-  const studentMaterial = service.createMaterial({
-    title: "Dispensa NAT",
-    contentText: "Approfondimento sul NAT e condivisione IP.",
-    pedagogicalRole: "student_material"
+test('Shared classroom PIN limiter tolerates NAT and ignores untrusted forwarded-IP headers', async (t) => {
+  const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'class-pin-rate-limit-'));
+  const dbManager = new DatabaseManager(':memory:').init();
+  const fileStore = new FileStore(path.join(tmpDir, 'files'));
+  const service = new TeacherService({
+    dbManager,
+    fileStore,
+    mockAi: true,
+    classPinSecret: 'synthetic-class-pin-rate-limit-secret-2026'
   });
-  service.publishMaterial(studentMaterial.id, { versionNumber: 1 });
-
-  const assessment = service.createAssessment({
-    title: "Verifica Reti",
-    classId: testClass.id,
-    subjectId: testSubject.id,
-    status: "active",
-    items: [
-      {
-        type: "multiple_choice",
-        questionText: "Cosa fa il NAT?",
-        options: ["Traduzione indirizzi", "Instradamento dinamico"],
-        maxScore: 10,
-        assessableSourceId: studentMaterial.id,
-        assessableSourceVersion: 1
-      }
-    ]
-  });
-
-  // Create 30 students
-  const students = [];
-  for (let i = 1; i <= 30; i++) {
-    const student = service.addStudent({
-      classId: testClass.id,
-      firstName: `Studente${i}`,
-      lastName: `Cognome${i}`
-    });
-    students.push(student);
-  }
-  const creds = service.generateActivityCredentials(assessment.id);
-  const validCodes = creds.map(c => c.accessCode);
-
-  const rateLimiter = new ClaimRateLimiter(dbManager, {
-    ipMaxFails: 120,
-    ipBurstMaxFails: 75,
-    deviceMaxFails: 5,
-    codeMaxFails: 5,
-    windowMs: 5 * 60 * 1000,
-    blockMs: 5 * 60 * 1000,
-    burstWindowMs: 10 * 1000
-  });
+  const classroom = service.createClass({ name: '5A Informatica', academicYear: '2026/2027' });
+  service.generateClassActivityPin(classroom.id, { createdBy: 'synthetic-teacher' });
 
   const app = await createHttpApp({
     service,
-    claimRateLimiter: rateLimiter,
-    trustedProxyCidrs: ["10.0.0.1/32"]
+    trustedProxyCidrs: [],
+    classPinRateLimiterOptions: { deviceMaxFailures: 3, ipMaxFailures: 120, burstMaxFailures: 75 }
   });
-
-  async function executeClaim({
-    ip = "198.51.100.25",
-    accessCode,
-    deviceId = null,
-    headers = {}
-  }) {
-    const socket = new EventEmitter();
-    socket.setTimeout = () => {};
-    socket.remoteAddress = ip;
-    const req = new http.IncomingMessage(socket);
-    req.method = "POST";
-    req.url = "/api/student/claim-code";
-    const reqHeaders = {
-      host: "localhost:8770",
-      origin: "http://localhost:8770",
-      "content-type": "application/json",
-      ...headers
-    };
-    if (deviceId) {
-      reqHeaders["x-student-device-id"] = deviceId;
-    }
-    req.headers = Object.fromEntries(Object.entries(reqHeaders).map(([k, v]) => [k.toLowerCase(), v]));
-    req.rawHeaders = Object.entries(reqHeaders).flatMap(([k, v]) => [k, v]);
-
-    const res = new http.ServerResponse(req);
-    const outChunks = [];
-    res.assignSocket(socket);
-
-    const writtenHeaders = {};
-    const origSetHeader = res.setHeader.bind(res);
-    res.setHeader = (k, v) => {
-      writtenHeaders[k.toLowerCase()] = v;
-      return origSetHeader(k, v);
-    };
-    const origWriteHead = res.writeHead.bind(res);
-    res.writeHead = (status, ...args) => {
-      const hdrs = typeof args[0] === "object" ? args[0] : (args[1] || {});
-      for (const [k, v] of Object.entries(hdrs)) {
-        writtenHeaders[k.toLowerCase()] = v;
-      }
-      return origWriteHead(status, ...args);
-    };
-
-    let finishedResolve;
-    const finishedPromise = new Promise(resolve => { finishedResolve = resolve; });
-
-    res.write = function(chunk) {
-      if (chunk) outChunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
-      return true;
-    };
-    res.end = function(chunk) {
-      if (chunk) outChunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
-      finishedResolve();
-      return this;
-    };
-
-    const bodyObj = { accessCode, ...(deviceId ? { deviceId } : {}) };
-    process.nextTick(() => {
-      req.emit("data", Buffer.from(JSON.stringify(bodyObj), "utf-8"));
-      req.emit("end");
-    });
-
-    await app.handleHttpRequest(req, res);
-
-    return finishedPromise.then(() => {
-      const rawBody = Buffer.concat(outChunks).toString("utf-8");
-      let parsedJson = null;
-      try {
-        parsedJson = JSON.parse(rawBody);
-      } catch {}
-
-      return {
-        statusCode: res.statusCode,
-        headers: writtenHeaders,
-        body: parsedJson,
-        raw: rawBody
-      };
-    });
-  }
-
+  const appWithTightIpLimit = await createHttpApp({
+    service,
+    trustedProxyCidrs: [],
+    classPinRateLimiterOptions: { deviceMaxFailures: 100, ipMaxFailures: 3, burstMaxFailures: 3 }
+  });
   t.after(async () => {
     await app.close();
-    service.close();
+    await appWithTightIpLimit.close();
+    dbManager.close();
     fs.rmSync(tmpDir, { recursive: true, force: true });
   });
 
-  await t.test("1. 30 students under same NAT can make 2 typos each without blocking classroom", async () => {
-    const natIp = "198.51.100.25";
-    // Each of the 30 students makes 2 typos = 60 typos total
-    for (let i = 0; i < 30; i++) {
-      const devId = `device-student-${i + 1}`;
-      for (let typoNum = 1; typoNum <= 2; typoNum++) {
-        const typoRes = await executeClaim({
-          ip: natIp,
-          deviceId: devId,
-          accessCode: `TYPO-${i}-${typoNum}`
-        });
-        assert.equal(typoRes.statusCode, 403, `Typo ${typoNum} for student ${i + 1} should fail with 403, not 429`);
-      }
-    }
+  async function request(targetApp, {
+    classId = classroom.id,
+    pin = '9999',
+    remoteAddress = '192.0.2.44',
+    headers = {}
+  } = {}) {
+    const socket = new EventEmitter();
+    socket.setTimeout = () => {};
+    socket.remoteAddress = remoteAddress;
+    const req = new http.IncomingMessage(socket);
+    req.method = 'POST';
+    req.url = `/api/student/classes/${encodeURIComponent(classId)}/access`;
+    const requestHeaders = {
+      host: 'localhost:8770',
+      origin: 'http://localhost:8770',
+      'content-type': 'application/json',
+      ...headers
+    };
+    req.headers = Object.fromEntries(Object.entries(requestHeaders).map(([name, value]) => [name.toLowerCase(), value]));
+    req.rawHeaders = Object.entries(requestHeaders).flatMap(([name, value]) => [name, value]);
 
-    // Now all 30 students enter their correct code
-    for (let i = 0; i < 30; i++) {
-      const devId = `device-student-${i + 1}`;
-      const okRes = await executeClaim({
-        ip: natIp,
-        deviceId: devId,
-        accessCode: validCodes[i]
-      });
-      assert.equal(okRes.statusCode, 200, `Student ${i + 1} must succeed with 200 OK after room typos`);
-      assert.ok(okRes.body.session?.token, "Must return session token");
-    }
-  });
-
-  await t.test("2. Concurrent asynchronous claim requests under the same IP are handled safely", async () => {
-    const natIp = "198.51.100.30";
-    // 10 students submit concurrently via Promise.all
-    const promises = [];
-    for (let i = 1; i <= 10; i++) {
-      const devId = `concurrent-dev-${i}`;
-      // Each submits an initial typo concurrently
-      promises.push(executeClaim({
-        ip: natIp,
-        deviceId: devId,
-        accessCode: `CONC-TYPO-${i}`
-      }));
-    }
-    const results = await Promise.all(promises);
-    for (const r of results) {
-      assert.equal(r.statusCode, 403, "Concurrent typos should result in 403 without concurrency crash");
-    }
-  });
-
-  await t.test("3. Automated brute-force with rotating device IDs and rotating codes is blocked by burst limit", async () => {
-    const botIp = "198.51.100.50";
-    let blockedAt = null;
-
-    // Send 76 requests with distinct forged device IDs rapidly
-    for (let i = 1; i <= 76; i++) {
-      const res = await executeClaim({
-        ip: botIp,
-        deviceId: `forged-bot-dev-${i}`,
-        accessCode: `RANDOM-CODE-${i}-${Date.now()}`
-      });
-      if (res.statusCode === 429) {
-        blockedAt = i;
-        assert.ok(res.headers["retry-after"], "429 must include Retry-After header");
-        assert.match(res.body.message, /rapida successione|Troppi tentativi/);
-        break;
-      }
-    }
-    assert.equal(blockedAt, 76, "76th attempt in rapid succession must be blocked with 429 even with forged device IDs");
-  });
-
-  await t.test("4. Targeted brute force against a single code is blocked after 5 attempts regardless of rotating device IDs", async () => {
-    const attackerIp = "198.51.100.77";
-    const targetCode = validCodes[0];
-
-    // Attacker rotates device ID on every request trying the same victim code
-    for (let i = 1; i <= 5; i++) {
-      const res = await executeClaim({
-        ip: attackerIp,
-        deviceId: `attacker-rotating-dev-${i}`,
-        accessCode: targetCode + "-WRONG"
-      });
-      assert.equal(res.statusCode, 403);
-    }
-
-    // 6th attempt on the same code variant with yet another new device ID
-    const blockedRes = await executeClaim({
-      ip: attackerIp,
-      deviceId: "attacker-rotating-dev-6",
-      accessCode: targetCode + "-WRONG"
+    const res = new http.ServerResponse(req);
+    const chunks = [];
+    const writtenHeaders = {};
+    res.assignSocket(socket);
+    const originalSetHeader = res.setHeader.bind(res);
+    res.setHeader = (name, value) => {
+      writtenHeaders[name.toLowerCase()] = value;
+      return originalSetHeader(name, value);
+    };
+    const originalWriteHead = res.writeHead.bind(res);
+    res.writeHead = (status, ...args) => {
+      const responseHeaders = typeof args[0] === 'object' ? args[0] : (args[1] || {});
+      for (const [name, value] of Object.entries(responseHeaders)) writtenHeaders[name.toLowerCase()] = value;
+      return originalWriteHead(status, ...args);
+    };
+    let finish;
+    const done = new Promise(resolve => { finish = resolve; });
+    res.write = chunk => { if (chunk) chunks.push(Buffer.from(chunk)); return true; };
+    res.end = chunk => {
+      if (chunk) chunks.push(Buffer.from(chunk));
+      finish();
+      return res;
+    };
+    process.nextTick(() => {
+      req.emit('data', Buffer.from(JSON.stringify({ pin })));
+      req.emit('end');
     });
-    assert.equal(blockedRes.statusCode, 429, "Rotating device ID must NOT bypass code rate limit");
-    assert.match(blockedRes.body.message, /questo codice/);
-  });
+    await targetApp.handleHttpRequest(req, res);
+    await done;
+    return {
+      status: res.statusCode,
+      headers: writtenHeaders,
+      body: Buffer.concat(chunks).toString('utf8')
+    };
+  }
 
-  await t.test("5. Single student making 5 typos is blocked on their device, but peers on same NAT are not", async () => {
-    const classroomIp = "198.51.100.88";
-    const unluckyStudentDev = "dev-unlucky-student";
-    const peerStudentDev = "dev-good-peer";
-
-    for (let i = 1; i <= 5; i++) {
-      const res = await executeClaim({
-        ip: classroomIp,
-        deviceId: unluckyStudentDev,
-        accessCode: `MISTAKE-${i}`
-      });
-      assert.equal(res.statusCode, 403);
-    }
-
-    // 6th attempt by unlucky student
-    const blockedRes = await executeClaim({
-      ip: classroomIp,
-      deviceId: unluckyStudentDev,
-      accessCode: validCodes[1]
+  // Thirty students behind one classroom NAT, each on a distinct browser with
+  // one PIN typo, must not trigger a restrictive per-device threshold.
+  for (let index = 0; index < 30; index += 1) {
+    const response = await request(app, {
+      remoteAddress: '192.0.2.44',
+      headers: { 'x-forwarded-for': `203.0.113.${index + 1}` }
     });
-    assert.equal(blockedRes.statusCode, 429);
-    assert.match(blockedRes.body.message, /questo dispositivo/);
+    assert.equal(response.status, 403, `NAT typo ${index + 1} should remain an ordinary invalid-PIN response`);
+  }
 
-    // Issue a fresh student credential for this test
-    const freshStudent = service.addStudent({ classId: testClass.id, firstName: "FreshPeer", lastName: "FreshLastName" });
-    const freshCred = service.generateActivityCredentials(assessment.id).find(c => c.studentId === freshStudent.id);
-    const peerRes = await executeClaim({
-      ip: classroomIp,
-      deviceId: peerStudentDev,
-      accessCode: freshCred.accessCode
-    });
-    assert.equal(peerRes.statusCode, 200, "Peer student on same NAT must succeed unhindered");
-  });
+  // The HttpOnly browser bucket still limits repeated typos from one browser.
+  const firstDeviceFailure = await request(app, { remoteAddress: '192.0.2.45' });
+  assert.equal(firstDeviceFailure.status, 403);
+  const setCookies = firstDeviceFailure.headers['set-cookie'];
+  const cookieList = Array.isArray(setCookies) ? setCookies : [setCookies];
+  const deviceCookie = cookieList.find(value => value?.startsWith('ts_class_device='))?.split(';', 1)[0];
+  assert.ok(deviceCookie, 'first failed attempt should establish a stable HttpOnly device bucket');
+  for (let attempt = 2; attempt <= 3; attempt += 1) {
+    assert.equal((await request(app, { remoteAddress: '192.0.2.45', headers: { cookie: deviceCookie } })).status, 403);
+  }
+  assert.equal((await request(app, { remoteAddress: '192.0.2.45', headers: { cookie: deviceCookie } })).status, 429);
 
-  await t.test("6. Anonymous browsers without device headers establish cookie-isolated device buckets without classroom lockout", async () => {
-    const anonymousIp = "198.51.100.99";
-
-    // 10 distinct students under same NAT make typos without sending custom device headers.
-    // In previous naive fallback, after 5 typos the entire classroom was blocked.
-    // With cookie-based device isolation, each browser establishes its own device bucket.
-    const studentCookies = [];
-    for (let i = 1; i <= 10; i++) {
-      const res = await executeClaim({
-        ip: anonymousIp,
-        deviceId: null,
-        accessCode: `CLASS-TYPO-${i}`
-      });
-      assert.equal(res.statusCode, 403, `Student ${i} typo must return 403 Forbidden, not 429`);
-      assert.ok(res.headers["set-cookie"], "Server must issue ts_device_id cookie to anonymous browser");
-      const match = res.headers["set-cookie"].match(/ts_device_id=([^;]+)/);
-      assert.ok(match, "Cookie must contain ts_device_id");
-      studentCookies.push(decodeURIComponent(match[1]));
-    }
-
-    // Student 1 continues making typos using their issued cookie until reaching device limit (5 fails total)
-    const s1Cookie = studentCookies[0];
-    for (let attempt = 2; attempt <= 5; attempt++) {
-      const res = await executeClaim({
-        ip: anonymousIp,
-        deviceId: null,
-        headers: { cookie: `ts_device_id=${encodeURIComponent(s1Cookie)}` },
-        accessCode: `S1-TYPO-${attempt}`
-      });
-      assert.equal(res.statusCode, 403);
-    }
-
-    // 6th attempt by Student 1: blocked by device limit
-    const s1Blocked = await executeClaim({
-      ip: anonymousIp,
-      deviceId: null,
-      headers: { cookie: `ts_device_id=${encodeURIComponent(s1Cookie)}` },
-      accessCode: "S1-TYPO-6"
-    });
-    assert.equal(s1Blocked.statusCode, 429, "Student 1 must be blocked after 5 device failures");
-    assert.match(s1Blocked.body.message, /dispositivo/);
-
-    // Crucial check: Student 2 on the same NAT IP enters their valid code and succeeds!
-    // Classroom is NOT blocked!
-    const anonStudent = service.addStudent({ classId: testClass.id, firstName: "AnonPeer", lastName: "AnonLastName" });
-    const validStudentCred = service.generateActivityCredentials(assessment.id).find(c => c.studentId === anonStudent.id);
-    const s2Success = await executeClaim({
-      ip: anonymousIp,
-      deviceId: null,
-      headers: { cookie: `ts_device_id=${encodeURIComponent(studentCookies[1])}` },
-      accessCode: validStudentCred.accessCode
-    });
-    assert.equal(s2Success.statusCode, 200, "Student 2 under same NAT must succeed unhindered despite Student 1 device block");
-
-    // Anti-brute-force: automated script without cookies targeting a single code is blocked after 5 attempts
-    const targetedCode = "TARGETED-CODE-99";
-    for (let i = 1; i <= 5; i++) {
-      const res = await executeClaim({
-        ip: anonymousIp,
-        deviceId: null,
-        accessCode: targetedCode
-      });
-      assert.equal(res.statusCode, 403);
-    }
-    const codeBlocked = await executeClaim({
-      ip: anonymousIp,
-      deviceId: null,
-      accessCode: targetedCode
-    });
-    assert.equal(codeBlocked.statusCode, 429, "Targeted code attack without cookies must trigger code limit");
-    assert.match(codeBlocked.body.message, /codice di accesso/);
-  });
-
-  await t.test("6b. 30 anonymous students with cookies disabled under same NAT can make typos without blocking classroom", async () => {
-    const noCookieIp = "198.51.100.123";
-    const assess2 = service.createAssessment({
-      title: "Verifica Senza Cookie",
-      classId: testClass.id,
-      subjectId: testSubject.id,
-      status: "active",
-      items: [
-        {
-          type: "multiple_choice",
-          questionText: "Cos è un cookie?",
-          options: ["Stato locale", "Pacchetto IP"],
-          maxScore: 10,
-          assessableSourceId: studentMaterial.id,
-          assessableSourceVersion: 1
-        }
-      ]
-    });
-    const assess2Creds = service.generateActivityCredentials(assess2.id);
-    const assess2Codes = assess2Creds.map(c => c.accessCode);
-    // 30 students without device headers and without cookies make 2 typos each = 60 typos total
-    for (let i = 0; i < 30; i++) {
-      const typo1 = await executeClaim({
-        ip: noCookieIp,
-        deviceId: null,
-        accessCode: `NO-COOKIE-TYPO-${i}-A`
-      });
-      assert.equal(typo1.statusCode, 403, `Student ${i} typo A must return 403`);
-
-      const typo2 = await executeClaim({
-        ip: noCookieIp,
-        deviceId: null,
-        accessCode: `NO-COOKIE-TYPO-${i}-B`
-      });
-      assert.equal(typo2.statusCode, 403, `Student ${i} typo B must return 403`);
-    }
-
-    // Now all 30 students submit their valid codes without cookies
-    for (let i = 0; i < 30; i++) {
-      const successRes = await executeClaim({
-        ip: noCookieIp,
-        deviceId: null,
-        accessCode: assess2Codes[i]
-      });
-      assert.equal(successRes.statusCode, 200, `Student ${i} must successfully claim valid code even with cookies disabled`);
-    }
-  });
-
-  await t.test("7. Anti-spoofing: Untrusted peers cannot forge CF-Connecting-IP or X-Forwarded-For", async () => {
-    const untrustedSocketIp = "198.51.100.90";
-    const spoofedIp = "203.0.113.199";
-
-    // Untrusted client sends spoofed headers
-    for (let i = 1; i <= 5; i++) {
-      const res = await executeClaim({
-        ip: untrustedSocketIp,
-        deviceId: `spoof-dev-${i}`,
-        accessCode: `SPOOF-CODE-${i}`,
-        headers: {
-          "cf-connecting-ip": spoofedIp,
-          "x-forwarded-for": spoofedIp
-        }
-      });
-      assert.equal(res.statusCode, 403);
-    }
-
-    // Verify rate limit table recorded untrustedSocketIp, NOT spoofedIp
-    const row = dbManager.prepare(
-      "SELECT identifier FROM student_claim_rate_limits WHERE scope = 'ip' AND identifier = ?"
-    ).get(untrustedSocketIp);
-    assert.ok(row, "Rate limiter must attribute failures to actual TCP socket IP, not spoofed header");
-
-    const spoofRow = dbManager.prepare(
-      "SELECT identifier FROM student_claim_rate_limits WHERE scope = 'ip' AND identifier = ?"
-    ).get(spoofedIp);
-    assert.equal(spoofRow, undefined, "Spoofed IP must not exist in rate limit table");
-  });
-
-  await t.test("8. Rate limiting survives process restart via SQLite persistence", async () => {
-    const testIp = "198.51.100.120";
-    const devId = "restart-test-device";
-
-    // 5 failures
-    for (let i = 1; i <= 5; i++) {
-      rateLimiter.recordFailure({ ip: testIp, deviceId: devId, code: "CODE-RESTART" });
-    }
-
-    // Simulate process restart by creating a new limiter instance on the same SQLite database
-    const freshLimiter = new ClaimRateLimiter(dbManager, {
-      deviceMaxFails: 5,
-      ipMaxFails: 120
-    });
-
-    const check = freshLimiter.checkLimit({ ip: testIp, deviceId: devId, code: "CODE-RESTART" });
-    assert.equal(check?.blocked, true, "New limiter instance must immediately enforce limits from SQLite");
-  });
+  // A direct client cannot evade the IP bucket by changing X-Forwarded-For or
+  // forging Cloudflare's connecting-IP header. Neither header is trusted when
+  // the socket peer is not an explicitly trusted proxy.
+  const tightClass = service.createClass({ name: '5B Telecomunicazioni', academicYear: '2026/2027' });
+  service.generateClassActivityPin(tightClass.id, { createdBy: 'synthetic-teacher' });
+  const spoofingHeaders = [
+    { 'x-forwarded-for': '203.0.113.1', 'cf-connecting-ip': '203.0.113.1' },
+    { 'x-forwarded-for': '203.0.113.2', 'cf-connecting-ip': '203.0.113.2' },
+    { 'x-forwarded-for': '203.0.113.3', 'cf-connecting-ip': '203.0.113.3' }
+  ];
+  for (const headers of spoofingHeaders) {
+    assert.equal((await request(appWithTightIpLimit, {
+      classId: tightClass.id,
+      remoteAddress: '198.51.100.70',
+      headers
+    })).status, 403);
+  }
+  assert.equal((await request(appWithTightIpLimit, {
+    classId: tightClass.id,
+    remoteAddress: '198.51.100.70',
+    headers: { 'x-forwarded-for': '203.0.113.99', 'cf-connecting-ip': '203.0.113.99' }
+  })).status, 429, 'changing forged forwarding headers must not evade a trusted-peer IP bucket');
 });

@@ -94,6 +94,11 @@ export class DatabaseManager {
     ensureColumn('assessment_submissions', 'reopened_at', 'TEXT DEFAULT NULL');
     ensureColumn('assessment_submissions', 'reopened_by', 'TEXT DEFAULT NULL');
     ensureColumn('assessment_submissions', 'reopen_reason', 'TEXT DEFAULT NULL');
+    ensureColumn('student_attempt_sessions', 'class_session_id', 'TEXT REFERENCES student_class_sessions(id) ON DELETE CASCADE');
+    this.db.exec(`
+      CREATE INDEX IF NOT EXISTS idx_student_attempt_sessions_class_session
+        ON student_attempt_sessions(submission_id, class_session_id, expires_at, revoked_at);
+    `);
 
     this.db.exec(`
       CREATE TABLE IF NOT EXISTS student_activity_credentials (

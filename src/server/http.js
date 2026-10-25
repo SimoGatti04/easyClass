@@ -20,6 +20,7 @@ import { createStaticFileHandler } from './static.js';
 import path from 'node:path';
 import { resolveClientIp } from './client-ip.js';
 import { ClaimRateLimiter } from './claim-rate-limiter.js';
+import { ClassPinRateLimiter } from './class-pin-rate-limiter.js';
 import { createTeacherPrincipalAuthorizer } from './teacher-authorization.js';
 import { TeacherService } from '../services/teacher-service.js';
 import { PedagogicalRoles } from '../core/contracts.js';
@@ -111,6 +112,7 @@ export async function createHttpApp(options = {}) {
       : DEFAULT_ALLOWED_ORIGINS
   );
   const claimRateLimiter = options.claimRateLimiter || new ClaimRateLimiter(service.dbManager, options.rateLimiterOptions);
+  const classPinRateLimiter = options.classPinRateLimiter || new ClassPinRateLimiter(service.dbManager, options.classPinRateLimiterOptions);
   const trustedProxyCidrs = options.trustedProxyCidrs ??
     (process.env.TEACHER_SERVICE_TRUSTED_PROXY_CIDRS || '').split(',').map(value => value.trim()).filter(Boolean);
 
@@ -267,7 +269,7 @@ export async function createHttpApp(options = {}) {
 
       // Branch 3a: Student API (/api/student/*) — Public Student Space, zero teacher privilege
       if (pathname.startsWith('/api/student/')) {
-        return handleStudentApi(req, res, pathname, parsedUrl, service, parsedBody, multipartData, trustedProxyCidrs, claimRateLimiter);
+        return handleStudentApi(req, res, pathname, parsedUrl, service, parsedBody, multipartData, trustedProxyCidrs, claimRateLimiter, classPinRateLimiter);
       }
 
       // Branch 3b: Protected Teacher REST API (/api/*) — Strict authentication & teacher authorization
@@ -585,7 +587,7 @@ const claimRateLimitMap = new Map();
 const MAX_FAILED_CLAIM_ATTEMPTS = 5;
 const CLAIM_BLOCK_WINDOW_MS = 5 * 60 * 1000;
 
-export async function handleStudentApi(req, res, pathname, parsedUrl, service, parsedBody, multipartData, trustedProxyCidrs = [], rateLimiter = null) {
+export async function handleStudentApi(req, res, pathname, parsedUrl, service, parsedBody, multipartData, trustedProxyCidrs = [], rateLimiter = null, classPinRateLimiter = null) {
   const activeRateLimiter = rateLimiter || new ClaimRateLimiter(service.dbManager);
   res.setHeader('Content-Type', 'application/json');
 
@@ -612,6 +614,30 @@ export async function handleStudentApi(req, res, pathname, parsedUrl, service, p
     });
   };
 
+  const readCookie = (name) => {
+    const cookieHeader = typeof req.headers.cookie === 'string' ? req.headers.cookie : '';
+    for (const pair of cookieHeader.split(';')) {
+      const index = pair.indexOf('=');
+      if (index < 0 || pair.slice(0, index).trim() !== name) continue;
+      try { return decodeURIComponent(pair.slice(index + 1).trim()); } catch { return null; }
+    }
+    return null;
+  };
+  const setStudentCookie = (name, value, maxAge, clear = false) => {
+    const secure = process.env.NODE_ENV === 'production' || Boolean(req.socket?.encrypted);
+    return `${name}=${clear ? '' : encodeURIComponent(value)}; Path=/api/student; HttpOnly; SameSite=Strict; Max-Age=${clear ? 0 : maxAge}${secure ? '; Secure' : ''}`;
+  };
+  const getClassAccessSession = (classId) => {
+    const token = readCookie('ts_class_access');
+    if (!token) {
+      const err = new AuthorizationError('Inserisci il PIN della classe per accedere alle attività');
+      err.statusCode = 401;
+      throw err;
+    }
+    return service.validateClassActivitySession(token, classId);
+  };
+  const activeClassPinLimiter = classPinRateLimiter || new ClassPinRateLimiter(service.dbManager);
+
   const getStudentSession = (assessmentId = null) => {
     const authHeader = req.headers['authorization'] || "";
     let token = null;
@@ -629,73 +655,11 @@ export async function handleStudentApi(req, res, pathname, parsedUrl, service, p
   };
 
   try {
-    // POST /api/student/claim-code (Access via 6-char code / QR)
+    // DEPRECATED: individual 6-character codes/QR are no longer issued or redeemable.
     if (pathname === '/api/student/claim-code' && req.method === 'POST') {
-      // Forwarded client IPs are trusted only when the immediate TCP peer is
-      // explicitly configured as a reverse proxy. In particular, private
-      // address space alone is not evidence that a forwarded header is safe.
-            const clientIp = resolveClientIp(req, trustedProxyCidrs);
-      const accessCode = parsedBody?.accessCode;
-      const rawDeviceId = req.headers["x-student-device-id"] || req.headers["x-device-id"] || parsedBody?.deviceId;
-      let cookieDeviceId = null;
-      if (req.headers["cookie"]) {
-        const match = req.headers["cookie"].match(/(?:^|;\s*)ts_device_id=([^;]*)/);
-        if (match) cookieDeviceId = decodeURIComponent(match[1].trim());
-      }
-      // Note: X-Student-Device-Id is an untrusted client hint used solely for localized
-      // device rate-limiting bucketing so an individual student does not exhaust the room quota.
-      // It is never treated as an authentication token, authorization credential, or security boundary.
-      let clientDeviceId = (typeof rawDeviceId === "string" && rawDeviceId.trim().length > 0)
-        ? rawDeviceId.trim()
-        : (cookieDeviceId || null);
-
-      // If client did not provide a cookie-based device identifier, issue a cookie hint so
-      // subsequent browser requests are bucketed per-device instead of relying purely on IP.
-      // We never bucket anonymous requests into a shared anon:IP bucket, which would lock out
-      // 30+ students in a classroom after only 5 typos. Each browser without a device header
-      // receives an isolated device cookie and its own independent 5-typo allowance.
-      if (!cookieDeviceId) {
-        const assignedCookieId = clientDeviceId || crypto.randomUUID();
-        res.setHeader("Set-Cookie", `ts_device_id=${encodeURIComponent(assignedCookieId)}; Path=/api/student; HttpOnly; SameSite=Lax; Max-Age=2592000`);
-        if (!clientDeviceId) {
-          clientDeviceId = assignedCookieId;
-        }
-      }
-
-      const deviceId = `dev:${clientDeviceId}`;
-      const now = Date.now();
-
-      const blockInfo = activeRateLimiter.checkLimit({ ip: clientIp, deviceId, code: accessCode, now });
-      if (blockInfo?.blocked) {
-        res.writeHead(429, {
-          "Content-Type": "application/json",
-          "Retry-After": String(blockInfo.remainingSec)
-        });
-        res.end(JSON.stringify({
-          error: "TooManyRequests",
-          message: blockInfo.message || "Troppi tentativi falliti di riscatto codice. Riprova tra qualche minuto."
-        }));
-        return;
-      }
-
-      // Validate accessCode presence before recording rate-limiting failures.
-      // Missing or malformed payloads are client schema errors (400), not access code guessing attempts.
-      if (!accessCode || typeof accessCode !== "string" || accessCode.trim().length === 0) {
-        res.writeHead(400, { "Content-Type": "application/json" });
-        res.end(JSON.stringify({ error: "ValidationError", message: "Codice di accesso richiesto" }));
-        return;
-      }
-
-      try {
-        const session = service.claimStudentSession(accessCode);
-        activeRateLimiter.recordSuccess({ ip: clientIp, deviceId, code: accessCode });
-        res.writeHead(200);
-        res.end(JSON.stringify({ status: "ok", session }));
-        return;
-      } catch (err) {
-        activeRateLimiter.recordFailure({ ip: clientIp, deviceId, code: accessCode, now });
-        throw err;
-      }
+      res.writeHead(410);
+      res.end(JSON.stringify({ error: 'Gone', message: 'I codici individuali sono stati sostituiti dal PIN condiviso della classe.' }));
+      return;
     }
 
     // GET /api/student/session (Verify existing token on reload / resume)
@@ -719,37 +683,170 @@ export async function handleStudentApi(req, res, pathname, parsedUrl, service, p
       return;
     }
 
-    // GET /api/student/classes/:id/students (Privacy-preserving roster)
-    if (pathname.match(/^\/api\/student\/classes\/([^/]+)\/students$/) && req.method === 'GET') {
-      const classId = pathname.split('/')[4];
-      const students = service.listStudents(classId).map(s => ({
-        id: s.id,
-        firstName: s.first_name,
-        lastName: s.last_name ? (s.last_name.charAt(0) + '.') : '',
-        fullName: `${s.first_name} ${s.last_name ? (s.last_name.charAt(0) + '.') : ''}`.trim()
+    // GET /api/student/classes/:id: only minimal class metadata is public.
+    const publicClassMatch = pathname.match(/^\/api\/student\/classes\/([^/]+)$/);
+    if (publicClassMatch && req.method === 'GET') {
+      const classId = decodeURIComponent(publicClassMatch[1]);
+      const classroom = service.getClass(classId);
+      res.writeHead(200);
+      res.end(JSON.stringify({ class: {
+        id: classroom.id,
+        name: classroom.name,
+        section: classroom.section,
+        academicYear: classroom.academic_year
+      } }));
+      return;
+    }
+
+    // Published material listings and exact-version reads are intentionally
+    // public. The service checks class membership, publication state and expiry.
+    const publicMaterialListMatch = pathname.match(/^\/api\/student\/classes\/([^/]+)\/materials$/);
+    if (publicMaterialListMatch && req.method === 'GET') {
+      const classId = decodeURIComponent(publicMaterialListMatch[1]);
+      const materials = service.listPublishedStudentMaterials(classId);
+      res.writeHead(200);
+      res.end(JSON.stringify({ materials }));
+      return;
+    }
+
+    const publicMaterialMatch = pathname.match(/^\/api\/student\/classes\/([^/]+)\/materials\/([^/]+)\/versions\/(\d+)(\/(?:download|preview))?$/);
+    if (publicMaterialMatch && req.method === 'GET') {
+      const [, rawClassId, rawMaterialId, rawVersion, fileMode] = publicMaterialMatch;
+      const classId = decodeURIComponent(rawClassId);
+      const materialId = decodeURIComponent(rawMaterialId);
+      const versionNumber = Number(rawVersion);
+      if (fileMode) {
+        const file = service.getPublishedStudentMaterialFile(classId, materialId, versionNumber);
+        const material = service.getPublishedStudentMaterial(classId, materialId, versionNumber);
+        const body = file?.buffer || Buffer.from(material.content, 'utf8');
+        const contentType = file?.contentType || (material.format === 'markdown' || material.format === 'md' ? 'text/markdown; charset=utf-8' : 'text/plain; charset=utf-8');
+        const fallbackExtension = material.format === 'markdown' || material.format === 'md' ? 'md' : 'txt';
+        const filename = (file?.filename || `${material.title}.${fallbackExtension}`)
+          .replace(/[\u0000-\u001f\u007f"\\/]/g, '_').slice(0, 160) || 'materiale';
+        const isPreview = fileMode === '/preview';
+        res.writeHead(200, {
+          'Content-Type': contentType,
+          'Content-Length': body.length,
+          'Content-Disposition': `${isPreview ? 'inline' : 'attachment'}; filename*=UTF-8''${encodeURIComponent(filename)}`,
+          'X-Content-Type-Options': 'nosniff',
+          'Content-Security-Policy': isPreview ? "default-src 'none'; frame-ancestors 'self'; sandbox" : "default-src 'none'; sandbox",
+          'Cache-Control': 'private, no-store'
+        });
+        res.end(body);
+        return;
+      }
+      const material = service.getPublishedStudentMaterial(classId, materialId, versionNumber);
+      res.writeHead(200);
+      res.end(JSON.stringify({ material }));
+      return;
+    }
+
+    // POST /api/student/classes/:id/access: exchange the shared class PIN for
+    // an HttpOnly class-navigation session; never return the session bearer.
+    const classAccessMatch = pathname.match(/^\/api\/student\/classes\/([^/]+)\/access$/);
+    if (classAccessMatch && req.method === 'POST') {
+      const classId = decodeURIComponent(classAccessMatch[1]);
+      const ip = resolveClientIp(req, trustedProxyCidrs);
+      let deviceId = readCookie('ts_class_device');
+      const issuedDeviceCookie = !deviceId;
+      if (!deviceId) deviceId = crypto.randomBytes(16).toString('base64url');
+      const limit = activeClassPinLimiter.check({ classId, ip, deviceId });
+      if (limit.blocked) {
+        res.setHeader('Retry-After', String(limit.retryAfterSeconds));
+        res.writeHead(429);
+        res.end(JSON.stringify({ error: 'Too Many Requests', message: 'Troppi tentativi. Attendi prima di riprovare.' }));
+        return;
+      }
+      let session;
+      try {
+        session = service.redeemClassActivityPin(classId, parsedBody?.pin);
+      } catch (error) {
+        if (error instanceof AuthorizationError) {
+          activeClassPinLimiter.recordFailure({ classId, ip, deviceId });
+          if (issuedDeviceCookie) res.setHeader('Set-Cookie', setStudentCookie('ts_class_device', deviceId, 30 * 24 * 60 * 60));
+          throw error;
+        }
+        throw error;
+      }
+      const cookies = [setStudentCookie('ts_class_access', session.token, 12 * 60 * 60)];
+      if (issuedDeviceCookie) cookies.push(setStudentCookie('ts_class_device', deviceId, 30 * 24 * 60 * 60));
+      res.setHeader('Set-Cookie', cookies);
+      res.writeHead(200);
+      res.end(JSON.stringify({ status: 'ok', class: { id: session.classId, name: session.className }, expiresAt: session.expiresAt }));
+      return;
+    }
+
+    // POST /api/student/classes/:id/exit: drop this browser's navigation cookie.
+    const classExitMatch = pathname.match(/^\/api\/student\/classes\/([^/]+)\/exit$/);
+    if (classExitMatch && req.method === 'POST') {
+      res.setHeader('Set-Cookie', setStudentCookie('ts_class_access', '', 0, true));
+      res.writeHead(200);
+      res.end(JSON.stringify({ status: 'ok' }));
+      return;
+    }
+
+    // GET /api/student/classes/:id/activities: activity metadata requires a
+    // current class session. Draft/ready/closed and disabled activities stay hidden.
+    const classActivitiesMatch = pathname.match(/^\/api\/student\/classes\/([^/]+)\/activities$/);
+    if (classActivitiesMatch && req.method === 'GET') {
+      const classId = decodeURIComponent(classActivitiesMatch[1]);
+      getClassAccessSession(classId);
+      const activities = service.listAssessments({ classId })
+        .filter((activity) => activity.status === 'active' && activity.is_active === 1)
+        .map((activity) => ({
+          id: activity.id,
+          title: activity.title,
+          description: activity.description,
+          activityType: activity.activity_type || 'test',
+          durationMinutes: activity.duration_minutes,
+          maxScore: activity.max_score,
+          status: 'active'
+        }));
+      res.writeHead(200);
+      res.end(JSON.stringify({ activities }));
+      return;
+    }
+
+    // Full roster names are released only after a class session and an explicit
+    // activity selection. This selection remains declarative, not strong identity.
+    const activityRosterMatch = pathname.match(/^\/api\/student\/classes\/([^/]+)\/activities\/([^/]+)\/students$/);
+    if (activityRosterMatch && req.method === 'GET') {
+      const classId = decodeURIComponent(activityRosterMatch[1]);
+      const assessmentId = decodeURIComponent(activityRosterMatch[2]);
+      getClassAccessSession(classId);
+      const activity = service.getAssessment(assessmentId, { role: 'student', includeTeacherSolutions: false });
+      if (activity.class_id !== classId || activity.status !== 'active' || activity.is_active !== 1) {
+        throw new NotFoundError('Available activity', assessmentId);
+      }
+      const students = service.listStudents(classId).map((student) => ({
+        id: student.id,
+        firstName: student.first_name,
+        lastName: student.last_name,
+        fullName: `${student.first_name} ${student.last_name}`.trim()
       }));
       res.writeHead(200);
       res.end(JSON.stringify({ students }));
       return;
     }
 
-    // GET /api/student/classes/:id/activities (Only ready and active, NEVER drafts)
-    if (pathname.match(/^\/api\/student\/classes\/([^/]+)\/activities$/) && req.method === 'GET') {
-      const classId = pathname.split('/')[4];
-      const all = service.listAssessments({ classId });
-      const activities = all
-        .filter(a => a.is_active !== 0 && (a.status === 'ready' || a.status === 'active'))
-        .map(a => ({
-          id: a.id,
-          title: a.title,
-          description: a.description,
-          activityType: a.activity_type || 'test',
-          durationMinutes: a.duration_minutes,
-          maxScore: a.max_score,
-          status: a.status
-        }));
+    // Neighbor options are likewise scoped to the selected active activity.
+    const activityNeighborsMatch = pathname.match(/^\/api\/student\/classes\/([^/]+)\/activities\/([^/]+)\/neighbors$/);
+    if (activityNeighborsMatch && req.method === 'GET') {
+      const classId = decodeURIComponent(activityNeighborsMatch[1]);
+      const assessmentId = decodeURIComponent(activityNeighborsMatch[2]);
+      const selectedStudentId = parsedUrl.searchParams.get('studentId');
+      getClassAccessSession(classId);
+      const activity = service.getAssessment(assessmentId, { role: 'student', includeTeacherSolutions: false });
+      if (activity.class_id !== classId || activity.status !== 'active' || activity.is_active !== 1) {
+        throw new NotFoundError('Available activity', assessmentId);
+      }
+      const selectedStudent = service.listStudents(classId).find((student) => student.id === selectedStudentId);
+      if (!selectedStudent) throw new ValidationError('Seleziona prima il tuo nominativo');
+      const neighbors = service.listStudents(classId)
+        .filter((student) => student.id !== selectedStudentId)
+        .map((student) => ({ id: student.id, fullName: `${student.first_name} ${student.last_name}`.trim() }));
       res.writeHead(200);
-      res.end(JSON.stringify({ activities }));
+      res.end(JSON.stringify({ neighbors: [{ id: 'none', fullName: 'Nessuno' }, ...neighbors] }));
       return;
     }
 
@@ -809,6 +906,53 @@ export async function handleStudentApi(req, res, pathname, parsedUrl, service, p
           { id: 'none', fullName: 'Nessuno' },
           ...classmates
         ]
+      }));
+      return;
+    }
+
+    // POST /api/student/classes/:classId/activities/:activityId/start
+    // The class navigation cookie gates the declared student selection. A
+    // separate random bearer is issued only for the resulting attempt.
+    const classAttemptStartMatch = pathname.match(/^\/api\/student\/classes\/([^/]+)\/activities\/([^/]+)\/start$/);
+    if (classAttemptStartMatch && req.method === 'POST') {
+      const classId = decodeURIComponent(classAttemptStartMatch[1]);
+      const assessmentId = decodeURIComponent(classAttemptStartMatch[2]);
+      const classSession = getClassAccessSession(classId);
+      const body = parsedBody || {};
+      if (typeof body.studentId !== 'string' || !body.studentId ||
+          typeof body.seatRow !== 'string' || !body.seatRow.trim() ||
+          !['none', ...service.listStudents(classId).map((student) => student.id)].includes(body.leftNeighborId) ||
+          !['none', ...service.listStudents(classId).map((student) => student.id)].includes(body.rightNeighborId)) {
+        throw new ValidationError('Seleziona nominativo, fila e vicini (o Nessuno) prima di iniziare');
+      }
+      const started = service.startClassAttempt({
+        classId,
+        assessmentId,
+        studentId: body.studentId,
+        seatRow: body.seatRow,
+        seatDesk: typeof body.seatDesk === 'string' ? body.seatDesk : null,
+        leftNeighborId: body.leftNeighborId,
+        rightNeighborId: body.rightNeighborId,
+        classSessionId: classSession.id
+      });
+      res.writeHead(started.readOnly ? 200 : (started.resumed ? 200 : 201));
+      res.end(JSON.stringify({
+        status: started.readOnly ? 'submitted' : (started.resumed ? 'resumed' : 'started'),
+        session: {
+          token: started.token,
+          classId: started.classId,
+          className: started.className,
+          assessmentId: started.assessmentId,
+          assessmentVersion: started.assessmentVersion,
+          studentId: started.studentId,
+          studentName: started.studentName,
+          activityTitle: started.activityTitle,
+          activityType: started.activityType,
+          expiresAt: started.expiresAt,
+          resumed: started.resumed,
+          readOnly: started.readOnly
+        },
+        submission: started.submission
       }));
       return;
     }
@@ -1184,6 +1328,30 @@ async function handleRestApi(req, res, pathname, parsedUrl, service, authResult,
       return;
     }
 
+    // Teacher-only shared class activity PIN management. The clear PIN is
+    // returned only once when generated; status never reveals it.
+    const classPinRoute = pathname.match(/^\/api\/classes\/([^/]+)\/activity-pin$/);
+    if (classPinRoute && req.method === 'GET') {
+      const classId = decodeURIComponent(classPinRoute[1]);
+      res.writeHead(200);
+      res.end(JSON.stringify({ pin: service.getClassActivityPinStatus(classId) }));
+      return;
+    }
+    if (classPinRoute && req.method === 'POST') {
+      const classId = decodeURIComponent(classPinRoute[1]);
+      const pin = service.generateClassActivityPin(classId, { createdBy: authResult.principal || 'teacher' });
+      res.writeHead(201);
+      res.end(JSON.stringify({ pin }));
+      return;
+    }
+    if (classPinRoute && req.method === 'DELETE') {
+      const classId = decodeURIComponent(classPinRoute[1]);
+      const result = service.revokeClassActivityPin(classId, { revokedBy: authResult.principal || 'teacher' });
+      res.writeHead(200);
+      res.end(JSON.stringify({ pin: result }));
+      return;
+    }
+
     // GET /api/classes/:id/students (Teacher view of class roster)
     if (pathname.match(/^\/api\/classes\/([^/]+)\/students$/) && req.method === 'GET') {
       const classId = pathname.split('/')[3];
@@ -1473,39 +1641,23 @@ async function handleRestApi(req, res, pathname, parsedUrl, service, authResult,
       return;
     }
 
-    // GET /api/assessments/:id/credentials (List student access codes)
-    if (pathname.match(/^\/api\/assessments\/([^/]+)\/credentials$/) && req.method === 'GET') {
-      const id = pathname.split('/')[3];
-      const credentials = service.listActivityCredentials(id);
-      res.writeHead(200);
-      res.end(JSON.stringify({ credentials }));
+    // DEPRECATED: personal activity-code issuance/listing is disabled. Existing
+    // already-claimed attempt sessions remain valid; historical credential rows
+    // are retained for audit and existing-session validation.
+    if (pathname.match(/^\/api\/assessments\/([^/]+)\/credentials$/) && req.method === 'GET' ||
+        pathname.match(/^\/api\/assessments\/([^/]+)\/credentials\/generate$/) && req.method === 'POST' ||
+        pathname.match(/^\/api\/assessments\/([^/]+)\/credentials\/([^/]+)\/reissue$/) && req.method === 'POST') {
+      res.writeHead(410);
+      res.end(JSON.stringify({ error: 'Gone', message: 'I codici individuali sono stati sostituiti dal PIN condiviso della classe.' }));
       return;
     }
 
-    // POST /api/assessments/:id/credentials/generate (Generate/refresh student access codes)
-    if (pathname.match(/^\/api\/assessments\/([^/]+)\/credentials\/generate$/) && req.method === 'POST') {
-      const id = pathname.split('/')[3];
-      const credentials = service.generateActivityCredentials(id, parsedBody || {});
-      res.writeHead(200);
-      res.end(JSON.stringify({ credentials }));
-      return;
-    }
-
-    // POST /api/assessments/:id/credentials/:credId/revoke (Revoke student access code/session)
+    // Legacy credential revocation remains available for cleanup of historical
+    // credentials; it cannot issue or reveal a code.
     if (pathname.match(/^\/api\/assessments\/([^/]+)\/credentials\/([^/]+)\/revoke$/) && req.method === 'POST') {
       const parts = pathname.split('/');
-      const credId = parts[5];
-      const result = service.revokeActivityCredential(credId);
-      res.writeHead(200);
-      res.end(JSON.stringify(result));
-      return;
-    }
-
-    // POST /api/assessments/:id/credentials/:credId/reissue (Reissue lost access code/session)
-    if (pathname.match(/^\/api\/assessments\/([^/]+)\/credentials\/([^/]+)\/reissue$/) && req.method === 'POST') {
-      const parts = pathname.split('/');
-      const credId = parts[5];
-      const result = service.reissueActivityCredential(credId, parsedBody || {});
+      const credentialId = parts[5];
+      const result = service.revokeActivityCredential(credentialId);
       res.writeHead(200);
       res.end(JSON.stringify(result));
       return;

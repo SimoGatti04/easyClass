@@ -19,7 +19,12 @@ test('C4 real browser workflow: two students, responsive viewports, offline reco
 
   const dbManager = new DatabaseManager(dbPath).init();
   const fileStore = new FileStore(filesPath);
-  const service = new TeacherService({ dbManager, fileStore, mockAi: true });
+  const service = new TeacherService({
+    dbManager,
+    fileStore,
+    mockAi: true,
+    classPinSecret: 'synthetic-c4-browser-class-pin-secret-2026'
+  });
 
   const classroom = service.createClass({ name: '4A Informatica — C4 E2E', academicYear: '2026/2027' });
   const subject = service.createSubject({ classId: classroom.id, name: 'Basi di Dati' });
@@ -59,11 +64,8 @@ test('C4 real browser workflow: two students, responsive viewports, offline reco
       }
     ]
   });
-  const credentials = service.listActivityCredentials(assessment.id);
-  const credential1 = credentials.find(entry => entry.studentId === student1.id);
-  const credential2 = credentials.find(entry => entry.studentId === student2.id);
-  assert.ok(credential1?.accessCode);
-  assert.ok(credential2?.accessCode);
+  const classPin = service.generateClassActivityPin(classroom.id, { createdBy: 'c4-browser-test' }).pin;
+  assert.match(classPin, /^\d{4}$/);
 
   const { publicKey, privateKey } = crypto.generateKeyPairSync('rsa', {
     modulusLength: 2048,
@@ -131,14 +133,27 @@ test('C4 real browser workflow: two students, responsive viewports, offline reco
   const browserErrors = [];
   const student1Page = await student1Browser.newPage();
   student1Page.on('pageerror', error => browserErrors.push(error.message));
-  const firstNavigation = await student1Page.goto(`${url}/#/studente`);
-  if (!(await student1Page.getByPlaceholder('A3F9X2').count())) {
-    console.error('[C4 browser bootstrap]', { url, status: firstNavigation?.status(), title: await student1Page.title(), body: await student1Page.locator('body').innerText(), html: await student1Page.locator('body').innerHTML() });
-  }
-  await student1Page.getByPlaceholder('A3F9X2').fill(credential1.accessCode);
-  await student1Page.getByRole('button', { name: /Accedi alla Prova/ }).click();
-  await student1Page.getByRole('heading', { name: /Dichiarazione Postazione/ }).waitFor();
-  await student1Page.getByRole('button', { name: /Conferma Postazione e Inizia Prova/ }).click();
+  const enterStudentActivity = async (page, studentId, seatRow, leftNeighborId = 'none', rightNeighborId = 'none') => {
+    await page.goto(`${url}/studente`);
+    await page.locator('.public-class-card').filter({ hasText: classroom.name }).click();
+    await page.getByRole('button', { name: /Accedi alle attività/ }).click();
+    await page.getByLabel('PIN della classe').fill(classPin);
+    await page.getByRole('button', { name: 'Continua' }).click();
+    await page.getByRole('button', { name: new RegExp(assessment.title) }).click();
+    await page.getByLabel('Il tuo nominativo').selectOption(studentId);
+    await page.getByPlaceholder('Es. Fila 2').fill(seatRow);
+    await page.getByLabel('Vicino a sinistra').selectOption(leftNeighborId);
+    await page.getByLabel('Vicino a destra').selectOption(rightNeighborId);
+    await page.getByRole('button', { name: 'Inizia attività' }).click();
+    await page.locator('.student-question-card').waitFor();
+  };
+
+  await student1Page.goto(`${url}/studente`);
+  await student1Page.locator('.public-class-card').filter({ hasText: classroom.name }).click();
+  await student1Page.getByRole('button', { name: /Scheda di prova C4/ }).click();
+  await student1Page.locator('.public-markdown-reader').getByText('Esempi sintetici su SQL e risposte aperte.').waitFor();
+  await student1Page.getByRole('button', { name: /4A Informatica/ }).click();
+  await enterStudentActivity(student1Page, student1.id, 'Fila 2', 'none', student2.id);
   await student1Page.locator('.student-question-card').waitFor();
   assert.equal(await student1Page.getByRole('timer').count(), 1, 'Server-issued countdown is shown during the attempt');
 
@@ -206,11 +221,7 @@ test('C4 real browser workflow: two students, responsive viewports, offline reco
   student2Context = await browser.newContext({ viewport: { width: 768, height: 1024 }, isMobile: true, hasTouch: true });
   const student2Page = await student2Context.newPage();
   student2Page.on('pageerror', error => browserErrors.push(error.message));
-  await student2Page.goto(`${url}/#/studente`);
-  await student2Page.getByPlaceholder('A3F9X2').fill(credential2.accessCode);
-  await student2Page.getByRole('button', { name: /Accedi alla Prova/ }).click();
-  await student2Page.getByRole('heading', { name: /Dichiarazione Postazione/ }).waitFor();
-  await student2Page.getByRole('button', { name: /Conferma Postazione e Inizia Prova/ }).click();
+  await enterStudentActivity(student2Page, student2.id, 'Fila 2', student1.id, 'none');
   await student2Page.locator('.student-question-card textarea').fill('La chiave primaria distingue ogni record.');
   await student2Page.getByRole('status').filter({ hasText: /Salvato \(Rev/ }).waitFor();
   await student2Page.setViewportSize({ width: 1365, height: 900 });

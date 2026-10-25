@@ -30,13 +30,14 @@ export class AssessmentService {
    * @param {import('../ai/omniroute-client.js').OmniRouteClient} omniRouteClient
    * @param {import('./ai-rule-service.js').AiRuleService} [aiRuleService]
    */
-  constructor(dbManager, materialService, omniRouteClient, aiRuleService = null, fileStore = null, { allowExternalStudentGrading = process.env.TEACHER_SERVICE_ALLOW_EXTERNAL_STUDENT_GRADING === 'true' } = {}) {
+  constructor(dbManager, materialService, omniRouteClient, aiRuleService = null, fileStore = null, { allowExternalStudentGrading = process.env.TEACHER_SERVICE_ALLOW_EXTERNAL_STUDENT_GRADING === 'true', classPinSecret = process.env.TEACHER_SERVICE_CLASS_PIN_SECRET || '' } = {}) {
     this.dbManager = dbManager;
     this.materialService = materialService;
     this.omniRouteClient = omniRouteClient;
     this.aiRuleService = aiRuleService;
     this.fileStore = fileStore;
     this.allowExternalStudentGrading = Boolean(allowExternalStudentGrading);
+    this.classPinSecret = typeof classPinSecret === 'string' ? classPinSecret : '';
   }
 
   /* -------------------------------------------------------------------------- */
@@ -94,10 +95,6 @@ export class AssessmentService {
         items.forEach((item, index) => {
           this.addItem(id, { ...item, orderIndex: index + 1 });
         });
-      }
-
-      if ((effStatus === "ready" || effStatus === "active") && classId) {
-        this.generateActivityCredentials(id);
       }
 
       return this.getAssessment(id);
@@ -228,15 +225,32 @@ export class AssessmentService {
     if (!assessableSourceId) {
       const parentAsm = this.dbManager.prepare('SELECT * FROM assessments WHERE id = ?').get(assessmentId);
       if (parentAsm && parentAsm.class_id) {
-        const eligible = this.dbManager.prepare(`
+        const now = new Date().toISOString();
+        const candidates = this.dbManager.prepare(`
           SELECT r.id, r.current_version AS version
           FROM resources r
-          JOIN material_publication_events p ON r.id = p.resource_id AND r.current_version = p.version_number AND p.state = 'published'
+          JOIN material_publication_events p
+            ON r.id = p.resource_id AND r.current_version = p.version_number
           WHERE (r.class_id = ? OR r.class_id IS NULL)
+            AND (r.subject_id IS NULL OR r.subject_id = ?)
+            AND (r.lesson_id IS NULL OR r.lesson_id = ?)
             AND r.pedagogical_role IN ('student_material', 'support_material')
+            AND r.resource_type NOT IN ('teacher_script', 'lesson_plan', 'assessment')
             AND r.status = 'active'
-          ORDER BY r.created_at DESC LIMIT 1
-        `).get(parentAsm.class_id);
+            AND p.rowid = (
+              SELECT p2.rowid FROM material_publication_events p2
+              WHERE p2.resource_id = r.id AND p2.version_number = r.current_version
+              ORDER BY p2.occurred_at DESC, p2.rowid DESC LIMIT 1
+            )
+            AND p.state = 'published'
+            AND (p.available_until IS NULL OR p.available_until > ?)
+          ORDER BY r.created_at DESC
+        `).all(parentAsm.class_id, parentAsm.subject_id || null, parentAsm.lesson_id || null, now);
+        const eligible = candidates.find((candidate) => this.materialService.isVersionAssessable(
+          candidate.id,
+          candidate.version,
+          { lessonId: parentAsm.lesson_id || null }
+        ));
         if (eligible) {
           assessableSourceId = eligible.id;
           assessableSourceVersion = eligible.version;
@@ -353,11 +367,6 @@ export class AssessmentService {
         }
       }
 
-      if (nextStatus === AssessmentStatuses.READY || nextStatus === AssessmentStatuses.ACTIVE) {
-        if (existing.class_id) {
-          this.generateActivityCredentials(id);
-        }
-      }
     }
 
     const title = updates.title !== undefined ? updates.title.trim() : existing.title;
@@ -1441,114 +1450,309 @@ Risposta fornita dallo studente:
     });
   }
 
-    generateActivityCredentials(assessmentId, { forceRegenerate = false, durationHours = 8 } = {}) {
-    const asm = this.getAssessment(assessmentId);
-    if (!asm.class_id) return [];
-
-    const students = this.dbManager.prepare(`
-      SELECT id, first_name, last_name, email FROM students WHERE class_id = ? ORDER BY last_name ASC, first_name ASC
-    `).all(asm.class_id);
-
-    const charset = "23456789ABCDEFGHJKLMNPQRSTUVWXYZ";
-    const generateCode = () => {
-      const bytes = crypto.randomBytes(6);
-      let res = "";
-      for (let i = 0; i < 6; i++) {
-        res += charset[bytes[i] % charset.length];
-      }
-      return res;
-    };
-
-    const results = [];
-    const now = new Date().toISOString();
-    const expiresAt = new Date(Date.now() + durationHours * 3600 * 1000).toISOString();
-
-    this.dbManager.transaction(() => {
-      for (const st of students) {
-        let existing = this.dbManager.prepare(`
-          SELECT * FROM student_activity_credentials WHERE assessment_id = ? AND student_id = ?
-        `).get(assessmentId, st.id);
-
-        if (existing && !forceRegenerate) {
-          results.push({
-            id: existing.id,
-            assessmentId,
-            studentId: st.id,
-            studentName: `${st.first_name} ${st.last_name}`.trim(),
-            accessCode: existing.access_code,
-            status: existing.status,
-            expiresAt: existing.expires_at,
-            claimedAt: existing.claimed_at,
-            lastSeenAt: existing.last_seen_at,
-            reissueCount: existing.reissue_count || 0
-          });
-          continue;
-        }
-
-        // Ensure globally unique access code among unexpired credentials
-        let accessCode = generateCode();
-        let attempts = 0;
-        while (attempts < 10) {
-          const duplicate = this.dbManager.prepare("SELECT id FROM student_activity_credentials WHERE access_code = ?").get(accessCode);
-          if (!duplicate) break;
-          accessCode = generateCode();
-          attempts++;
-        }
-
-        const credId = existing ? existing.id : `cred-${crypto.randomUUID()}`;
-
-        if (existing) {
-          this.dbManager.prepare(`
-            UPDATE student_activity_credentials
-            SET access_code = ?, token = NULL, token_hash = NULL, status = 'issued', expires_at = ?, claimed_at = NULL, last_seen_at = NULL, updated_at = ?
-            WHERE id = ?
-          `).run(accessCode, expiresAt, now, credId);
-        } else {
-          this.dbManager.prepare(`
-            INSERT INTO student_activity_credentials (
-              id, assessment_id, student_id, access_code, token, token_hash, status, expires_at, created_at, updated_at
-            ) VALUES (?, ?, ?, ?, NULL, NULL, 'issued', ?, ?, ?)
-          `).run(credId, assessmentId, st.id, accessCode, expiresAt, now, now);
-        }
-
-        results.push({
-          id: credId,
-          assessmentId,
-          studentId: st.id,
-          studentName: `${st.first_name} ${st.last_name}`.trim(),
-          accessCode,
-          status: "issued",
-          expiresAt,
-          claimedAt: null,
-          lastSeenAt: null,
-          reissueCount: existing ? (existing.reissue_count || 0) : 0
-        });
-      }
-    });
-
-    return results;
+  generateActivityCredentials() {
+    throw new ConflictError('I codici individuali sono stati ritirati; usa il PIN condiviso della classe.');
   }
 
-  listActivityCredentials(assessmentId) {
-    this.getAssessment(assessmentId);
-    return this.dbManager.prepare(`
-      SELECT c.*, s.first_name, s.last_name, s.email
-      FROM student_activity_credentials c
-      JOIN students s ON c.student_id = s.id
-      WHERE c.assessment_id = ?
-      ORDER BY s.last_name ASC, s.first_name ASC
-    `).all(assessmentId).map(r => ({
-      id: r.id,
-      assessmentId: r.assessment_id,
-      studentId: r.student_id,
-      studentName: `${r.first_name} ${r.last_name}`.trim(),
-      email: r.email,
-      accessCode: r.access_code,
-      status: r.status,
-      expiresAt: r.expires_at,
-      claimedAt: r.claimed_at,
-      lastSeenAt: r.last_seen_at
-    }));
+  _assertClassPinSecret() {
+    if (Buffer.byteLength(this.classPinSecret, 'utf8') < 32) {
+      const error = new Error('Class activity access is not configured on this server');
+      error.statusCode = 503;
+      throw error;
+    }
+  }
+
+  _hashClassPin(classId, pin) {
+    this._assertClassPinSecret();
+    return crypto.createHmac('sha256', this.classPinSecret)
+      .update('teacher-service:class-pin:v1\0')
+      .update(String(classId))
+      .update('\0')
+      .update(String(pin))
+      .digest('hex');
+  }
+
+  _hashBearerToken(token) {
+    return crypto.createHash('sha256').update(token).digest('hex');
+  }
+
+  _deriveAttemptBearerToken(attemptSessionId) {
+    this._assertClassPinSecret();
+    return crypto.createHmac('sha256', this.classPinSecret)
+      .update('teacher-service:attempt-session:v1\0')
+      .update(String(attemptSessionId))
+      .digest('base64url');
+  }
+
+  getClassActivityPinStatus(classId) {
+    const classroom = this.dbManager.prepare('SELECT id FROM classes WHERE id = ?').get(classId);
+    if (!classroom) throw new NotFoundError('Class', classId);
+    const active = this.dbManager.prepare(`
+      SELECT id, created_at, created_by FROM class_activity_pins
+      WHERE class_id = ? AND status = 'active'
+    `).get(classId);
+    return active
+      ? { classId, configured: Buffer.byteLength(this.classPinSecret, 'utf8') >= 32, active: true, createdAt: active.created_at, createdBy: active.created_by }
+      : { classId, configured: Buffer.byteLength(this.classPinSecret, 'utf8') >= 32, active: false, createdAt: null, createdBy: null };
+  }
+
+  generateClassActivityPin(classId, { createdBy = 'teacher' } = {}) {
+    this._assertClassPinSecret();
+    const classroom = this.dbManager.prepare('SELECT id FROM classes WHERE id = ?').get(classId);
+    if (!classroom) throw new NotFoundError('Class', classId);
+    const pin = String(crypto.randomInt(0, 10000)).padStart(4, '0');
+    const id = `cap-${crypto.randomUUID()}`;
+    const now = new Date().toISOString();
+    this.dbManager.transaction(() => {
+      // PIN rotation forces a fresh class-session entry; attempt sessions are
+      // deliberately untouched so an in-flight assessment remains recoverable.
+      this.dbManager.prepare(`
+        UPDATE student_class_sessions SET revoked_at = ?
+        WHERE class_id = ? AND revoked_at IS NULL
+      `).run(now, classId);
+      this.dbManager.prepare(`
+        UPDATE class_activity_pins SET status = 'revoked', revoked_at = ?, revoked_by = ?
+        WHERE class_id = ? AND status = 'active'
+      `).run(now, String(createdBy), classId);
+      this.dbManager.prepare(`
+        INSERT INTO class_activity_pins (id, class_id, pin_hash, status, created_at, created_by)
+        VALUES (?, ?, ?, 'active', ?, ?)
+      `).run(id, classId, this._hashClassPin(classId, pin), now, String(createdBy));
+    });
+    // The clear PIN is returned only for this creation/rotation response.
+    return { classId, pin, createdAt: now, status: 'active' };
+  }
+
+  revokeClassActivityPin(classId, { revokedBy = 'teacher' } = {}) {
+    this._assertClassPinSecret();
+    const classroom = this.dbManager.prepare('SELECT id FROM classes WHERE id = ?').get(classId);
+    if (!classroom) throw new NotFoundError('Class', classId);
+    const now = new Date().toISOString();
+    const changed = this.dbManager.transaction(() => {
+      const result = this.dbManager.prepare(`
+        UPDATE class_activity_pins SET status = 'revoked', revoked_at = ?, revoked_by = ?
+        WHERE class_id = ? AND status = 'active'
+      `).run(now, String(revokedBy), classId);
+      this.dbManager.prepare(`
+        UPDATE student_class_sessions SET revoked_at = ?
+        WHERE class_id = ? AND revoked_at IS NULL
+      `).run(now, classId);
+      return result.changes;
+    });
+    return { classId, active: false, revoked: changed > 0, revokedAt: changed > 0 ? now : null };
+  }
+
+  redeemClassActivityPin(classId, pin) {
+    this._assertClassPinSecret();
+    if (typeof classId !== 'string' || !classId || typeof pin !== 'string' || !/^\d{4}$/.test(pin)) {
+      throw new AuthorizationError('Codice classe non valido');
+    }
+    const pinHash = this._hashClassPin(classId, pin);
+    const token = crypto.randomBytes(32).toString('base64url');
+    const now = new Date();
+    const nowIso = now.toISOString();
+    const expiresAt = new Date(now.getTime() + 12 * 60 * 60 * 1000).toISOString();
+
+    // Check the active PIN and create the class session in the same SQLite
+    // transaction. A concurrent rotation therefore either precedes the check
+    // (old PIN rejected) or follows the insert (and revokes this session).
+    return this.dbManager.transaction(() => {
+      const active = this.dbManager.prepare(`
+        SELECT p.id, p.pin_hash, c.name AS class_name FROM class_activity_pins p
+        JOIN classes c ON c.id = p.class_id
+        WHERE p.class_id = ? AND p.status = 'active'
+      `).get(classId);
+      const expected = Buffer.from(active?.pin_hash || '0'.repeat(64), 'hex');
+      const candidate = Buffer.from(pinHash, 'hex');
+      const matches = crypto.timingSafeEqual(candidate, expected) && Boolean(active);
+      if (!matches) throw new AuthorizationError('Codice classe non valido');
+
+      this.dbManager.prepare(`
+        INSERT INTO student_class_sessions
+          (id, class_id, pin_id, token_hash, created_at, expires_at, last_seen_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
+      `).run(`css-${crypto.randomUUID()}`, classId, active.id, this._hashBearerToken(token), nowIso, expiresAt, nowIso);
+      return { token, classId, className: active.class_name, expiresAt };
+    });
+  }
+
+  validateClassActivitySession(token, classId) {
+    if (typeof token !== 'string' || !token || typeof classId !== 'string' || !classId) {
+      throw new AuthorizationError('Sessione della classe richiesta');
+    }
+    const now = new Date().toISOString();
+    const session = this.dbManager.prepare(`
+      SELECT s.id, s.class_id, s.expires_at, c.name AS class_name
+      FROM student_class_sessions s
+      JOIN classes c ON c.id = s.class_id
+      JOIN class_activity_pins p ON p.id = s.pin_id AND p.status = 'active'
+      WHERE s.token_hash = ? AND s.class_id = ? AND s.revoked_at IS NULL AND s.expires_at > ?
+    `).get(this._hashBearerToken(token), classId, now);
+    if (!session) {
+      const error = new AuthorizationError('Sessione della classe non valida o scaduta');
+      error.statusCode = 401;
+      throw error;
+    }
+    this.dbManager.prepare('UPDATE student_class_sessions SET last_seen_at = ? WHERE id = ?').run(now, session.id);
+    return { id: session.id, classId: session.class_id, className: session.class_name, expiresAt: session.expires_at };
+  }
+
+  startClassAttempt({
+    classId, assessmentId, studentId, seatRow, seatDesk = null,
+    leftNeighborId, rightNeighborId, classSessionId
+  }) {
+    if (typeof classSessionId !== 'string' || !classSessionId) {
+      const error = new AuthorizationError('Sessione della classe richiesta');
+      error.statusCode = 401;
+      throw error;
+    }
+    return this.dbManager.transaction(() => {
+        const classSession = this.dbManager.prepare(`
+          SELECT s.id FROM student_class_sessions s
+          JOIN class_activity_pins p ON p.id = s.pin_id AND p.status = 'active'
+          WHERE s.id = ? AND s.class_id = ? AND s.revoked_at IS NULL AND s.expires_at > ?
+        `).get(classSessionId, classId, new Date().toISOString());
+        if (!classSession) {
+        const error = new AuthorizationError('Sessione della classe non valida o scaduta');
+        error.statusCode = 401;
+        throw error;
+      }
+      const activity = this.dbManager.prepare(`
+        SELECT id, title, class_id, status, is_active, version, activity_type
+        FROM assessments WHERE id = ?
+      `).get(assessmentId);
+      if (!activity || activity.class_id !== classId || activity.status !== 'active' || activity.is_active !== 1) {
+        throw new AuthorizationError('Attività non disponibile per questa classe');
+      }
+      const selectedStudent = this.dbManager.prepare(`
+        SELECT id, first_name, last_name, class_id FROM students WHERE id = ?
+      `).get(studentId);
+      if (!selectedStudent || selectedStudent.class_id !== classId) {
+        throw new AuthorizationError('Studente non appartenente a questa classe');
+      }
+      if (typeof seatRow !== 'string' || !seatRow.trim() || seatRow.trim().length > 80 ||
+          leftNeighborId === undefined || rightNeighborId === undefined) {
+        throw new ValidationError('Fila e dichiarazione dei vicini (incluso Nessuno) sono obbligatorie');
+      }
+      const resolveNeighbor = (neighborId) => {
+        if (neighborId === 'none' || neighborId === null || neighborId === '') return null;
+        const neighbor = this.dbManager.prepare(`
+          SELECT id, first_name, last_name, class_id FROM students WHERE id = ?
+        `).get(neighborId);
+        if (!neighbor || neighbor.class_id !== classId || neighbor.id === studentId) {
+          throw new ValidationError('Studente adiacente non valido per questa classe');
+        }
+        return neighbor;
+      };
+      const left = resolveNeighbor(leftNeighborId);
+      const right = resolveNeighbor(rightNeighborId);
+      if (left && right && left.id === right.id) throw new ValidationError('Seleziona studenti distinti per i due lati');
+
+      const existingRows = this.dbManager.prepare(`
+        SELECT id, attempt_status, assessment_version FROM assessment_submissions
+        WHERE assessment_id = ? AND student_id = ? ORDER BY created_at DESC, id DESC
+      `).all(assessmentId, studentId);
+      if (existingRows.length > 1) {
+        throw new ConflictError('Sono presenti più tentativi storici per questo studente e questa attività; serve una revisione del docente prima del rientro.');
+      }
+
+      let submissionId;
+      let resumed = false;
+      let readOnly = false;
+      if (existingRows.length === 1) {
+        const existing = existingRows[0];
+        if ((existing.assessment_version || 1) !== (activity.version || 1)) {
+          throw new ConflictError('La versione dei quesiti è cambiata dopo l’avvio del tentativo. Il docente deve ripristinare la versione originale o autorizzare una riapertura tracciata.');
+        }
+        submissionId = existing.id;
+        resumed = true;
+        readOnly = existing.attempt_status === 'submitted' || existing.attempt_status === 'teacher_withdrawn';
+      } else {
+        const saved = this.saveDraftSubmission({
+          assessmentId,
+          studentId,
+          studentName: `${selectedStudent.first_name} ${selectedStudent.last_name}`.trim(),
+          seatRow: seatRow.trim(),
+          seatDesk: typeof seatDesk === 'string' ? seatDesk.trim().slice(0, 80) : null,
+          leftNeighborId: left?.id || null,
+          leftNeighborName: left ? `${left.first_name} ${left.last_name}`.trim() : null,
+          rightNeighborId: right?.id || null,
+          rightNeighborName: right ? `${right.first_name} ${right.last_name}`.trim() : null,
+          responses: [],
+          revision: 1,
+          isFinal: false,
+          attemptStatus: 'in_progress'
+        });
+        submissionId = saved.id;
+      }
+      const now = new Date();
+      const nowIso = now.toISOString();
+      const expiresAt = new Date(now.getTime() + 14 * 24 * 60 * 60 * 1000).toISOString();
+
+      // A repeated start from the same class-navigation session is idempotent:
+      // return the same bearer instead of invalidating the first response in a
+      // double click/race. The bearer is re-derived from a random persisted
+      // session id and the server secret; only its SHA-256 digest is stored.
+      if (classSessionId) {
+        const existingSession = this.dbManager.prepare(`
+          SELECT id, token_hash, expires_at FROM student_attempt_sessions
+          WHERE submission_id = ? AND class_session_id = ?
+            AND revoked_at IS NULL AND expires_at > ?
+        `).get(submissionId, classSessionId, nowIso);
+        if (existingSession) {
+          const reusableToken = this._deriveAttemptBearerToken(existingSession.id);
+          if (this._hashBearerToken(reusableToken) === existingSession.token_hash) {
+            const submission = this.getStudentSubmission(assessmentId, studentId);
+            return {
+              token: reusableToken,
+              classId,
+              assessmentId,
+              studentId,
+              studentName: `${selectedStudent.first_name} ${selectedStudent.last_name}`.trim(),
+              activityTitle: activity.title,
+              activityType: activity.activity_type || 'test',
+              assessmentVersion: activity.version || 1,
+              expiresAt: existingSession.expires_at,
+              resumed: true,
+              readOnly,
+              submission
+            };
+          }
+        }
+      }
+
+      const attemptSessionId = `sas-${crypto.randomUUID()}`;
+      const token = this._deriveAttemptBearerToken(attemptSessionId);
+      this.dbManager.prepare(`
+        UPDATE student_attempt_sessions SET revoked_at = ?
+        WHERE submission_id = ? AND revoked_at IS NULL
+      `).run(nowIso, submissionId);
+      this.dbManager.prepare(`
+        INSERT INTO student_attempt_sessions
+          (id, submission_id, class_session_id, assessment_id, student_id, class_id, token_hash, created_at, expires_at, last_seen_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `).run(attemptSessionId, submissionId, classSessionId, assessmentId, studentId, classId,
+        this._hashBearerToken(token), nowIso, expiresAt, nowIso);
+      const submission = this.getStudentSubmission(assessmentId, studentId);
+      return {
+        token,
+        classId,
+        assessmentId,
+        studentId,
+        studentName: `${selectedStudent.first_name} ${selectedStudent.last_name}`.trim(),
+        activityTitle: activity.title,
+        activityType: activity.activity_type || 'test',
+        assessmentVersion: activity.version || 1,
+        expiresAt,
+        resumed,
+        readOnly,
+        submission
+      };
+    });
+  }
+
+  listActivityCredentials() {
+    throw new ConflictError('La gestione dei codici individuali è stata ritirata.');
   }
 
   revokeActivityCredential(credentialId) {
@@ -1648,88 +1852,62 @@ Risposta fornita dallo studente:
     return attachment;
   }
 
-  claimStudentSession(accessCode) {
-    if (!accessCode || typeof accessCode !== "string" || accessCode.trim() === "") {
-      throw new ValidationError("Codice di accesso richiesto");
-    }
-    const cleanCode = accessCode.trim().toUpperCase();
-
-    return this.dbManager.transaction(() => {
-      const cred = this.dbManager.prepare(`
-        SELECT c.*, s.first_name, s.last_name, s.class_id, a.title AS activity_title,
-               a.status AS activity_status, a.activity_type, a.version AS assessment_version, cl.name AS class_name
-        FROM student_activity_credentials c
-        JOIN students s ON c.student_id = s.id
-        JOIN assessments a ON c.assessment_id = a.id
-        LEFT JOIN classes cl ON s.class_id = cl.id
-        WHERE UPPER(c.access_code) = ?
-      `).get(cleanCode);
-
-      if (!cred) {
-        throw new AuthorizationError("Codice di accesso non valido. Controlla il codice fornito dal docente.");
-      }
-
-      if (cred.status === "revoked") {
-        throw new AuthorizationError("Questa credenziale di accesso è stata revocata dal docente.");
-      }
-
-      if (new Date(cred.expires_at) < new Date()) {
-        throw new AuthorizationError("Questo codice di accesso è scaduto.");
-      }
-
-      if (cred.activity_status === "draft") {
-        throw new AuthorizationError("La verifica è ancora in fase di bozza e non è accessibile agli studenti.");
-      }
-
-      if (cred.activity_status === "closed") {
-        throw new AuthorizationError("La verifica è stata chiusa dal docente.");
-      }
-
-      // Single-use code protection: must be strictly in 'issued' status
-      if (cred.status !== "issued") {
-        throw new AuthorizationError("Questo codice di accesso è già stato utilizzato. Rivolgiti al docente per ripristinare o rinnovare l'accesso.");
-      }
-
-      const now = new Date().toISOString();
-      // Cryptographically secure session token generated exclusively on authorized claim
-      const rawToken = crypto.randomBytes(32).toString("hex");
-      const tokenHash = crypto.createHash("sha256").update(rawToken).digest("hex");
-
-      // Atomic conditional update enforcing status = 'issued'
-      const updateResult = this.dbManager.prepare(`
-        UPDATE student_activity_credentials
-        SET token_hash = ?, token = NULL, status = 'active', claimed_at = ?, last_seen_at = ?, updated_at = ?
-        WHERE id = ? AND status = 'issued'
-      `).run(tokenHash, now, now, now, cred.id);
-
-      if (updateResult.changes === 0) {
-        throw new AuthorizationError("Questo codice di accesso è già stato utilizzato. Rivolgiti al docente per ripristinare o rinnovare l'accesso.");
-      }
-
-      return {
-        token: rawToken,
-        credentialId: cred.id,
-        assessmentId: cred.assessment_id,
-        assessmentVersion: cred.assessment_version || 1,
-        studentId: cred.student_id,
-        studentName: `${cred.first_name} ${cred.last_name}`.trim(),
-        classId: cred.class_id,
-        className: cred.class_name || "",
-        activityTitle: cred.activity_title,
-        activityStatus: cred.activity_status,
-        activityType: cred.activity_type,
-        expiresAt: cred.expires_at
-      };
-    });
+  claimStudentSession() {
+    throw new ConflictError('Il riscatto dei codici individuali è stato ritirato; accedi tramite PIN della classe e avvia l’attività.');
   }
 
   validateStudentSession(token, assessmentId = null) {
-    if (!token || typeof token !== "string" || token.trim() === "") {
-      throw new AuthorizationError("Token di sessione studente mancante");
+    if (!token || typeof token !== 'string' || token.trim() === '') {
+      throw new AuthorizationError('Token di sessione studente mancante');
     }
     const cleanToken = token.trim();
-    const tokenHash = crypto.createHash("sha256").update(cleanToken).digest("hex");
+    const tokenHash = this._hashBearerToken(cleanToken);
+    const now = new Date().toISOString();
 
+    // New attempt bearer sessions are distinct from shared class-navigation
+    // sessions and from the retained C3.1 credential-history rows.
+    const attempt = this.dbManager.prepare(`
+      SELECT ss.id AS attempt_session_id, ss.assessment_id, ss.student_id,
+             ss.expires_at AS session_expires_at, sub.id AS submission_id,
+             sub.attempt_status, sub.assessment_version,
+             st.first_name, st.last_name, st.class_id, a.title AS activity_title,
+             a.status AS activity_status, a.activity_type, a.version AS current_assessment_version,
+             c.name AS class_name
+      FROM student_attempt_sessions ss
+      JOIN assessment_submissions sub ON sub.id = ss.submission_id
+      JOIN students st ON st.id = ss.student_id
+      JOIN assessments a ON a.id = ss.assessment_id
+      JOIN classes c ON c.id = ss.class_id
+      WHERE ss.token_hash = ? AND ss.revoked_at IS NULL AND ss.expires_at > ?
+    `).get(tokenHash, now);
+
+    if (attempt) {
+      if (assessmentId && attempt.assessment_id !== assessmentId) {
+        throw new AuthorizationError('La sessione corrente appartiene a un\'altra attività');
+      }
+      this.dbManager.prepare('UPDATE student_attempt_sessions SET last_seen_at = ? WHERE id = ?')
+        .run(now, attempt.attempt_session_id);
+      return {
+        token: cleanToken,
+        attemptSessionId: attempt.attempt_session_id,
+        submissionId: attempt.submission_id,
+        assessmentId: attempt.assessment_id,
+        assessmentVersion: attempt.assessment_version || 1,
+        studentId: attempt.student_id,
+        studentName: `${attempt.first_name} ${attempt.last_name}`.trim(),
+        classId: attempt.class_id,
+        className: attempt.class_name,
+        activityTitle: attempt.activity_title,
+        activityStatus: attempt.activity_status,
+        activityType: attempt.activity_type,
+        attemptStatus: attempt.attempt_status,
+        readOnly: attempt.attempt_status === 'submitted' || attempt.attempt_status === 'teacher_withdrawn',
+        expiresAt: attempt.session_expires_at
+      };
+    }
+
+    // Backward-compatible validation for already-issued C3.1 attempts. New
+    // per-student codes are no longer issued or exposed by current surfaces.
     const cred = this.dbManager.prepare(`
       SELECT c.*, s.first_name, s.last_name, s.class_id, a.title AS activity_title,
              a.status AS activity_status, a.activity_type, a.version AS assessment_version, cl.name AS class_name
@@ -1739,28 +1917,18 @@ Risposta fornita dallo studente:
       LEFT JOIN classes cl ON s.class_id = cl.id
       WHERE (c.token_hash = ? OR c.token = ?)
     `).get(tokenHash, cleanToken);
-
-    if (!cred) {
-      throw new AuthorizationError("Sessione studente non valida o inesistente");
+    if (!cred || cred.status === 'revoked' || new Date(cred.expires_at) < new Date()) {
+      const error = new AuthorizationError(
+        !cred ? 'Sessione studente non valida o inesistente' :
+          cred.status === 'revoked' ? 'Sessione revocata dal docente' : 'Sessione studente scaduta'
+      );
+      error.statusCode = 401;
+      throw error;
     }
-
-    if (cred.status === "revoked") {
-      throw new AuthorizationError("Sessione revocata dal docente");
-    }
-
-    if (new Date(cred.expires_at) < new Date()) {
-      throw new AuthorizationError("Sessione studente scaduta");
-    }
-
     if (assessmentId && cred.assessment_id !== assessmentId) {
-      throw new AuthorizationError("La sessione corrente appartiene a un'altra attività");
+      throw new AuthorizationError('La sessione corrente appartiene a un\'altra attività');
     }
-
-    const now = new Date().toISOString();
-    this.dbManager.prepare(`
-      UPDATE student_activity_credentials SET last_seen_at = ? WHERE id = ?
-    `).run(now, cred.id);
-
+    this.dbManager.prepare('UPDATE student_activity_credentials SET last_seen_at = ? WHERE id = ?').run(now, cred.id);
     return {
       token: cleanToken,
       credentialId: cred.id,
@@ -1769,70 +1937,17 @@ Risposta fornita dallo studente:
       studentId: cred.student_id,
       studentName: `${cred.first_name} ${cred.last_name}`.trim(),
       classId: cred.class_id,
-      className: cred.class_name || "",
+      className: cred.class_name || '',
       activityTitle: cred.activity_title,
       activityStatus: cred.activity_status,
       activityType: cred.activity_type,
-      status: cred.status
+      status: cred.status,
+      expiresAt: cred.expires_at
     };
   }
 
-  reissueActivityCredential(credentialId, { reason = "Rigenerazione autorizzata dal docente" } = {}) {
-    const cred = this.dbManager.prepare(`
-      SELECT * FROM student_activity_credentials WHERE id = ?
-    `).get(credentialId);
-    if (!cred) throw new NotFoundError("StudentCredential", credentialId);
-
-    const charset = "23456789ABCDEFGHJKLMNPQRSTUVWXYZ";
-    const generateCode = () => {
-      const bytes = crypto.randomBytes(6);
-      let res = "";
-      for (let i = 0; i < 6; i++) {
-        res += charset[bytes[i] % charset.length];
-      }
-      return res;
-    };
-
-    let newCode = generateCode();
-    let attempts = 0;
-    while (attempts < 10) {
-      const dup = this.dbManager.prepare("SELECT id FROM student_activity_credentials WHERE access_code = ?").get(newCode);
-      if (!dup) break;
-      newCode = generateCode();
-      attempts++;
-    }
-
-    const now = new Date().toISOString();
-    const newExpiresAt = new Date(Date.now() + 8 * 3600 * 1000).toISOString();
-    const reissueCount = (cred.reissue_count || 0) + 1;
-
-    this.dbManager.prepare(`
-      UPDATE student_activity_credentials
-      SET access_code = ?, token_hash = NULL, token = NULL, status = 'issued',
-          reissue_count = ?, expires_at = ?, claimed_at = NULL, last_seen_at = NULL,
-          updated_at = ?
-      WHERE id = ?
-    `).run(newCode, reissueCount, newExpiresAt, now, credentialId);
-
-    const updated = this.dbManager.prepare(`
-      SELECT c.*, s.first_name, s.last_name
-      FROM student_activity_credentials c
-      JOIN students s ON c.student_id = s.id
-      WHERE c.id = ?
-    `).get(credentialId);
-
-    return {
-      id: updated.id,
-      assessmentId: updated.assessment_id,
-      studentId: updated.student_id,
-      studentName: `${updated.first_name} ${updated.last_name}`.trim(),
-      accessCode: updated.access_code,
-      status: updated.status,
-      reissueCount: updated.reissue_count,
-      expiresAt: updated.expires_at,
-      claimedAt: updated.claimed_at,
-      lastSeenAt: updated.last_seen_at
-    };
+  reissueActivityCredential() {
+    throw new ConflictError('Il rinnovo dei codici individuali è stato ritirato; ruota il PIN condiviso della classe.');
   }
 
   _validateActionKey(key) {
@@ -2020,16 +2135,11 @@ Risposta fornita dallo studente:
           !['submitted', 'graded', 'reviewed', 'withdrawn_by_teacher'].includes(sub.status)) {
         throw new ConflictError('È possibile riaprire soltanto una consegna conclusa o ritirata dal docente');
       }
-      const credential = this.dbManager.prepare(`
-        SELECT status, token_hash, token, expires_at FROM student_activity_credentials
-        WHERE assessment_id = ? AND student_id = ?
-      `).get(assessment.id, sub.student_id);
-      if (!credential || credential.status === 'revoked' ||
-          (!credential.token_hash && !credential.token) ||
-          !['active', 'submitted'].includes(credential.status) ||
-          new Date(credential.expires_at).getTime() <= nowMs) {
-        throw new ConflictError('Sessione studente assente o scaduta. Rinnova il codice e attendi che lo studente acceda prima di riaprire la prova.');
-      }
+      // Student-specific credentials were retired by the shared-class-PIN
+      // flow. A teacher-authorized reopen remains recoverable: the learner can
+      // re-enter with the current class PIN and same declared roster identity,
+      // and startClassAttempt issues a fresh attempt bearer without resetting
+      // the saved answers or authoritative timer.
 
       const duration = Number(assessment.duration_minutes) > 0 ? Number(assessment.duration_minutes) : 60;
       const oldExtra = sub.extra_time_minutes || 0;
@@ -2056,12 +2166,6 @@ Risposta fornita dallo studente:
           AND attempt_status IN ('submitted', 'teacher_withdrawn')
       `).run(newExtra, now, teacherPrincipal, reason.trim(), now, submissionId, assessment.id);
       if (updated.changes !== 1) throw new ConflictError('Il tentativo è cambiato prima della riapertura');
-      if (credential.status === 'submitted') {
-        this.dbManager.prepare(`
-          UPDATE student_activity_credentials SET status = 'active', updated_at = ?
-          WHERE assessment_id = ? AND student_id = ? AND status = 'submitted'
-        `).run(now, assessment.id, sub.student_id);
-      }
       this._recordAssessmentAction({
         assessmentId: assessment.id,
         submissionId,

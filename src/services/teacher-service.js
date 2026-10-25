@@ -40,6 +40,7 @@ export class TeacherService {
     webResearchClient = null,
     mockAi = false,
     allowExternalStudentGrading = process.env.TEACHER_SERVICE_ALLOW_EXTERNAL_STUDENT_GRADING === 'true',
+    classPinSecret = process.env.TEACHER_SERVICE_CLASS_PIN_SECRET || '',
     enableIntegrityAnalysis = process.env.TEACHER_SERVICE_ENABLE_INTEGRITY_ANALYSIS === 'true',
     fileServiceOptions = {}
   } = {}) {
@@ -56,7 +57,7 @@ export class TeacherService {
     this.webResearch = webResearchClient || new WebResearchClient();
     this.sources = new SourceService(this.dbManager, this.materials, this.org, this.webResearch);
     this.fileService = new FileService(this.materials, this.fileStore, fileServiceOptions);
-    this.assessments = new AssessmentService(this.dbManager, this.materials, this.ai, this.aiRules, this.fileStore, { allowExternalStudentGrading });
+    this.assessments = new AssessmentService(this.dbManager, this.materials, this.ai, this.aiRules, this.fileStore, { allowExternalStudentGrading, classPinSecret });
     this.enableIntegrityAnalysis = Boolean(enableIntegrityAnalysis);
     this.integrity = new IntegrityAnalysisService({ dbManager: this.dbManager, assessmentService: this.assessments, materialService: this.materials });
     this.generation = new GenerationService(this.ai, this.materials, this.org, this.aiRules, this.assessments, this.sources);
@@ -115,6 +116,9 @@ export class TeacherService {
   publishMaterial(id, options) { return this.materials.publishMaterial(id, options); }
   unpublishMaterial(id, options) { return this.materials.unpublishMaterial(id, options); }
   getVersionPublication(id, version, options) { return this.materials.getVersionPublication(id, version, options); }
+  listPublishedStudentMaterials(classId) { return this.materials.listPublishedStudentMaterials(classId); }
+  getPublishedStudentMaterial(classId, resourceId, versionNumber) { return this.materials.getPublishedStudentMaterial(classId, resourceId, versionNumber); }
+  getPublishedStudentMaterialFile(classId, resourceId, versionNumber) { return this.materials.getPublishedStudentMaterialFile(classId, resourceId, versionNumber); }
   authorizeAssessable(id, options) { return this.materials.authorizeAssessable(id, options); }
   isVersionAssessable(id, version) { return this.materials.isVersionAssessable(id, version); }
   getAssessableAuthorization(id, version) { return this.materials.getAssessableAuthorization(id, version); }
@@ -193,6 +197,12 @@ export class TeacherService {
   reissueActivityCredential(credentialId, options) { return this.assessments.reissueActivityCredential(credentialId, options); }
   claimStudentSession(accessCode) { return this.assessments.claimStudentSession(accessCode); }
   validateStudentSession(token, assessmentId) { return this.assessments.validateStudentSession(token, assessmentId); }
+  getClassActivityPinStatus(classId) { return this.assessments.getClassActivityPinStatus(classId); }
+  generateClassActivityPin(classId, options) { return this.assessments.generateClassActivityPin(classId, options); }
+  revokeClassActivityPin(classId, options) { return this.assessments.revokeClassActivityPin(classId, options); }
+  redeemClassActivityPin(classId, pin) { return this.assessments.redeemClassActivityPin(classId, pin); }
+  validateClassActivitySession(token, classId) { return this.assessments.validateClassActivitySession(token, classId); }
+  startClassAttempt(input) { return this.assessments.startClassAttempt(input); }
   registerStudentAttachment(data) { return this.assessments.registerStudentAttachment(data); }
   getStudentAttachment(data) { return this.assessments.getStudentAttachment(data); }
   getAssessmentStatistics(assessmentId) { return this.assessments.getAssessmentStatistics(assessmentId); }

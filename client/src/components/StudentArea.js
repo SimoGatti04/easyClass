@@ -1,12 +1,10 @@
 import React, { createElement as h, useState, useEffect, useRef, useCallback } from 'react';
 import { clearOfflineDraft, loadOfflineDraft, saveOfflineDraft } from '../utils/student-offline-cache.js';
+import { PublicClassPortal } from './PublicClassPortal.js';
 
-export function StudentArea({ onNavigate }) {
-  // Step: 'code_entry' | 'seat_declaration' | 'in_progress' | 'submitted'
-  const [step, setStep] = useState('code_entry');
-
-  // Direct code or manual selection
-  const [accessCodeInput, setAccessCodeInput] = useState('');
+function StudentAttemptArea({ onNavigate, onExit }) {
+  // Attempt sessions are created only by the class PIN + activity + roster flow.
+  const [step, setStep] = useState('loading');
   const [session, setSession] = useState(null); // { token, studentName, studentId, classId, className, activityTitle, ... }
 
 
@@ -82,18 +80,9 @@ export function StudentArea({ onNavigate }) {
     };
   }, []);
 
-  // Restore a session after reload. If the network is unavailable, the cached session
-  // snapshot and IndexedDB draft permit read/edit recovery but not server submission.
+  // Restore an already-issued attempt token after reload. New entry and recovery
+  // happen through the public class portal, never via personal access codes.
   useEffect(() => {
-    const urlParams = new URLSearchParams(window.location.search);
-    const hashParams = new URLSearchParams(window.location.hash.includes('?') ? window.location.hash.split('?')[1] : '');
-    const codeFromUrl = urlParams.get('code') || hashParams.get('code');
-    if (codeFromUrl) {
-      setAccessCodeInput(codeFromUrl.toUpperCase());
-      claimAccessCode(codeFromUrl.toUpperCase());
-      return;
-    }
-
     const storedToken = sessionStorage.getItem('teacher_service_student_token');
     if (!storedToken) return;
     fetch('/api/student/session', { headers: { 'X-Student-Token': storedToken } })
@@ -115,51 +104,6 @@ export function StudentArea({ onNavigate }) {
         }
       });
   }, []);
-
-  // Claim access code
-  const claimAccessCode = (codeToClaim) => {
-    const code = (codeToClaim || accessCodeInput).trim().toUpperCase();
-    if (!code) {
-      setErrorMessage('Inserisci il codice di accesso fornito dal docente.');
-      return;
-    }
-
-    setErrorMessage('');
-    let studentDeviceId = "";
-    try {
-      studentDeviceId = localStorage.getItem("teacher_service_device_id");
-      if (!studentDeviceId) {
-        studentDeviceId = (typeof crypto !== "undefined" && crypto.randomUUID) ? crypto.randomUUID() : ("dev-" + Date.now() + "-" + Math.random().toString(36).slice(2, 9));
-        localStorage.setItem("teacher_service_device_id", studentDeviceId);
-      }
-    } catch {}
-
-    fetch('/api/student/claim-code', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        ...(studentDeviceId ? { 'X-Student-Device-Id': studentDeviceId } : {})
-      },
-      body: JSON.stringify({ accessCode: code, deviceId: studentDeviceId })
-    })
-      .then(res => {
-        if (!res.ok) {
-          return res.json().then(j => { throw new Error(j.message || 'Codice non valido o scaduto'); });
-        }
-        return res.json();
-      })
-      .then(data => {
-        if (data.session) {
-          const cacheKey = crypto.randomUUID?.() || `${Date.now()}-${Math.random()}-${Math.random()}`;
-          sessionStorage.setItem('teacher_service_student_token', data.session.token);
-          sessionStorage.setItem('teacher_service_student_cache_key', cacheKey);
-          initStudentSession({ ...data.session, cacheKey });
-        }
-      })
-      .catch(err => {
-        setErrorMessage(err.message);
-      });
-  };
 
   const applyTimer = (timer) => {
     const previousExpiry = timerInfoRef.current?.expires_at || null;
@@ -789,13 +733,12 @@ export function StudentArea({ onNavigate }) {
     if (step === 'in_progress') {
       const hasUnconfirmedChanges = draftLocation !== 'server' || clientRevisionRef.current > serverRevisionRef.current || !isOnline;
       const warning = hasUnconfirmedChanges
-        ? 'Ci sono modifiche che potrebbero non essere state salvate sul server. Uscendo verranno rimosse da questo dispositivo e non potranno essere recuperate. Vuoi uscire comunque?'
-        : 'Uscendo, la sessione temporanea verrà rimossa da questo dispositivo. Le risposte già salvate resteranno sul server; per rientrare servirà un nuovo codice dal docente. Vuoi continuare?';
+        ? 'Ci sono modifiche non confermate dal server. La bozza locale verrà conservata su questo dispositivo; per recuperarla dovrai rientrare nella stessa classe, attività e nominativo. Vuoi tornare al portale?'
+        : 'Le risposte salvate resteranno sul server. Per rientrare userai il PIN condiviso della classe e selezionerai di nuovo la stessa attività e lo stesso nominativo. Vuoi tornare al portale?';
       if (!confirm(warning)) return;
     }
     if (autosaveTimerRef.current) clearTimeout(autosaveTimerRef.current);
     autosaveSeqRef.current++;
-    if (session?.assessmentId) void clearOfflineDraft(session, session.assessmentId);
     sessionStorage.removeItem('teacher_service_student_token');
     sessionStorage.removeItem('teacher_service_student_snapshot');
     sessionStorage.removeItem('teacher_service_student_cache_key');
@@ -818,7 +761,8 @@ export function StudentArea({ onNavigate }) {
     setTimerWarning('');
     setSubmissionResult(null);
     setSubmissionConfirmed(false);
-    setStep('code_entry');
+    setStep('loading');
+    onExit?.();
   };
 
   // Render questions count
@@ -875,36 +819,6 @@ export function StudentArea({ onNavigate }) {
     h('main', { key: 'main', className: 'flex-1 max-w-4xl w-full mx-auto p-4 sm:p-6' }, [
 
       // STEP 1: Code Entry Screen
-      step === 'code_entry' && h('div', { className: 'card max-w-md mx-auto p-6 sm:p-8 text-center bg-white rounded-xl shadow-sm border mt-8' }, [
-        h('span', { className: 'text-4xl mb-4 block' }, '🔑'),
-        h('h2', { className: 'text-xl font-bold text-slate-900 mb-2' }, 'Accesso Prova Studente'),
-        h('p', { className: 'text-sm text-slate-600 mb-6' }, 'Inserisci il codice di 6 caratteri assegnato dal docente per iniziare la tua prova in aula.'),
-
-        h('form', { onSubmit: e => { e.preventDefault(); claimAccessCode(); } }, [
-          h('div', { className: 'mb-4' }, [
-            h('input', {
-              type: 'text',
-              className: 'form-input w-full text-center text-3xl font-mono font-bold tracking-widest uppercase py-3 border-2 border-indigo-200 focus:border-indigo-600 rounded-lg',
-              maxLength: 6,
-              placeholder: 'A3F9X2',
-              autoFocus: true,
-              value: accessCodeInput,
-              onChange: e => setAccessCodeInput(e.target.value.toUpperCase())
-            })
-          ]),
-          h('button', {
-            type: 'submit',
-            className: 'btn btn-primary w-full py-3 text-base font-semibold shadow',
-            disabled: accessCodeInput.trim().length === 0
-          }, 'Accedi alla Prova →')
-        ]),
-
-        h('div', { className: 'mt-8 pt-6 border-t text-xs text-slate-500' }, [
-          h('p', null, 'Accesso leggero senza password conformemente alle normative scolastiche (Dossier 02 §4).')
-        ])
-      ]),
-
-      // STEP 2: Seat Map Declaration (Dossier 05)
       step === 'seat_declaration' && h('div', { className: 'card max-w-lg mx-auto p-6 bg-white rounded-xl shadow-sm border mt-4' }, [
         h('div', { className: 'text-center mb-6' }, [
           h('span', { className: 'text-3xl mb-2 block' }, '🪑'),
@@ -1269,4 +1183,83 @@ export function StudentArea({ onNavigate }) {
       ])
     ])
   ]);
+}
+
+
+export function StudentArea({ onNavigate }) {
+  const [attemptSession, setAttemptSession] = useState(null);
+  const [checkingSession, setCheckingSession] = useState(true);
+  const [sessionNotice, setSessionNotice] = useState('');
+
+  useEffect(() => {
+    let cancelled = false;
+    const token = sessionStorage.getItem('teacher_service_student_token');
+    if (!token) {
+      setCheckingSession(false);
+      return () => { cancelled = true; };
+    }
+
+    fetch('/api/student/session', { headers: { 'X-Student-Token': token } })
+      .then(async (response) => {
+        const payload = await response.json().catch(() => ({}));
+        if (!response.ok) {
+          const error = new Error(payload.message || 'Sessione non disponibile');
+          error.status = response.status;
+          throw error;
+        }
+        return payload;
+      })
+      .then((payload) => {
+        if (!cancelled && payload.session) setAttemptSession(payload.session);
+      })
+      .catch((error) => {
+        if (cancelled) return;
+        if (error.status === 401 || error.status === 403) {
+          sessionStorage.removeItem('teacher_service_student_token');
+          setSessionNotice('La sessione precedente non è più attiva. Per recuperare le risposte salvate, rientra nella classe con il PIN e seleziona la stessa attività e lo stesso nominativo.');
+        } else if (!error.status) {
+          const snapshot = sessionStorage.getItem('teacher_service_student_snapshot');
+          const cacheKey = sessionStorage.getItem('teacher_service_student_cache_key');
+          try {
+            const saved = snapshot ? JSON.parse(snapshot) : null;
+            if (saved?.assessmentId && saved?.studentId) setAttemptSession({ ...saved, token, cacheKey });
+          } catch {
+            setSessionNotice('La connessione non è disponibile. Le risposte locali non verranno mostrate finché non sarà possibile verificare l’attività.');
+          }
+        } else {
+          setSessionNotice('Non è stato possibile verificare la sessione precedente. Puoi rientrare nella classe per recuperare i dati salvati sul server.');
+        }
+      })
+      .finally(() => { if (!cancelled) setCheckingSession(false); });
+
+    return () => { cancelled = true; };
+  }, []);
+
+  if (checkingSession) {
+    return h('main', { className: 'public-class-portal' }, h('p', { className: 'portal-loading', role: 'status' }, 'Verifica della sessione…'));
+  }
+
+  if (attemptSession) {
+    const returnToPortal = () => {
+      const route = attemptSession.classId
+        ? `/studente/classi/${encodeURIComponent(attemptSession.classId)}`
+        : '/studente';
+      window.history.replaceState({}, '', route);
+      setAttemptSession(null);
+      window.dispatchEvent(new PopStateEvent('popstate'));
+    };
+    return h(StudentAttemptArea, {
+      key: `${attemptSession.assessmentId}:${attemptSession.studentId}`,
+      onNavigate,
+      onExit: returnToPortal
+    });
+  }
+
+  return h(PublicClassPortal, {
+    notice: sessionNotice,
+    onAttemptStarted: (session) => {
+      setSessionNotice('');
+      setAttemptSession(session);
+    }
+  });
 }

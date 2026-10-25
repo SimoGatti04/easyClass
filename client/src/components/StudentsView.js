@@ -7,6 +7,10 @@ export function StudentsView() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
+  const [classPinStatus, setClassPinStatus] = useState(null);
+  const [newClassPin, setNewClassPin] = useState('');
+  const [pinBusy, setPinBusy] = useState(false);
+  const [pinError, setPinError] = useState('');
 
   // Add student form
   const [firstName, setFirstName] = useState('');
@@ -44,11 +48,63 @@ export function StudentsView() {
       });
   };
 
+  const loadClassPinStatus = async (classId) => {
+    if (!classId) return;
+    try {
+      const response = await fetch(`/api/classes/${encodeURIComponent(classId)}/activity-pin`);
+      const payload = await response.json();
+      if (!response.ok) throw new Error(payload.message || 'Impossibile leggere lo stato del PIN');
+      setClassPinStatus(payload.pin);
+      setPinError('');
+    } catch (error) {
+      setClassPinStatus(null);
+      setPinError(error.message);
+    }
+  };
+
   useEffect(() => {
     if (selectedClassId) {
       loadStudents(selectedClassId);
+      setNewClassPin('');
+      void loadClassPinStatus(selectedClassId);
     }
   }, [selectedClassId]);
+
+  const generateClassPin = async () => {
+    if (!selectedClassId) return;
+    if (classPinStatus?.active && !confirm('Rigenerare il PIN invaliderà i nuovi accessi alla sezione Attività. Le prove già iniziate continueranno senza interruzioni. Procedere?')) return;
+    setPinBusy(true);
+    setPinError('');
+    setNewClassPin('');
+    try {
+      const response = await fetch(`/api/classes/${encodeURIComponent(selectedClassId)}/activity-pin`, { method: 'POST' });
+      const payload = await response.json();
+      if (!response.ok) throw new Error(payload.message || 'Impossibile generare il PIN');
+      setNewClassPin(payload.pin.pin);
+      await loadClassPinStatus(selectedClassId);
+    } catch (error) {
+      setPinError(error.message);
+    } finally {
+      setPinBusy(false);
+    }
+  };
+
+  const revokeClassPin = async () => {
+    if (!selectedClassId || !confirm('Revocare il PIN impedirà i nuovi accessi alle Attività. Le prove già iniziate non saranno invalidate.')) return;
+    setPinBusy(true);
+    setPinError('');
+    setNewClassPin('');
+    try {
+      const response = await fetch(`/api/classes/${encodeURIComponent(selectedClassId)}/activity-pin`, { method: 'DELETE' });
+      const payload = await response.json();
+      if (!response.ok) throw new Error(payload.message || 'Impossibile revocare il PIN');
+      await loadClassPinStatus(selectedClassId);
+    } catch (error) {
+      setPinError(error.message);
+    } finally {
+      setPinBusy(false);
+    }
+  };
 
   const handleAddStudent = (e) => {
     e.preventDefault();
@@ -149,6 +205,27 @@ export function StudentsView() {
           className: 'btn-secondary-action',
           onClick: () => setIsBulkOpen(true)
         }, '📥 Importa Elenco Roster')
+      ])
+    ]),
+
+    // Shared class PIN management. Cleartext is shown only immediately after generation.
+    h('section', { key: 'class-pin', className: 'card class-pin-manager', 'aria-labelledby': 'class-pin-title' }, [
+      h('div', { className: 'class-pin-manager-copy' }, [
+        h('h3', { id: 'class-pin-title' }, 'Accesso alle Attività'),
+        h('p', null, classPinStatus?.active
+          ? 'Il PIN condiviso è attivo. Comunicalo alla classe per abilitare l’elenco delle attività.'
+          : 'Genera un PIN condiviso di quattro cifre per consentire l’accesso alle attività della classe.'),
+        classPinStatus?.active && h('p', { className: 'class-pin-status' }, `Attivo dal ${new Date(classPinStatus.createdAt).toLocaleString()}. Il PIN non viene conservato in chiaro e non può essere riletto.`),
+        classPinStatus && !classPinStatus.configured && h('p', { className: 'error-msg-banner', role: 'alert' }, 'Accesso alle attività non configurato sul server: manca il segreto stabile previsto per il PIN di classe.'),
+        newClassPin && h('div', { className: 'class-pin-reveal', role: 'status', 'aria-live': 'polite' }, [
+          h('span', null, 'Nuovo PIN — mostralo alla classe ora'),
+          h('strong', { className: 'class-pin-value' }, newClassPin)
+        ]),
+        pinError && h('p', { className: 'error-msg-banner', role: 'alert' }, pinError)
+      ]),
+      h('div', { className: 'class-pin-manager-actions' }, [
+        h('button', { type: 'button', className: 'btn btn-primary', disabled: pinBusy || !selectedClassId || !classPinStatus?.configured, onClick: generateClassPin }, pinBusy ? 'Attendi…' : classPinStatus?.active ? 'Rigenera PIN' : 'Genera PIN'),
+        classPinStatus?.active && h('button', { type: 'button', className: 'btn btn-secondary', disabled: pinBusy, onClick: revokeClassPin }, 'Revoca PIN')
       ])
     ]),
 

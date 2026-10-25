@@ -135,10 +135,10 @@ test('Pre-opening internal read-only smoke checks suite', async (t) => {
     assert.ok([401, 403].includes(mgmtRes.statusCode), `Must reject unauthenticated with 401 or 403, got ${mgmtRes.statusCode}`);
   });
 
-  await t.test('5. Student claim schema validation responds 400 Bad Request on empty payload without mutating rate limits', async () => {
+  await t.test('5. Retired individual student-credential endpoint returns 410 without mutating rate limits', async () => {
     const countBefore = dbManager.prepare('SELECT count(*) as count FROM student_claim_rate_limits').get().count;
 
-    // Run 5 consecutive smoke checks with empty payload
+    // Repeated legacy requests must not issue credentials or alter either limiter.
     for (let i = 0; i < 5; i++) {
       const claimRes = await executeCheck({
         method: 'POST',
@@ -146,8 +146,8 @@ test('Pre-opening internal read-only smoke checks suite', async (t) => {
         headers: { 'Content-Type': 'application/json' },
         body: {}
       });
-      assert.equal(claimRes.statusCode, 400);
-      assert.equal(claimRes.body.error, 'ValidationError');
+      assert.equal(claimRes.statusCode, 410);
+      assert.equal(claimRes.body.error, 'Gone');
     }
 
     const countAfter = dbManager.prepare('SELECT count(*) as count FROM student_claim_rate_limits').get().count;

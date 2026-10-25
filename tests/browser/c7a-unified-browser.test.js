@@ -50,7 +50,15 @@ test('C7A unified same-assessment flow: teacher API, two real browser sessions, 
       };
     }
   };
-  const service = new TeacherService({ dbManager, fileStore, omniRouteClient: aiMock, mockAi: true, allowExternalStudentGrading: false, enableIntegrityAnalysis: true });
+  const service = new TeacherService({
+    dbManager,
+    fileStore,
+    omniRouteClient: aiMock,
+    mockAi: true,
+    allowExternalStudentGrading: false,
+    enableIntegrityAnalysis: true,
+    classPinSecret: 'synthetic-c7a-browser-class-pin-secret-2026'
+  });
   const { publicKey, privateKey } = crypto.generateKeyPairSync('rsa', { modulusLength: 2048 });
   const kid = `c7a-unified-${process.pid}`;
   setTestAuthKeys({ keys: new Map([[kid, publicKey]]) });
@@ -141,11 +149,8 @@ test('C7A unified same-assessment flow: teacher API, two real browser sessions, 
   await teacherApi(`/api/assessments/${created.id}/status`, { method: 'PUT', body: { status: 'ready' } });
   await teacherApi(`/api/assessments/${created.id}/status`, { method: 'PUT', body: { status: 'active' } });
 
-  const credentials = service.listActivityCredentials(created.id);
-  const credentialFor = (studentId) => credentials.find((entry) => entry.studentId === studentId)?.accessCode;
-  const student1Code = credentialFor(students[0].id);
-  const student2Code = credentialFor(students[1].id);
-  assert.ok(student1Code && student2Code);
+  const classPin = service.generateClassActivityPin(classroom.id, { createdBy: 'c7a-browser-test' }).pin;
+  assert.match(classPin, /^\d{4}$/);
 
   const publicClasses = await fetch(`${baseUrl}/api/student/classes`).then((response) => response.json());
   assert.ok(publicClasses.classes.some((entry) => entry.id === classroom.id));
@@ -162,19 +167,28 @@ test('C7A unified same-assessment flow: teacher API, two real browser sessions, 
     page.on('pageerror', (error) => browserDiagnostics.push(`page${index + 1}: ${error.message}`));
     page.on('requestfailed', (request) => browserDiagnostics.push(`request${index + 1}: ${request.url()} ${request.failure()?.errorText || ''}`));
   }
-  await Promise.all([
-    student1Page.goto(`${url}/studente?code=${encodeURIComponent(student1Code)}`),
-    student2Page.goto(`${url}/studente?code=${encodeURIComponent(student2Code)}`)
-  ]);
-  for (const page of [student1Page, student2Page]) {
+  const enterStudentActivity = async (page, studentId, seatRow, leftNeighborId, rightNeighborId) => {
+    await page.goto(`${url}/studente`);
+    await page.locator('.public-class-card').filter({ hasText: classroom.name }).click();
+    await page.getByRole('button', { name: /Accedi alle attività/ }).click();
+    await page.getByLabel('PIN della classe').fill(classPin);
+    await page.getByRole('button', { name: 'Continua' }).click();
+    await page.getByRole('button', { name: new RegExp(created.title) }).click();
+    await page.getByLabel('Il tuo nominativo').selectOption(studentId);
+    await page.getByPlaceholder('Es. Fila 2').fill(seatRow);
+    await page.getByLabel('Vicino a sinistra').selectOption(leftNeighborId);
+    await page.getByLabel('Vicino a destra').selectOption(rightNeighborId);
+    await page.getByRole('button', { name: 'Inizia attività' }).click();
     try {
-      await page.getByRole('heading', { name: /Dichiarazione Postazione/ }).waitFor({ timeout: 8000 });
+      await page.locator('.student-question-card').waitFor({ timeout: 8000 });
     } catch {
-      throw new Error(`Student entry did not reach seat declaration. URL=${page.url()} BODY=${(await page.locator('body').innerText()).slice(0, 1200)} DIAGNOSTICS=${browserDiagnostics.join(' | ')}`);
+      throw new Error(`Student entry did not start the activity. URL=${page.url()} BODY=${(await page.locator('body').innerText()).slice(0, 1200)} DIAGNOSTICS=${browserDiagnostics.join(' | ')}`);
     }
-    await page.getByRole('button', { name: /Conferma Postazione e Inizia Prova/ }).click();
-    await page.locator('.student-question-card').waitFor();
-  }
+  };
+  await Promise.all([
+    enterStudentActivity(student1Page, students[0].id, 'Fila 1', 'none', students[1].id),
+    enterStudentActivity(student2Page, students[1].id, 'Fila 1', students[0].id, 'none')
+  ]);
   const { assessment } = await teacherApi(`/api/assessments/${created.id}`);
   assert.equal(assessment.items.length, 4);
   assert.deepEqual(assessment.items.map((item) => item.type), ['multiple_choice', 'open_extended', 'code', 'attachment']);

@@ -16,7 +16,7 @@ test('C5 teacher dashboard end-to-end: author, monitor, operate, correct, confir
   fs.mkdirSync(runRoot, { recursive: true });
   const dbManager = new DatabaseManager(path.join(runRoot, 'teacher-c5-e2e.sqlite')).init();
   const fileStore = new FileStore(path.join(runRoot, 'filestore'));
-  const service = new TeacherService({ dbManager, fileStore, mockAi: true });
+  const service = new TeacherService({ dbManager, fileStore, mockAi: true, classPinSecret: 'synthetic-c5-browser-class-pin-secret-2026' });
 
   const classroom = service.createClass({ name: '5A Informatica C5 E2E', academicYear: '2026/2027' });
   const subject = service.createSubject({ classId: classroom.id, name: 'Basi di Dati' });
@@ -110,7 +110,7 @@ test('C5 teacher dashboard end-to-end: author, monitor, operate, correct, confir
   assert.equal(unauthenticatedTeacherApi.status(), 401, 'teacher REST endpoints reject unauthenticated principals');
 
   // Teacher creates the assessment and its questions through the actual React dashboard.
-  await teacherPage.goto(`${url}/#/docente`);
+  await teacherPage.goto(`${url}/docente`);
   await teacherPage.getByRole('heading', { name: 'Panoramica verifiche' }).waitFor();
   await teacherPage.getByRole('button', { name: /Attività/ }).click();
   await teacherPage.getByRole('button', { name: /Nuova Attività \/ Verifica/ }).click();
@@ -144,25 +144,21 @@ test('C5 teacher dashboard end-to-end: author, monitor, operate, correct, confir
   await teacherPage.waitForResponse(response => response.url().endsWith(`/api/assessments/${assessment.id}/status`) && response.request().method() === 'PUT' && response.status() === 200);
   assert.equal(await assessmentRow.getByRole('combobox').inputValue(), 'active', 'the teacher dashboard reflects the active lifecycle state');
 
-  // Teacher generates the individual credentials using the dashboard, then distributes them privately.
-  await assessmentRow.getByRole('button', { name: /Codici Studenti/ }).click();
-  const credentialDialog = teacherPage.locator('.modal-overlay').last();
-  await credentialDialog.getByRole('button', { name: /Rigenera Tutti i Codici/ }).waitFor();
-  teacherPage.once('dialog', dialog => dialog.accept());
-  const credentialsResponse = teacherPage.waitForResponse(response => response.url().endsWith(`/api/assessments/${assessment.id}/credentials/generate`) && response.status() === 200);
-  await credentialDialog.getByRole('button', { name: /Rigenera Tutti i Codici/ }).click();
-  await credentialsResponse;
-  const credentialRows = credentialDialog.locator('tbody tr');
-  const adaRow = credentialRows.filter({ hasText: 'Ada Rossi' });
-  const alanRow = credentialRows.filter({ hasText: 'Alan Verdi' });
-  await adaRow.waitFor();
-  await alanRow.waitFor();
-  const adaCode = (await adaRow.locator('td').nth(1).innerText()).trim();
-  const alanCode = (await alanRow.locator('td').nth(1).innerText()).trim();
-  assert.match(adaCode, /^[A-Z0-9]{6}$/);
-  assert.match(alanCode, /^[A-Z0-9]{6}$/);
-  await credentialDialog.getByRole('button', { name: 'Fatto' }).click();
+  // Teacher creates one shared class PIN in the roster UI. It is not tied to a student's identity.
+  await teacherPage.getByRole('button', { name: 'Registro studenti' }).click();
+  const classSelector = teacherPage.locator('.select-class-dropdown');
+  await classSelector.selectOption(classroom.id);
+  const pinManager = teacherPage.locator('.class-pin-manager');
+  await pinManager.getByRole('heading', { name: 'Accesso alle Attività' }).waitFor();
+  const generatePinResponse = teacherPage.waitForResponse(response =>
+    response.url().endsWith(`/api/classes/${classroom.id}/activity-pin`) && response.request().method() === 'POST' && response.status() === 201
+  );
+  await pinManager.getByRole('button', { name: 'Genera PIN' }).click();
+  await generatePinResponse;
+  const classPin = (await pinManager.locator('.class-pin-value').innerText()).trim();
+  assert.match(classPin, /^\d{4}$/, 'teacher dashboard reveals exactly one four-digit class PIN');
 
+  await teacherPage.getByRole('button', { name: 'Attività' }).click();
   await assessmentRow.getByRole('button', { name: /Monitora Live/ }).click();
   await teacherPage.getByRole('heading', { name: 'Monitoraggio della classe' }).waitFor();
   await teacherPage.locator('.monitor-student-card').first().waitFor();
@@ -173,18 +169,22 @@ test('C5 teacher dashboard end-to-end: author, monitor, operate, correct, confir
   const student2Page = await tabletStudentContext.newPage();
   student1Page.on('pageerror', error => pageErrors.push(`student mobile: ${error.message}`));
   student2Page.on('pageerror', error => pageErrors.push(`student tablet: ${error.message}`));
-  for (const [page, code, desk, studentName] of [
-    [student1Page, adaCode, 'Banco 1', 'Ada Rossi'],
-    [student2Page, alanCode, 'Banco 2', 'Alan Verdi']
+  for (const [page, studentId, desk] of [
+    [student1Page, student1.id, 'Fila 1'],
+    [student2Page, student2.id, 'Fila 2']
   ]) {
-    await page.goto(`${url}/#/studente`);
-    await page.getByPlaceholder('A3F9X2').fill(code);
-    await page.getByRole('button', { name: /Accedi alla Prova/ }).click();
-    await page.getByRole('heading', { name: /Dichiarazione Postazione d'Aula/ }).waitFor();
-    await page.locator('main form select').nth(1).selectOption(desk);
-    await page.getByRole('button', { name: /Conferma Postazione e Inizia Prova/ }).click();
+    await page.goto(`${url}/studente`);
+    await page.locator('.public-class-card').filter({ hasText: classroom.name }).click();
+    await page.getByRole('button', { name: /Accedi alle attività/ }).click();
+    await page.getByLabel('PIN della classe').fill(classPin);
+    await page.getByRole('button', { name: 'Continua' }).click();
+    await page.getByRole('button', { name: new RegExp('C5 — Chiavi e relazioni') }).click();
+    await page.getByLabel('Il tuo nominativo').selectOption(studentId);
+    await page.getByPlaceholder('Es. Fila 2').fill(desk);
+    await page.getByLabel('Vicino a sinistra').selectOption('none');
+    await page.getByLabel('Vicino a destra').selectOption('none');
+    await page.getByRole('button', { name: 'Inizia attività' }).click();
     await page.locator('.student-question-card').waitFor();
-    await page.getByText(new RegExp(studentName)).waitFor();
   }
 
   // Refresh once so teacher actions use the newly persisted student sessions, not the initial roster snapshot.

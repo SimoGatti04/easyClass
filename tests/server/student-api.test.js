@@ -22,7 +22,8 @@ test('Student Public API & Teacher Live Monitor HTTP Suite', async (t) => {
   const service = new TeacherService({
     dbManager,
     fileStore,
-    mockAi: true
+    mockAi: true,
+    classPinSecret: 'synthetic-student-api-class-pin-secret-2026'
   });
 
   // Seed sample data
@@ -98,6 +99,9 @@ test('Student Public API & Teacher Live Monitor HTTP Suite', async (t) => {
     publicKeyEncoding: { type: 'spki', format: 'pem' },
     privateKeyEncoding: { type: 'pkcs8', format: 'pem' }
   });
+  let testClassPin = service.generateClassActivityPin(testClass.id, { createdBy: 'synthetic-teacher' }).pin;
+  let classAccessCookie = '';
+
   const keyId = 'test-teacher-key';
   setTestAuthKeys({ keys: new Map([[keyId, crypto.createPublicKey(publicKey)]]) });
 
@@ -214,6 +218,41 @@ test('Student Public API & Teacher Live Monitor HTTP Suite', async (t) => {
     });
   }
 
+  function parseAccessCookies(headers = {}) {
+    const setCookie = headers['set-cookie'];
+    const values = Array.isArray(setCookie) ? setCookie : (setCookie ? [setCookie] : []);
+    return values.map(value => value.split(';', 1)[0]).join('; ');
+  }
+
+  function startAttemptSession(assessmentId, studentId, {
+    seatRow = 'Fila 1', seatDesk = 'Banco 1', leftNeighborId = 'none', rightNeighborId = 'none'
+  } = {}) {
+    const assessment = service.getAssessment(assessmentId);
+    return service.startClassAttempt({
+      classId: assessment.class_id,
+      assessmentId,
+      studentId,
+      seatRow,
+      seatDesk,
+      leftNeighborId,
+      rightNeighborId
+    });
+  }
+
+  async function startClassAttemptRequest(assessmentId, studentId, {
+    cookie = classAccessCookie,
+    seatRow = 'Fila 1', seatDesk = 'Banco 1', leftNeighborId = 'none', rightNeighborId = 'none'
+  } = {}) {
+    const assessment = service.getAssessment(assessmentId);
+    if (!cookie) throw new Error('Test fixture must redeem the class PIN before starting an attempt');
+    return executeVirtualRequest({
+      method: 'POST',
+      url: `/api/student/classes/${assessment.class_id}/activities/${assessmentId}/start`,
+      headers: { 'Content-Type': 'application/json', Cookie: cookie },
+      body: { studentId, seatRow, seatDesk, leftNeighborId, rightNeighborId }
+    });
+  }
+
   t.after(async () => {
     await app.close();
     clearJwksCache(); setTestAuthKeys(null);
@@ -221,7 +260,6 @@ test('Student Public API & Teacher Live Monitor HTTP Suite', async (t) => {
   });
 
     let student1Token = null;
-  let student1Cred = null;
   let student2Token = null;
   let student3Token = null;
   let testSubmissionId = null;
@@ -238,51 +276,85 @@ test('Student Public API & Teacher Live Monitor HTTP Suite', async (t) => {
     assert.equal(res.body.classes[0].name, '5B Informatica');
   });
 
-  await t.test('2. Student can list students in class with privacy protection', async () => {
+  await t.test('2. Full student roster is not available through the legacy public route', async () => {
     const res = await executeVirtualRequest({
       method: 'GET',
       url: `/api/student/classes/${testClass.id}/students`
     });
-    assert.equal(res.statusCode, 200);
-    assert.ok(Array.isArray(res.body.students));
-    assert.equal(res.body.students.length, 2);
-    // Student list preserves first name but masks last name with initial, no email/notes exposed
-    assert.equal(res.body.students[0].firstName, 'Laura');
-    assert.equal(res.body.students[1].firstName, 'Marco');
-    assert.equal(res.body.students[0].email, undefined);
+    assert.equal(res.statusCode, 404);
+    assert.ok(!res.raw.includes('Marco Rossi'));
+    assert.ok(!res.raw.includes('Laura Bianchi'));
   });
 
-  await t.test('3. Student can list active activities for class', async () => {
+  await t.test('3. Activity list is withheld until the shared class PIN is redeemed', async () => {
     const res = await executeVirtualRequest({
       method: 'GET',
       url: `/api/student/classes/${testClass.id}/activities`
     });
-    assert.equal(res.statusCode, 200);
-    assert.ok(Array.isArray(res.body.activities));
-    assert.equal(res.body.activities.length, 1);
-    assert.equal(res.body.activities[0].title, 'Verifica Reti TCP/IP');
-    assert.equal(res.body.activities[0].activityType, 'test');
+    assert.equal(res.statusCode, 401);
+    assert.ok(!res.raw.includes(testAssessment.title));
   });
 
-  await t.test('4. Student can claim access code and receive session token', async () => {
-    const creds = service.listActivityCredentials(testAssessment.id);
-    assert.ok(creds.length >= 2);
-    student1Cred = creds.find(c => c.studentId === student1.id);
-    assert.ok(student1Cred);
-    assert.ok(student1Cred.accessCode);
-
-    const claimRes = await executeVirtualRequest({
+  await t.test('4. Shared class PIN unlocks active activities and allows declared identity before attempt', async () => {
+    const retiredClaim = await executeVirtualRequest({
       method: 'POST',
       url: '/api/student/claim-code',
       headers: { 'Content-Type': 'application/json' },
-      body: { accessCode: student1Cred.accessCode }
+      body: { accessCode: 'ABC123' }
     });
-    assert.equal(claimRes.statusCode, 200);
-    assert.ok(claimRes.body.session);
-    assert.ok(claimRes.body.session.token);
-    assert.equal(claimRes.body.session.studentId, student1.id);
-    assert.equal(claimRes.body.session.studentName, 'Marco Rossi');
-    student1Token = claimRes.body.session.token;
+    assert.equal(retiredClaim.statusCode, 410);
+
+    const access = await executeVirtualRequest({
+      method: 'POST',
+      url: `/api/student/classes/${testClass.id}/access`,
+      headers: { 'Content-Type': 'application/json' },
+      body: { pin: testClassPin }
+    });
+    assert.equal(access.statusCode, 200);
+    assert.ok(access.body.class);
+    classAccessCookie = parseAccessCookies(access.headers);
+    assert.match(classAccessCookie, /ts_class_access=/);
+    assert.ok(!classAccessCookie.includes(testClassPin));
+
+    const activities = await executeVirtualRequest({
+      method: 'GET',
+      url: `/api/student/classes/${testClass.id}/activities`,
+      headers: { Cookie: classAccessCookie }
+    });
+    assert.equal(activities.statusCode, 200);
+    assert.deepEqual(activities.body.activities.map(item => item.id), [testAssessment.id]);
+
+    const roster = await executeVirtualRequest({
+      method: 'GET',
+      url: `/api/student/classes/${testClass.id}/activities/${testAssessment.id}/students`,
+      headers: { Cookie: classAccessCookie }
+    });
+    assert.equal(roster.statusCode, 200);
+    assert.deepEqual(roster.body.students.map(student => student.fullName).sort(), ['Laura Bianchi', 'Marco Rossi']);
+    assert.equal(roster.body.students[0].email, undefined);
+
+    const startRes = await executeVirtualRequest({
+      method: 'POST',
+      url: `/api/student/classes/${testClass.id}/activities/${testAssessment.id}/start`,
+      headers: { 'Content-Type': 'application/json', Cookie: classAccessCookie },
+      body: {
+        studentId: student1.id,
+        seatRow: 'Fila 1',
+        seatDesk: 'Banco 2',
+        leftNeighborId: 'none',
+        rightNeighborId: student2.id
+      }
+    });
+    assert.equal(startRes.statusCode, 201);
+    assert.equal(startRes.body.status, 'started');
+    assert.equal(startRes.body.session.studentId, student1.id);
+    assert.equal(startRes.body.session.studentName, 'Marco Rossi');
+    student1Token = startRes.body.session.token;
+    testSubmissionId = startRes.body.submission.id;
+    assert.equal(startRes.body.submission.seat_row, 'Fila 1');
+    assert.equal(startRes.body.submission.seat_desk, 'Banco 2');
+    assert.equal(startRes.body.submission.left_neighbor_name, null, 'Nessuno is persisted as an empty neighbor reference');
+    assert.equal(startRes.body.submission.right_neighbor_id, student2.id);
   });
 
   await t.test('5. Student can retrieve activity questions with teacher solutions strictly stripped', async () => {
@@ -294,41 +366,30 @@ test('Student Public API & Teacher Live Monitor HTTP Suite', async (t) => {
     assert.equal(res.statusCode, 200);
     assert.equal(res.body.activity.title, 'Verifica Reti TCP/IP');
     assert.equal(res.body.activity.items.length, 2);
-
-    // Verify teacher solutions and rubrics are masked/null
     for (const item of res.body.activity.items) {
       assert.equal(item.teacher_solution, null, 'Teacher solution must be strictly null for student');
       assert.equal(item.rubric, null, 'Rubric must be strictly null for student');
     }
   });
 
-  await t.test('6. Student can start attempt with Seat Map declaration', async () => {
+  await t.test('6. Re-entering the same activity and declared identity resumes the existing attempt', async () => {
     const res = await executeVirtualRequest({
       method: 'POST',
-      url: `/api/student/activities/${testAssessment.id}/start`,
-      headers: {
-        'Content-Type': 'application/json',
-        'X-Student-Token': student1Token
-      },
+      url: `/api/student/classes/${testClass.id}/activities/${testAssessment.id}/start`,
+      headers: { 'Content-Type': 'application/json', Cookie: classAccessCookie },
       body: {
-        seatRow: 'Fila 1',
-        seatDesk: 'Banco 2',
-        leftNeighborId: null,
-        leftNeighborName: 'Nessuno',
-        rightNeighborId: student2.id,
-        rightNeighborName: 'Laura Bianchi',
-        revision: 1,
-        responses: []
+        studentId: student1.id,
+        seatRow: 'Fila 9',
+        seatDesk: 'Banco 9',
+        leftNeighborId: 'none',
+        rightNeighborId: 'none'
       }
     });
-
     assert.equal(res.statusCode, 200);
-    assert.equal(res.body.status, 'started');
-    assert.equal(res.body.submission.seat_row, 'Fila 1');
-    assert.equal(res.body.submission.seat_desk, 'Banco 2');
-    assert.equal(res.body.submission.left_neighbor_name, 'Nessuno');
-    assert.equal(res.body.submission.right_neighbor_id, student2.id);
-    testSubmissionId = res.body.submission.id;
+    assert.equal(res.body.status, 'resumed');
+    assert.equal(res.body.submission.id, testSubmissionId);
+    assert.equal(res.body.submission.seat_row, 'Fila 1', 'resume does not silently replace the original seat declaration');
+    student1Token = res.body.session.token;
   });
 
   await t.test('7. Student can autosave responses and retrieve draft only for own session', async () => {
@@ -555,31 +616,26 @@ test('Student Public API & Teacher Live Monitor HTTP Suite', async (t) => {
     assert.equal(delRes.statusCode, 200);
     });
 
-  await t.test("13. Impersonation prevention: Student cannot read or overwrite another student submission", async () => {
-    const creds = service.listActivityCredentials(testAssessment.id);
-    const student2Cred = creds.find(c => c.studentId === student2.id);
-    assert.ok(student2Cred);
-
-    // Student 2 claims access code
-    const claim2 = await executeVirtualRequest({
-      method: "POST",
-      url: "/api/student/claim-code",
-      headers: { "Content-Type": "application/json" },
-      body: { accessCode: student2Cred.accessCode }
+  await t.test("13. Declared identity is explicit; attempt token scopes saved answers", async () => {
+    const start2 = await startClassAttemptRequest(testAssessment.id, student2.id, {
+      seatRow: 'Fila 1', seatDesk: 'Banco 3'
     });
-    assert.equal(claim2.statusCode, 200);
-    student2Token = claim2.body.session.token;
+    assert.equal(start2.statusCode, 201);
+    student2Token = start2.body.session.token;
 
-    // Student 2 retrieves draft: must be null, cannot read Student 1 submission
+    // The Domain Owner accepts name selection as a declaration, not strong
+    // identity proof. Starting the attempt creates this student's own draft.
     const draft2 = await executeVirtualRequest({
       method: "GET",
       url: "/api/student/activities/" + testAssessment.id + "/submission",
       headers: { "X-Student-Token": student2Token }
     });
     assert.equal(draft2.statusCode, 200);
-    assert.equal(draft2.body.submission, null);
+    assert.ok(draft2.body.submission, JSON.stringify(draft2.body));
+    assert.equal(draft2.body.submission.student_id, student2.id);
 
-    // Student 2 attempts to spoof Student 1 studentId in autosave payload
+    // A client-supplied studentId is ignored: ownership comes only from the
+    // attempt bearer returned by the server after the declaration flow.
     const spoofAutosave = await executeVirtualRequest({
       method: "POST",
       url: "/api/student/activities/" + testAssessment.id + "/autosave",
@@ -588,27 +644,24 @@ test('Student Public API & Teacher Live Monitor HTTP Suite', async (t) => {
         "X-Student-Token": student2Token
       },
       body: {
-        revision: 1,
+        revision: 2,
         studentId: student1.id,
         studentName: "Marco Rossi",
-        responses: [{ itemId: testAssessment.items[0].id, responseText: "HACKED_BY_STUDENT_2" }]
+        responses: [{ itemId: testAssessment.items[0].id, responseText: "RISPOSTA_STUDENTE_2" }]
       }
     });
     assert.equal(spoofAutosave.statusCode, 200);
 
-    // Verify Student 1 actual submission was untouched
     const sub1 = service.getStudentSubmission(testAssessment.id, student1.id);
     assert.ok(sub1);
     const sub1Item0 = sub1.responses.find(r => r.item_id === testAssessment.items[0].id);
-    assert.notEqual(sub1Item0?.response_text, "HACKED_BY_STUDENT_2");
     assert.equal(sub1Item0?.response_text, "Trasporto (aggiornato dopo riapertura)");
 
-    // Verify Student 2 submission was saved under Student 2 own student_id
     const sub2 = service.getStudentSubmission(testAssessment.id, student2.id);
     assert.ok(sub2);
     assert.equal(sub2.student_id, student2.id);
-    const sub2Item0 = sub2.responses.find(r => r.item_id === testAssessment.items[0].id);
-    assert.equal(sub2Item0?.response_text, "HACKED_BY_STUDENT_2");
+    assert.equal(sub2.revision, 2);
+    assert.equal(sub2.responses.find(r => r.item_id === testAssessment.items[0].id)?.response_text, "RISPOSTA_STUDENTE_2");
   });
 
   await t.test("14. Integrity: Draft activities are strictly inaccessible to students", async () => {
@@ -639,7 +692,8 @@ test('Student Public API & Teacher Live Monitor HTTP Suite', async (t) => {
     // Draft activities do not appear in class activities list
     const classActs = await executeVirtualRequest({
       method: "GET",
-      url: "/api/student/classes/" + testClass.id + "/activities"
+      url: "/api/student/classes/" + testClass.id + "/activities",
+      headers: { Cookie: classAccessCookie }
     });
     assert.equal(classActs.statusCode, 200);
     const draftFound = classActs.body.activities.find(a => a.id === draftAsm.id);
@@ -695,37 +749,37 @@ test('Student Public API & Teacher Live Monitor HTTP Suite', async (t) => {
 
   });
 
-  await t.test("16. Security: Revoked and expired credentials fail closed with AuthorizationError", async () => {
-    // Generate new credential for test
-    const creds = service.listActivityCredentials(testAssessment.id);
-    const testCred = creds[0];
-
-    // Revoked credential
-    dbManager.prepare("UPDATE student_activity_credentials SET status = 'revoked' WHERE id = ?").run(testCred.id);
-
-    const claimRevoked = await executeVirtualRequest({
-      method: "POST",
-      url: "/api/student/claim-code",
-      headers: { "Content-Type": "application/json" },
-      body: { accessCode: testCred.accessCode }
+  await t.test("16. Class PIN revocation blocks new navigation but preserves started attempts", async () => {
+    const previousCookie = classAccessCookie;
+    const attemptStatus = await executeVirtualRequest({
+      method: 'GET', url: '/api/student/session', headers: { 'X-Student-Token': student1Token }
     });
-    assert.equal(claimRevoked.statusCode, 403);
-    assert.equal(claimRevoked.body.error, "AuthorizationError");
+    assert.equal(attemptStatus.statusCode, 200);
 
-    // Expired credential
-    dbManager.prepare("UPDATE student_activity_credentials SET status = 'active', expires_at = '2020-01-01T00:00:00.000Z' WHERE id = ?").run(testCred.id);
-
-    const claimExpired = await executeVirtualRequest({
-      method: "POST",
-      url: "/api/student/claim-code",
-      headers: { "Content-Type": "application/json" },
-      body: { accessCode: testCred.accessCode }
+    service.revokeClassActivityPin(testClass.id, { revokedBy: 'synthetic-teacher' });
+    const hiddenActivities = await executeVirtualRequest({
+      method: 'GET', url: `/api/student/classes/${testClass.id}/activities`, headers: { Cookie: previousCookie }
     });
-    assert.equal(claimExpired.statusCode, 403);
-    assert.equal(claimExpired.body.error, "AuthorizationError");
+    assert.equal(hiddenActivities.statusCode, 401);
+    const preservedAttempt = await executeVirtualRequest({
+      method: 'GET', url: '/api/student/session', headers: { 'X-Student-Token': student1Token }
+    });
+    assert.equal(preservedAttempt.statusCode, 200, 'revoking the navigation PIN must not revoke an attempt bearer');
 
-    // Restore credential status
-    dbManager.prepare("UPDATE student_activity_credentials SET status = 'active', expires_at = '2030-01-01T00:00:00.000Z' WHERE id = ?").run(testCred.id);
+    const oldPin = await executeVirtualRequest({
+      method: 'POST', url: `/api/student/classes/${testClass.id}/access`,
+      headers: { 'Content-Type': 'application/json' }, body: { pin: testClassPin }
+    });
+    assert.equal(oldPin.statusCode, 403);
+
+    testClassPin = service.generateClassActivityPin(testClass.id, { createdBy: 'synthetic-teacher' }).pin;
+    const entered = await executeVirtualRequest({
+      method: 'POST', url: `/api/student/classes/${testClass.id}/access`,
+      headers: { 'Content-Type': 'application/json' }, body: { pin: testClassPin }
+    });
+    assert.equal(entered.statusCode, 200);
+    classAccessCookie = parseAccessCookies(entered.headers);
+    assert.match(classAccessCookie, /ts_class_access=/);
   });
 
   await t.test("17. Teacher solutions & rubrics isolation between student and teacher views", async () => {
@@ -792,20 +846,9 @@ test('Student Public API & Teacher Live Monitor HTTP Suite', async (t) => {
         assessableSourceVersion: 1
       }]
     });
-    const credential = service.listActivityCredentials(attachmentAssessment.id).find(c => c.studentId === student2.id);
-    assert.ok(credential);
-    const claimRes = await executeVirtualRequest({
-      method: "POST", url: "/api/student/claim-code",
-      headers: { "Content-Type": "application/json" }, body: { accessCode: credential.accessCode }
-    });
-    assert.equal(claimRes.statusCode, 200);
-    const token = claimRes.body.session.token;
-    const startRes = await executeVirtualRequest({
-      method: "POST", url: `/api/student/activities/${attachmentAssessment.id}/start`,
-      headers: { "Content-Type": "application/json", "X-Student-Token": token },
-      body: { revision: 1, responses: [] }
-    });
-    assert.equal(startRes.statusCode, 200);
+    const startRes = await startClassAttemptRequest(attachmentAssessment.id, student2.id);
+    assert.equal(startRes.statusCode, 201);
+    const token = startRes.body.session.token;
 
     const boundary = "----UploadSecBoundary123";
     const makeMultipart = (filename, contentType, bytes) => Buffer.concat([
@@ -875,7 +918,7 @@ test('Student Public API & Teacher Live Monitor HTTP Suite', async (t) => {
         "X-Student-Token": student2Token
       },
       body: {
-        revision: 2,
+        revision: 3,
         responses: [{ itemId: testAssessment.items[0].id, responseText: "Risposta revisione 1" }]
       }
     });
@@ -889,7 +932,7 @@ test('Student Public API & Teacher Live Monitor HTTP Suite', async (t) => {
         "X-Student-Token": student2Token
       },
       body: {
-        revision: 3,
+        revision: 4,
         responses: [{ itemId: testAssessment.items[0].id, responseText: "Risposta revisione 2 (definitiva)" }]
       }
     });
@@ -941,7 +984,7 @@ test('Student Public API & Teacher Live Monitor HTTP Suite', async (t) => {
         "X-Student-Token": student2Token
       },
       body: {
-        revision: 4,
+        revision: 5,
         responses: [
           { itemId: testAssessment.items[0].id, responseText: "Risposta finale sigillata" }
         ]
@@ -959,7 +1002,7 @@ test('Student Public API & Teacher Live Monitor HTTP Suite', async (t) => {
         "X-Student-Token": student2Token
       },
       body: {
-        revision: 3,
+        revision: 4,
         responses: [
           { itemId: testAssessment.items[0].id, responseText: "Stale out-of-order text that must not overwrite" }
         ]
@@ -974,115 +1017,87 @@ test('Student Public API & Teacher Live Monitor HTTP Suite', async (t) => {
     assert.equal(sub.responses[0].response_text, "Risposta finale sigillata");
   });
 
-  await t.test("23. Disconnection & Session Invalidation Resilience: Revoked credential fails closed", async () => {
-    // Create new student and credential for disconnection test
+  await t.test("23. Revoked attempt bearer fails closed and class-PIN re-entry recovers the saved draft", async () => {
     student3 = service.addStudent({
       classId: testClass.id,
       firstName: "Giulia",
       lastName: "Verdi",
       email: "g.verdi@scuola.example"
     });
-    const creds = service.generateActivityCredentials(testAssessment.id);
-    const s3Cred = creds.find(c => c.studentId === student3.id);
-    assert.ok(s3Cred);
-
-    // Student 3 claims access code to establish session
-    const claim3 = await executeVirtualRequest({
-      method: "POST",
-      url: "/api/student/claim-code",
-      headers: { "Content-Type": "application/json" },
-      body: { accessCode: s3Cred.accessCode }
+    const started = await startClassAttemptRequest(testAssessment.id, student3.id, {
+      seatRow: 'Fila 3', seatDesk: 'Banco 1'
     });
-    assert.equal(claim3.statusCode, 200);
-    student3Token = claim3.body.session.token;
-    assert.ok(student3Token);
+    assert.equal(started.statusCode, 201);
+    student3Token = started.body.session.token;
+    const submissionId = started.body.submission.id;
+    const originalExpiry = started.body.submission.timer.expires_at;
 
-    // Student 3 starts activity
-    const startRes = await executeVirtualRequest({
-      method: "POST",
-      url: "/api/student/activities/" + testAssessment.id + "/start",
-      headers: {
-        "Content-Type": "application/json",
-        "X-Student-Token": student3Token
-      },
-      body: {
-        seatRow: "Fila 3",
-        seatDesk: "Banco 1",
-        revision: 1,
-        responses: []
-      }
+    const saved = await executeVirtualRequest({
+      method: 'POST',
+      url: `/api/student/activities/${testAssessment.id}/autosave`,
+      headers: { 'Content-Type': 'application/json', 'X-Student-Token': student3Token },
+      body: { revision: 2, responses: [{ itemId: testAssessment.items[0].id, responseText: 'Salvata prima della disconnessione' }] }
     });
-    assert.equal(startRes.statusCode, 200);
+    assert.equal(saved.statusCode, 200);
+    dbManager.prepare(`UPDATE student_attempt_sessions SET revoked_at = ? WHERE submission_id = ? AND revoked_at IS NULL`)
+      .run(new Date().toISOString(), submissionId);
 
-    // Teacher revokes student credential (e.g. disciplinary or session disconnection)
-    service.revokeActivityCredential(s3Cred.id);
-
-    // Subsequent autosave attempt fails closed with 403
-    const autosaveRes = await executeVirtualRequest({
-      method: "POST",
-      url: "/api/student/activities/" + testAssessment.id + "/autosave",
-      headers: {
-        "Content-Type": "application/json",
-        "X-Student-Token": student3Token
-      },
-      body: {
-        revision: 2,
-        responses: [{ itemId: testAssessment.items[0].id, responseText: "Tentativo post revoca" }]
-      }
+    const rejected = await executeVirtualRequest({
+      method: 'POST',
+      url: `/api/student/activities/${testAssessment.id}/autosave`,
+      headers: { 'Content-Type': 'application/json', 'X-Student-Token': student3Token },
+      body: { revision: 3, responses: [{ itemId: testAssessment.items[0].id, responseText: 'Non deve sovrascrivere' }] }
     });
-    assert.equal(autosaveRes.statusCode, 403);
-    assert.equal(autosaveRes.body.error, "AuthorizationError");
+    assert.equal(rejected.statusCode, 401);
 
-    // Final submit attempt also fails closed with 403
-    const submitRes = await executeVirtualRequest({
-      method: "POST",
-      url: "/api/student/activities/" + testAssessment.id + "/submit",
-      headers: {
-        "Content-Type": "application/json",
-        "X-Student-Token": student3Token
-      },
-      body: { revision: 2 }
+    const reentered = await executeVirtualRequest({
+      method: 'POST',
+      url: `/api/student/classes/${testClass.id}/access`,
+      headers: { 'Content-Type': 'application/json' },
+      body: { pin: testClassPin }
     });
-    assert.equal(submitRes.statusCode, 403);
+    assert.equal(reentered.statusCode, 200);
+    classAccessCookie = parseAccessCookies(reentered.headers);
+    const resumed = await startClassAttemptRequest(testAssessment.id, student3.id, {
+      cookie: classAccessCookie, seatRow: 'Fila 3', seatDesk: 'Banco 1'
+    });
+    assert.equal(resumed.statusCode, 200);
+    assert.equal(resumed.body.submission.id, submissionId);
+    assert.equal(resumed.body.submission.responses[0].response_text, 'Salvata prima della disconnessione');
+    assert.equal(resumed.body.submission.timer.expires_at, originalExpiry);
+    student3Token = resumed.body.session.token;
   });
 
   await t.test("24. Duplicate & Rapid Concurrent Requests Handling", async () => {
-    // Recover the revoked credential without modifying the in-progress submission.
-    let s3Cred = service.listActivityCredentials(testAssessment.id).find(c => c.studentId === student3.id);
-    const renewed = service.reissueActivityCredential(s3Cred.id, { reason: "Ripresa del test concorrente" });
-    s3Cred = service.listActivityCredentials(testAssessment.id).find(c => c.studentId === student3.id);
-    const renewedClaim = await executeVirtualRequest({
-      method: "POST", url: "/api/student/claim-code",
-      headers: { "Content-Type": "application/json" }, body: { accessCode: renewed.accessCode }
-    });
-    assert.equal(renewedClaim.statusCode, 200);
-    student3Token = renewedClaim.body.session.token;
-
-    // Concurrent autosaves in flight: two requests with duplicate revision 2
+    // Use the recovered attempt bearer. Identical revisions race, and the
+    // server permits exactly one persisted write.
+    const currentRevision = service.getStudentSubmission(testAssessment.id, student3.id).revision;
+    const duplicateRevision = currentRevision + 1;
+    // Concurrent autosaves in flight: two requests with the same revision
     // Exactly one must succeed (200) and the duplicate must be rejected (409 Conflict)
     const [resA, resB] = await Promise.all([
       executeVirtualRequest({
         method: "POST",
         url: "/api/student/activities/" + testAssessment.id + "/autosave",
         headers: { "Content-Type": "application/json", "X-Student-Token": student3Token },
-        body: { revision: 2, responses: [{ itemId: testAssessment.items[0].id, responseText: "Test concorrente A" }] }
+        body: { revision: duplicateRevision, responses: [{ itemId: testAssessment.items[0].id, responseText: "Test concorrente A" }] }
       }),
       executeVirtualRequest({
         method: "POST",
         url: "/api/student/activities/" + testAssessment.id + "/autosave",
         headers: { "Content-Type": "application/json", "X-Student-Token": student3Token },
-        body: { revision: 2, responses: [{ itemId: testAssessment.items[0].id, responseText: "Test concorrente B" }] }
+        body: { revision: duplicateRevision, responses: [{ itemId: testAssessment.items[0].id, responseText: "Test concorrente B" }] }
       })
     ]);
     const statuses = [resA.statusCode, resB.statusCode].sort();
     assert.deepEqual(statuses, [200, 409]);
 
-    // Duplicate submit calls: first succeeds with revision 3, second returns 409 Conflict
+    // Duplicate submit calls: first succeeds at the next revision, second returns 409 Conflict
     const submit1 = await executeVirtualRequest({
       method: "POST",
       url: "/api/student/activities/" + testAssessment.id + "/submit",
       headers: { "Content-Type": "application/json", "X-Student-Token": student3Token },
-      body: { revision: 3 }
+      body: { revision: duplicateRevision + 1 }
     });
     assert.equal(submit1.statusCode, 200);
 
@@ -1090,7 +1105,7 @@ test('Student Public API & Teacher Live Monitor HTTP Suite', async (t) => {
       method: "POST",
       url: "/api/student/activities/" + testAssessment.id + "/submit",
       headers: { "Content-Type": "application/json", "X-Student-Token": student3Token },
-      body: { revision: 3 }
+      body: { revision: duplicateRevision + 1 }
     });
     assert.equal(submit2.statusCode, 409);
     assert.equal(submit2.body.error, "ConflictError");
@@ -1126,17 +1141,7 @@ test('Student Public API & Teacher Live Monitor HTTP Suite', async (t) => {
       durationMinutes: 45,
       maxScore: 30
     });
-    const freshCreds = service.generateActivityCredentials(freshAsm.id);
-    const s1Cred = freshCreds.find(c => c.studentId === student1.id);
-    const claimRes = await executeVirtualRequest({
-      method: "POST",
-      url: "/api/student/claim-code",
-      headers: { "Content-Type": "application/json" },
-      body: { accessCode: s1Cred.accessCode }
-    });
-    assert.equal(claimRes.statusCode, 200);
-    const freshStudentToken = claimRes.body.session.token;
-
+    // The assessment remains editable until its first attempt is started.
     // Teacher adds a new Code question item
     const addItemRes = await executeVirtualRequest({
       method: "POST",
@@ -1170,16 +1175,6 @@ test('Student Public API & Teacher Live Monitor HTTP Suite', async (t) => {
     const addedItemTeacher = teacherView.body.assessment.items.find(i => i.id === newItemId);
     assert.equal(addedItemTeacher.teacher_solution, "def tcp_checksum(packet):\n    return sum(packet) & 0xffff");
 
-    // Student view strips teacher solution
-    const studentView = await executeVirtualRequest({
-      method: "GET",
-      url: "/api/student/activities/" + freshAsm.id,
-      headers: { "X-Student-Token": freshStudentToken }
-    });
-    assert.equal(studentView.statusCode, 200);
-    const addedItemStudent = studentView.body.activity.items.find(i => i.id === newItemId);
-    assert.equal(addedItemStudent.teacher_solution, null);
-
     // Teacher updates the item
     const updateItemRes = await executeVirtualRequest({
       method: "PUT",
@@ -1196,321 +1191,247 @@ test('Student Public API & Teacher Live Monitor HTTP Suite', async (t) => {
     assert.equal(updateItemRes.statusCode, 200);
     assert.equal(updateItemRes.body.item.max_score, 15);
 
+    // Deletion is allowed while no student has started this version.
+    const temporaryItem = await executeVirtualRequest({
+      method: "POST",
+      url: "/api/assessments/" + freshAsm.id + "/items",
+      headers: { "Content-Type": "application/json", "Cf-Access-Jwt-Assertion": teacherToken },
+      body: {
+        type: "open_short", questionText: "Quesito temporaneo", maxScore: 1,
+        assessableSourceId: studentMaterial.id, assessableSourceVersion: 1
+      }
+    });
+    assert.equal(temporaryItem.statusCode, 201);
+    const deleteBeforeStart = await executeVirtualRequest({
+      method: "DELETE",
+      url: "/api/assessments/" + freshAsm.id + "/items/" + temporaryItem.body.item.id,
+      headers: { "Cf-Access-Jwt-Assertion": teacherToken }
+    });
+    assert.equal(deleteBeforeStart.statusCode, 200);
+
+    const freshStart = await startClassAttemptRequest(freshAsm.id, student1.id, {
+      seatRow: 'Fila 1', seatDesk: 'Banco 2'
+    });
+    assert.equal(freshStart.statusCode, 201, JSON.stringify(freshStart.body));
+    const freshStudentToken = freshStart.body.session.token;
+    const studentView = await executeVirtualRequest({
+      method: "GET",
+      url: "/api/student/activities/" + freshAsm.id,
+      headers: { "X-Student-Token": freshStudentToken }
+    });
+    assert.equal(studentView.statusCode, 200);
+    const addedItemStudent = studentView.body.activity.items.find(i => i.id === newItemId);
+    assert.equal(addedItemStudent.teacher_solution, null);
+
     // Teacher deletes the item
     const deleteItemRes = await executeVirtualRequest({
       method: "DELETE",
       url: "/api/assessments/" + freshAsm.id + "/items/" + newItemId,
       headers: { "Cf-Access-Jwt-Assertion": teacherToken }
     });
-    assert.equal(deleteItemRes.statusCode, 200);
-    assert.equal(deleteItemRes.body.success, true);
+    assert.equal(deleteItemRes.statusCode, 409, 'question changes are locked after a student starts');
   });
 
-  await t.test("26. Brute-force Defense: 5 failed claim attempts from a browser device block with 429", async () => {
-    const fakeIp = "198.51.100.42";
-    let browserCookie = null;
-    for (let i = 0; i < 5; i++) {
-      const failRes = await executeVirtualRequest({
-        method: "POST",
-        url: "/api/student/claim-code",
-        remoteAddress: fakeIp,
-        headers: {
-          "Content-Type": "application/json",
-          // Direct peer is authoritative; this client-controlled header is ignored.
-          "X-Forwarded-For": "192.0.2.77",
-          ...(browserCookie ? { Cookie: browserCookie } : {})
-        },
-        body: { accessCode: "WRONG" + i }
-      });
-      assert.equal(failRes.statusCode, 403);
-      if (failRes.headers["set-cookie"]) {
-        browserCookie = failRes.headers["set-cookie"].split(";")[0];
-      }
-    }
+  await t.test("26. Retired individual codes are unavailable through service and HTTP contracts", async () => {
+    assert.throws(() => service.generateActivityCredentials(testAssessment.id), { code: 'CONFLICT' });
+    assert.throws(() => service.listActivityCredentials(testAssessment.id), { code: 'CONFLICT' });
+    assert.throws(() => service.reissueActivityCredential('historical-credential', { reason: 'legacy' }), { code: 'CONFLICT' });
 
-    // 6th attempt is blocked immediately with 429 TooManyRequests
-    const blockedRes = await executeVirtualRequest({
-      method: "POST",
-      url: "/api/student/claim-code",
-      remoteAddress: fakeIp,
-      headers: {
-        "Content-Type": "application/json",
-        "X-Forwarded-For": "192.0.2.77",
-        ...(browserCookie ? { Cookie: browserCookie } : {})
-      },
-      body: { accessCode: "WRONG6" }
+    const claim = await executeVirtualRequest({
+      method: 'POST', url: '/api/student/claim-code',
+      headers: { 'Content-Type': 'application/json' }, body: { accessCode: 'ABC123' }
     });
-    assert.equal(blockedRes.statusCode, 429);
-    assert.equal(blockedRes.body.error, "TooManyRequests");
+    assert.equal(claim.statusCode, 410);
+    const credentialList = await executeVirtualRequest({
+      method: 'GET', url: `/api/assessments/${testAssessment.id}/credentials`,
+      headers: { 'Cf-Access-Jwt-Assertion': teacherToken }
+    });
+    assert.equal(credentialList.statusCode, 410);
   });
 
-  await t.test("27. Single-Use Access Code: Second claim attempt of same code is rejected", async () => {
-    // Generate new credentials for testAssessment
-    const creds = service.generateActivityCredentials(testAssessment.id, { forceRegenerate: true });
-    const student1Fresh = creds.find(c => c.studentId === student1.id);
-    assert.ok(student1Fresh);
-
-    // 1st claim succeeds
-    const claimFirst = await executeVirtualRequest({
-      method: "POST",
-      url: "/api/student/claim-code",
-      headers: { "Content-Type": "application/json" },
-      body: { accessCode: student1Fresh.accessCode }
+  await t.test("27. Draft and ready activities are not listed or startable", async () => {
+    const draftAsm = service.createAssessment({
+      title: 'Bozza non visibile', classId: testClass.id, subjectId: testSubject.id, status: 'draft'
     });
-    assert.equal(claimFirst.statusCode, 200);
-    assert.ok(claimFirst.body.session.token);
-
-    // 2nd claim of the exact same code by another subject fails with 403 AuthorizationError
-    const claimSecond = await executeVirtualRequest({
-      method: "POST",
-      url: "/api/student/claim-code",
-      headers: { "Content-Type": "application/json" },
-      body: { accessCode: student1Fresh.accessCode }
-    });
-    assert.equal(claimSecond.statusCode, 403);
-    assert.match(claimSecond.body.message, /già stato utilizzato/);
-  });
-
-  await t.test("28. State 'ready': Question items are hidden until teacher activates", async () => {
     const readyAsm = service.createAssessment({
-      title: "Verifica Pronta Ma Non Attiva",
-      classId: testClass.id,
-      subjectId: testSubject.id,
-      status: "ready",
-      items: [
-        {
-          type: "open_short",
-          questionText: "Domanda riservata che deve restare nascosta",
-          maxScore: 10,
-          assessableSourceId: studentMaterial.id,
-          assessableSourceVersion: 1,
-          teacherSolution: "Soluzione segreta"
-        }
-      ]
+      title: 'Pronta ma non attiva', classId: testClass.id, subjectId: testSubject.id, status: 'ready',
+      items: [{
+        type: 'open_short', questionText: 'Quesito riservato fino all’attivazione', maxScore: 10,
+        assessableSourceId: studentMaterial.id, assessableSourceVersion: 1, teacherSolution: 'Soluzione privata'
+      }]
     });
-
-    const readyCreds = service.listActivityCredentials(readyAsm.id);
-    const s1ReadyCred = readyCreds.find(c => c.studentId === student1.id);
-    assert.ok(s1ReadyCred);
-
-    const claimRes = await executeVirtualRequest({
-      method: "POST",
-      url: "/api/student/claim-code",
-      headers: { "Content-Type": "application/json" },
-      body: { accessCode: s1ReadyCred.accessCode }
+    const activities = await executeVirtualRequest({
+      method: 'GET', url: `/api/student/classes/${testClass.id}/activities`,
+      headers: { Cookie: classAccessCookie }
     });
-    assert.equal(claimRes.statusCode, 200);
-    const readyToken = claimRes.body.session.token;
+    assert.equal(activities.statusCode, 200);
+    assert.ok(!activities.body.activities.some(item => [draftAsm.id, readyAsm.id].includes(item.id)));
 
-    // Student GET activity in 'ready' state: items MUST be empty array
-    const studentView = await executeVirtualRequest({
-      method: "GET",
-      url: "/api/student/activities/" + readyAsm.id,
-      headers: { "X-Student-Token": readyToken }
-    });
-    assert.equal(studentView.statusCode, 200);
-    assert.equal(studentView.body.activity.status, "ready");
-    assert.equal(studentView.body.activity.items.length, 0, "Items must be empty in ready state");
-    assert.ok(studentView.body.activity.message);
-
-    // Attempting to start attempt in ready state is rejected
-    const startRes = await executeVirtualRequest({
-      method: "POST",
-      url: "/api/student/activities/" + readyAsm.id + "/start",
-      headers: {
-        "Content-Type": "application/json",
-        "X-Student-Token": readyToken
-      },
-      body: { seatRow: "Fila 1", revision: 1, responses: [] }
-    });
-    assert.equal(startRes.statusCode, 403);
-
-    // Teacher transitions to 'active'
-    service.setAssessmentStatus(readyAsm.id, "active");
-
-    // Now student can view questions (with solution stripped)
-    const activeStudentView = await executeVirtualRequest({
-      method: "GET",
-      url: "/api/student/activities/" + readyAsm.id,
-      headers: { "X-Student-Token": readyToken }
-    });
-    assert.equal(activeStudentView.statusCode, 200);
-    assert.equal(activeStudentView.body.activity.items.length, 1);
-    assert.equal(activeStudentView.body.activity.items[0].question_text, "Domanda riservata che deve restare nascosta");
-    assert.equal(activeStudentView.body.activity.items[0].teacher_solution, null);
+    for (const assessmentId of [draftAsm.id, readyAsm.id]) {
+      const start = await startClassAttemptRequest(assessmentId, student1.id);
+      assert.equal(start.statusCode, 403);
+    }
+    assert.ok(!activities.raw.includes('Soluzione privata'));
   });
 
-  await t.test("29. Monotonic Autosave: Out-of-order or stale revisions rejected with 409 Conflict", async () => {
-    // Dedicated student for monotonic revision tests
-    const studentMono = service.addStudent({
-      classId: testClass.id,
-      firstName: "Claudio",
-      lastName: "Neri",
-      email: "c.neri@scuola.example"
-    });
-    const creds = service.generateActivityCredentials(testAssessment.id);
-    const s2Cred = creds.find(c => c.studentId === studentMono.id);
-    const claimRes = await executeVirtualRequest({
-      method: "POST",
-      url: "/api/student/claim-code",
-      headers: { "Content-Type": "application/json" },
-      body: { accessCode: s2Cred.accessCode }
-    });
-    assert.equal(claimRes.statusCode, 200);
-    const token = claimRes.body.session.token;
+  await t.test("28. Monotonic autosave rejects stale and duplicate revisions without overwriting saved answers", async () => {
+    const studentMono = service.addStudent({ classId: testClass.id, firstName: 'Claudio', lastName: 'Neri' });
+    const started = await startClassAttemptRequest(testAssessment.id, studentMono.id);
+    assert.equal(started.statusCode, 201);
+    const token = started.body.session.token;
+    const itemId = testAssessment.items[0].id;
 
-    // Start with revision 1
-    const save1 = await executeVirtualRequest({
-      method: "POST",
-      url: "/api/student/activities/" + testAssessment.id + "/autosave",
-      headers: { "Content-Type": "application/json", "X-Student-Token": token },
-      body: { revision: 1, responses: [{ itemId: testAssessment.items[0].id, responseText: "Rev 1 text" }] }
+    const save2 = await executeVirtualRequest({
+      method: 'POST', url: `/api/student/activities/${testAssessment.id}/autosave`,
+      headers: { 'Content-Type': 'application/json', 'X-Student-Token': token },
+      body: { revision: 2, responses: [{ itemId, responseText: 'Revisione 2' }] }
     });
-    assert.equal(save1.statusCode, 200);
-    assert.equal(save1.body.revision, 1);
-
-    // Forward to revision 5
+    assert.equal(save2.statusCode, 200);
     const save5 = await executeVirtualRequest({
-      method: "POST",
-      url: "/api/student/activities/" + testAssessment.id + "/autosave",
-      headers: { "Content-Type": "application/json", "X-Student-Token": token },
-      body: { revision: 5, responses: [{ itemId: testAssessment.items[0].id, responseText: "Rev 5 text" }] }
+      method: 'POST', url: `/api/student/activities/${testAssessment.id}/autosave`,
+      headers: { 'Content-Type': 'application/json', 'X-Student-Token': token },
+      body: { revision: 5, responses: [{ itemId, responseText: 'Revisione 5 conservata' }] }
     });
     assert.equal(save5.statusCode, 200);
-    assert.equal(save5.body.revision, 5);
-
-    // Delayed revision 3 arrives after revision 5: must be rejected with 409 Conflict
-    const staleSave = await executeVirtualRequest({
-      method: "POST",
-      url: "/api/student/activities/" + testAssessment.id + "/autosave",
-      headers: { "Content-Type": "application/json", "X-Student-Token": token },
-      body: { revision: 3, responses: [{ itemId: testAssessment.items[0].id, responseText: "Stale Rev 3 text" }] }
-    });
-    assert.equal(staleSave.statusCode, 409);
-    assert.equal(staleSave.body.error, "ConflictError");
-
-    // Same revision 5 arriving again: also 409
-    const dupSave = await executeVirtualRequest({
-      method: "POST",
-      url: "/api/student/activities/" + testAssessment.id + "/autosave",
-      headers: { "Content-Type": "application/json", "X-Student-Token": token },
-      body: { revision: 5, responses: [{ itemId: testAssessment.items[0].id, responseText: "Duplicate 5 text" }] }
-    });
-    assert.equal(dupSave.statusCode, 409);
+    for (const revision of [3, 5]) {
+      const stale = await executeVirtualRequest({
+        method: 'POST', url: `/api/student/activities/${testAssessment.id}/autosave`,
+        headers: { 'Content-Type': 'application/json', 'X-Student-Token': token },
+        body: { revision, responses: [{ itemId, responseText: 'Sovrascrittura obsoleta' }] }
+      });
+      assert.equal(stale.statusCode, 409);
+    }
+    assert.equal(service.getStudentSubmission(testAssessment.id, studentMono.id).responses[0].response_text, 'Revisione 5 conservata');
   });
 
-  await t.test("30. Teacher Reissue Procedure: Reissue replaces lost code without token leakage", async () => {
-    const creds = service.listActivityCredentials(testAssessment.id);
-    const targetCred = creds[0];
-    assert.ok(targetCred);
-    assert.equal(targetCred.token, undefined);
+  await t.test("29. Teacher-only class PIN management generates, reports and revokes the shared PIN", async () => {
+    const route = `/api/classes/${testClass.id}/activity-pin`;
+    const unauthorized = await executeVirtualRequest({ method: 'GET', url: route });
+    assert.equal(unauthorized.statusCode, 401);
 
-    const reissueRes = await executeVirtualRequest({
-      method: "POST",
-      url: "/api/assessments/" + testAssessment.id + "/credentials/" + targetCred.id + "/reissue",
-      headers: {
-        "Content-Type": "application/json",
-        "Cf-Access-Jwt-Assertion": teacherToken
-      },
-      body: { reason: "Studente ha cambiato postazione" }
+    const generated = await executeVirtualRequest({
+      method: 'POST', url: route, headers: { 'Cf-Access-Jwt-Assertion': teacherToken }
     });
-    assert.equal(reissueRes.statusCode, 200);
-    assert.ok(reissueRes.body.accessCode);
-    assert.notEqual(reissueRes.body.accessCode, targetCred.accessCode);
-    assert.equal(reissueRes.body.status, "issued");
-    assert.equal(reissueRes.body.token, undefined);
-    assert.equal(reissueRes.body.token_hash, undefined);
+    assert.equal(generated.statusCode, 201);
+    assert.match(generated.body.pin.pin, /^\d{4}$/);
+    testClassPin = generated.body.pin.pin;
+
+    const status = await executeVirtualRequest({
+      method: 'GET', url: route, headers: { 'Cf-Access-Jwt-Assertion': teacherToken }
+    });
+    assert.equal(status.statusCode, 200);
+    assert.equal(status.body.pin.active, true);
+    assert.ok(!JSON.stringify(status.body).includes(testClassPin));
+
+    const revoked = await executeVirtualRequest({
+      method: 'DELETE', url: route, headers: { 'Cf-Access-Jwt-Assertion': teacherToken }
+    });
+    assert.equal(revoked.statusCode, 200);
+    assert.equal(revoked.body.pin.active, false);
+
+    const regenerated = await executeVirtualRequest({
+      method: 'POST', url: route, headers: { 'Cf-Access-Jwt-Assertion': teacherToken }
+    });
+    assert.equal(regenerated.statusCode, 201);
+    testClassPin = regenerated.body.pin.pin;
+    const entered = await executeVirtualRequest({
+      method: 'POST', url: `/api/student/classes/${testClass.id}/access`,
+      headers: { 'Content-Type': 'application/json' }, body: { pin: testClassPin }
+    });
+    assert.equal(entered.statusCode, 200);
+    classAccessCookie = parseAccessCookies(entered.headers);
   });
 
-  await t.test("31. Concurrent Code Claiming: Two simultaneous claims yield exactly one valid session", async () => {
-    // Generate new credentials for testAssessment
-    const creds = service.generateActivityCredentials(testAssessment.id, { forceRegenerate: true });
-    const targetStudent = creds[0];
-    assert.ok(targetStudent);
-
-    // Execute two concurrent claim requests with the identical code
-    const [res1, res2] = await Promise.all([
+  await t.test("30. Concurrent shared-PIN entry succeeds and duplicate starts are idempotent per browser", async () => {
+    const [accessA, accessB] = await Promise.all([
       executeVirtualRequest({
-        method: "POST",
-        url: "/api/student/claim-code",
-        headers: { "Content-Type": "application/json" },
-        body: { accessCode: targetStudent.accessCode }
+        method: 'POST', url: `/api/student/classes/${testClass.id}/access`,
+        headers: { 'Content-Type': 'application/json' }, body: { pin: testClassPin }
       }),
       executeVirtualRequest({
-        method: "POST",
-        url: "/api/student/claim-code",
-        headers: { "Content-Type": "application/json" },
-        body: { accessCode: targetStudent.accessCode }
+        method: 'POST', url: `/api/student/classes/${testClass.id}/access`,
+        headers: { 'Content-Type': 'application/json' }, body: { pin: testClassPin }
       })
     ]);
+    assert.deepEqual([accessA.statusCode, accessB.statusCode], [200, 200]);
+    const browserCookie = parseAccessCookies(accessA.headers);
+    classAccessCookie = browserCookie;
 
-    const statuses = [res1.statusCode, res2.statusCode].sort();
-    assert.deepEqual(statuses, [200, 403], "Exactly one claim must succeed (200) and one must be rejected (403)");
-    const successRes = res1.statusCode === 200 ? res1 : res2;
-    const failRes = res1.statusCode === 403 ? res1 : res2;
-    assert.ok(successRes.body.session?.token);
-    assert.match(failRes.body.message, /già stato utilizzato/);
+    const studentDoubleClick = service.addStudent({ classId: testClass.id, firstName: 'Elena', lastName: 'Blu' });
+    const startRequest = () => startClassAttemptRequest(testAssessment.id, studentDoubleClick.id, { cookie: browserCookie });
+    const [startA, startB] = await Promise.all([startRequest(), startRequest()]);
+    assert.ok([200, 201].includes(startA.statusCode));
+    assert.ok([200, 201].includes(startB.statusCode));
+    assert.equal(startA.body.submission.id, startB.body.submission.id);
+    assert.equal(startA.body.session.token, startB.body.session.token, 'duplicate starts from one browser return the same bearer');
+    const liveSessions = dbManager.prepare(`
+      SELECT COUNT(*) AS count FROM student_attempt_sessions
+      WHERE submission_id = ? AND revoked_at IS NULL
+    `).get(startA.body.submission.id).count;
+    assert.equal(liveSessions, 1);
   });
 
-  await t.test("32. Credential Reissue on Finalized Submission preserves submission integrity without response loss", async () => {
-    // Submit attempt for target student
-    const studentForReissue = service.addStudent({
-      classId: testClass.id,
-      firstName: "Davide",
-      lastName: "Verdi",
-      email: "d.verdi@scuola.example"
+  await t.test("31. PIN rotation preserves attempts, drafts, timers and final submission immutability", async () => {
+    const recoveringStudent = service.addStudent({ classId: testClass.id, firstName: 'Marta', lastName: 'Gialli' });
+    const started = await startClassAttemptRequest(testAssessment.id, recoveringStudent.id, {
+      seatRow: 'Fila 4', seatDesk: 'Banco 6'
     });
-    const creds = service.generateActivityCredentials(testAssessment.id);
-    const targetCred = creds.find(c => c.studentId === studentForReissue.id);
-    assert.ok(targetCred);
+    assert.equal(started.statusCode, 201);
+    const token = started.body.session.token;
+    const submissionId = started.body.submission.id;
+    const expiry = started.body.submission.timer.expires_at;
+    const itemId = testAssessment.items[0].id;
 
-    const claimRes = await executeVirtualRequest({
-      method: "POST",
-      url: "/api/student/claim-code",
-      headers: { "Content-Type": "application/json" },
-      body: { accessCode: targetCred.accessCode }
+    const save = await executeVirtualRequest({
+      method: 'POST', url: `/api/student/activities/${testAssessment.id}/autosave`,
+      headers: { 'Content-Type': 'application/json', 'X-Student-Token': token },
+      body: { revision: 2, responses: [{ itemId, responseText: 'Risposta conservata dopo rotazione' }] }
     });
-    assert.equal(claimRes.statusCode, 200);
-    const token = claimRes.body.session.token;
+    assert.equal(save.statusCode, 200);
+    testClassPin = service.generateClassActivityPin(testClass.id, { createdBy: 'synthetic-teacher' }).pin;
 
-    // Start and submit
-    await executeVirtualRequest({
-      method: "POST",
-      url: `/api/student/activities/${testAssessment.id}/start`,
-      headers: { "Content-Type": "application/json", "X-Student-Token": token },
-      body: { revision: 1, responses: [] }
+    const oldClassSession = await executeVirtualRequest({
+      method: 'GET', url: `/api/student/classes/${testClass.id}/activities`, headers: { Cookie: classAccessCookie }
     });
-    const subRes = await executeVirtualRequest({
-      method: "POST",
-      url: `/api/student/activities/${testAssessment.id}/submit`,
-      headers: { "Content-Type": "application/json", "X-Student-Token": token },
-      body: {
-        revision: 2,
-        responses: [{ itemId: testAssessment.items[0].id, responseText: "Risposta Davide definitiva" }]
-      }
+    assert.equal(oldClassSession.statusCode, 401);
+    const stillRunning = await executeVirtualRequest({
+      method: 'GET', url: '/api/student/session', headers: { 'X-Student-Token': token }
     });
-    assert.equal(subRes.statusCode, 200);
+    assert.equal(stillRunning.statusCode, 200);
+    assert.equal(service.getStudentSubmission(testAssessment.id, recoveringStudent.id).responses[0].response_text, 'Risposta conservata dopo rotazione');
 
-    // Now teacher reissues credentials for this student
-    const credRow = service.listActivityCredentials(testAssessment.id).find(c => c.studentId === studentForReissue.id);
-    assert.ok(credRow);
-
-    const reissueRes = await executeVirtualRequest({
-      method: "POST",
-      url: `/api/assessments/${testAssessment.id}/credentials/${credRow.id}/reissue`,
-      headers: {
-        "Content-Type": "application/json",
-        "Cf-Access-Jwt-Assertion": teacherToken
-      },
-      body: { reason: "Recupero accesso studente" }
+    const newEntry = await executeVirtualRequest({
+      method: 'POST', url: `/api/student/classes/${testClass.id}/access`,
+      headers: { 'Content-Type': 'application/json' }, body: { pin: testClassPin }
     });
-    assert.equal(reissueRes.statusCode, 200);
+    assert.equal(newEntry.statusCode, 200);
+    classAccessCookie = parseAccessCookies(newEntry.headers);
+    const resumed = await startClassAttemptRequest(testAssessment.id, recoveringStudent.id, { cookie: classAccessCookie });
+    assert.equal(resumed.statusCode, 200);
+    assert.equal(resumed.body.submission.id, submissionId);
+    assert.equal(resumed.body.submission.timer.expires_at, expiry);
+    assert.equal(resumed.body.submission.responses[0].response_text, 'Risposta conservata dopo rotazione');
 
-    // Verify submission is still intact, submitted, and responses are unchanged
-    const finalSub = service.getStudentSubmission(testAssessment.id, studentForReissue.id, { role: "teacher" });
-    assert.equal(finalSub.status, "submitted");
-    assert.equal(finalSub.responses.length, 1);
-    assert.equal(finalSub.responses[0].response_text, "Risposta Davide definitiva");
+    const submitted = await executeVirtualRequest({
+      method: 'POST', url: `/api/student/activities/${testAssessment.id}/submit`,
+      headers: { 'Content-Type': 'application/json', 'X-Student-Token': resumed.body.session.token },
+      body: { revision: 3, responses: [{ itemId, responseText: 'Risposta definitiva' }] }
+    });
+    assert.equal(submitted.statusCode, 200);
+    testClassPin = service.generateClassActivityPin(testClass.id, { createdBy: 'synthetic-teacher' }).pin;
+    const refreshedEntry = await executeVirtualRequest({
+      method: 'POST', url: `/api/student/classes/${testClass.id}/access`,
+      headers: { 'Content-Type': 'application/json' }, body: { pin: testClassPin }
+    });
+    assert.equal(refreshedEntry.statusCode, 200);
+    classAccessCookie = parseAccessCookies(refreshedEntry.headers);
+    const lateSave = await executeVirtualRequest({
+      method: 'POST', url: `/api/student/activities/${testAssessment.id}/autosave`,
+      headers: { 'Content-Type': 'application/json', 'X-Student-Token': resumed.body.session.token },
+      body: { revision: 4, responses: [{ itemId, responseText: 'Modifica tardiva' }] }
+    });
+    assert.equal(lateSave.statusCode, 409);
+    assert.equal(service.getStudentSubmission(testAssessment.id, recoveringStudent.id).responses[0].response_text, 'Risposta definitiva');
   });
 
   await t.test("33. Multi-Question Assessment with Two Concurrent Students: Monotonic Autosave & Live Monitoring", async () => {
@@ -1553,7 +1474,7 @@ test('Student Public API & Teacher Live Monitor HTTP Suite', async (t) => {
     });
     assert.equal(multiAsm.items.length, 3);
 
-    // 2. Add two distinct students and generate credentials
+    // 2. Add two distinct students for the same class-shared PIN workflow
     const studA = service.addStudent({
       classId: testClass.id,
       firstName: "Elena",
@@ -1567,60 +1488,19 @@ test('Student Public API & Teacher Live Monitor HTTP Suite', async (t) => {
       email: "f.riva@scuola.example"
     });
 
-    const creds = service.generateActivityCredentials(multiAsm.id);
-    const credA = creds.find(c => c.studentId === studA.id);
-    const credB = creds.find(c => c.studentId === studB.id);
-    assert.ok(credA && credB);
-
-    // 3. Both students claim their respective credentials
-    const [claimA, claimB] = await Promise.all([
-      executeVirtualRequest({
-        method: "POST",
-        url: "/api/student/claim-code",
-        headers: { "Content-Type": "application/json" },
-        body: { accessCode: credA.accessCode }
+    // 3. Each student explicitly selects their roster identity after class PIN entry.
+    const [startA, startB] = await Promise.all([
+      startClassAttemptRequest(multiAsm.id, studA.id, {
+        seatRow: 'Fila 2', seatDesk: 'Banco 1', rightNeighborId: studB.id
       }),
-      executeVirtualRequest({
-        method: "POST",
-        url: "/api/student/claim-code",
-        headers: { "Content-Type": "application/json" },
-        body: { accessCode: credB.accessCode }
+      startClassAttemptRequest(multiAsm.id, studB.id, {
+        seatRow: 'Fila 2', seatDesk: 'Banco 2', leftNeighborId: studA.id
       })
     ]);
-    assert.equal(claimA.statusCode, 200);
-    assert.equal(claimB.statusCode, 200);
-    const tokenA = claimA.body.session.token;
-    const tokenB = claimB.body.session.token;
-
-    // 4. Both students start attempt with seat map
-    await Promise.all([
-      executeVirtualRequest({
-        method: "POST",
-        url: `/api/student/activities/${multiAsm.id}/start`,
-        headers: { "Content-Type": "application/json", "X-Student-Token": tokenA },
-        body: {
-          seatRow: "Fila 2",
-          seatDesk: "Banco 1",
-          rightNeighborId: studB.id,
-          rightNeighborName: "Federico Riva",
-          responses: [],
-          revision: 1
-        }
-      }),
-      executeVirtualRequest({
-        method: "POST",
-        url: `/api/student/activities/${multiAsm.id}/start`,
-        headers: { "Content-Type": "application/json", "X-Student-Token": tokenB },
-        body: {
-          seatRow: "Fila 2",
-          seatDesk: "Banco 2",
-          leftNeighborId: studA.id,
-          leftNeighborName: "Elena Galli",
-          responses: [],
-          revision: 1
-        }
-      })
-    ]);
+    assert.equal(startA.statusCode, 201, JSON.stringify(startA.body));
+    assert.equal(startB.statusCode, 201, JSON.stringify(startB.body));
+    const tokenA = startA.body.session.token;
+    const tokenB = startB.body.session.token;
 
     // 5. Concurrent autosaves across questions with monotonic revisions
     const items = multiAsm.items;
@@ -1750,45 +1630,29 @@ test('Student Public API & Teacher Live Monitor HTTP Suite', async (t) => {
     assert.equal(studBMon.seatDesk, "Banco 2");
   });
 
-  await t.test("34. IP Proxy & Header Anti-Spoofing: Direct public connections ignore client-forged IP headers", async () => {
-    // Direct public IP attempting to rotate X-Forwarded-For and Cf-Connecting-Ip headers on every attempt
-    const directPublicIp = "203.0.113.88";
-    let clientCookie = null;
-
-    for (let i = 0; i < 5; i++) {
-      const res = await executeVirtualRequest({
-        method: "POST",
-        url: "/api/student/claim-code",
+  await t.test("34. Class PIN limiter ignores client-forged forwarding headers from direct peers", async () => {
+    const directPublicIp = '203.0.113.88';
+    const deviceCookie = 'ts_class_device=synthetic-device-fixed';
+    for (let i = 0; i < 4; i += 1) {
+      const response = await executeVirtualRequest({
+        method: 'POST',
+        url: `/api/student/classes/${testClass.id}/access`,
         remoteAddress: directPublicIp,
         headers: {
-          "Content-Type": "application/json",
-          "X-Forwarded-For": `1.2.3.${i}`,
-          "Cf-Connecting-Ip": `10.0.0.${i}`,
-          ...(clientCookie ? { Cookie: clientCookie } : {})
+          'Content-Type': 'application/json',
+          Cookie: deviceCookie,
+          'X-Forwarded-For': `1.2.3.${i}`,
+          'Cf-Connecting-Ip': `10.0.0.${i}`
         },
-        body: { accessCode: `WRONGSPOOF${i}` }
+        body: { pin: '0000' }
       });
-      assert.equal(res.statusCode, 403);
-      if (res.headers["set-cookie"]) {
-        clientCookie = res.headers["set-cookie"].split(";")[0];
-      }
+      assert.equal(response.statusCode, 403);
     }
-
-    // 6th attempt with yet another spoofed IP in header must be blocked with 429 TooManyRequests
-    const blockedRes = await executeVirtualRequest({
-      method: "POST",
-      url: "/api/student/claim-code",
-      remoteAddress: directPublicIp,
-      headers: {
-        "Content-Type": "application/json",
-        "X-Forwarded-For": "8.8.8.8",
-        "Cf-Connecting-Ip": "8.8.4.4",
-        ...(clientCookie ? { Cookie: clientCookie } : {})
-      },
-      body: { accessCode: "WRONGSPOOF6" }
-    });
-    assert.equal(blockedRes.statusCode, 429);
-    assert.equal(blockedRes.body.error, "TooManyRequests");
+    const identifier = crypto.createHash('sha256').update(`${testClass.id}\0${directPublicIp}`).digest('hex');
+    const ipBucket = dbManager.prepare(`
+      SELECT failed_count FROM student_claim_rate_limits WHERE scope = 'class_pin_ip' AND identifier = ?
+    `).get(identifier);
+    assert.equal(ipBucket.failed_count, 4, 'all failures share the direct socket-IP bucket despite changing forged headers');
   });
 
   await t.test("35. Authoritative Server Timer, Expiration Enforcement & Teacher Extra Time", async () => {
@@ -1803,39 +1667,24 @@ test('Student Public API & Teacher Live Monitor HTTP Suite', async (t) => {
     const item1 = service.assessments.addItem(timedAsm.id, {
       type: "open_short",
       questionText: "Domanda a tempo",
-      maxScore: 10
+      maxScore: 10,
+      assessableSourceId: studentMaterial.id,
+      assessableSourceVersion: 1
     });
-    // 2. Issue code to student
-    const creds = service.assessments.generateActivityCredentials(timedAsm.id);
-    const studentCred = creds.find(c => (c.studentId || c.student_id) === student1.id);
-    assert.ok(studentCred);
-
-    // 3. Student claims code and starts attempt
-    const claimRes = await executeVirtualRequest({
-      method: "POST",
-      url: "/api/student/claim-code",
-      body: { accessCode: studentCred.accessCode || studentCred.access_code }
+    // 2. Start through the current public class PIN and declared roster identity flow.
+    const startRes = await startClassAttemptRequest(timedAsm.id, student1.id, {
+      seatRow: 'Fila 1', seatDesk: 'Banco 1'
     });
-    const sToken = claimRes.body.session?.token || claimRes.body.token;
-
-    const startRes = await executeVirtualRequest({
-      method: "POST",
-      url: `/api/student/activities/${timedAsm.id}/start`,
-      headers: { "X-Student-Token": sToken },
-      body: {
-        seatRow: "Fila 1",
-        seatDesk: "Banco 1",
-        revision: 1
-      }
-    });
-    assert.equal(startRes.statusCode, 200);
-    assert.ok(startRes.body.timer);
-    assert.equal(startRes.body.timer.duration_minutes, 10);
-    assert.equal(startRes.body.timer.extra_time_minutes, 0);
-    assert.ok(startRes.body.timer.started_at);
-    assert.ok(startRes.body.timer.expires_at);
-    assert.ok(startRes.body.timer.time_remaining_seconds > 580);
-    assert.equal(startRes.body.timer.is_time_expired, false);
+    assert.equal(startRes.statusCode, 201);
+    const sToken = startRes.body.session.token;
+    const startTimer = startRes.body.submission.timer;
+    assert.ok(startTimer);
+    assert.equal(startTimer.duration_minutes, 10);
+    assert.equal(startTimer.extra_time_minutes, 0);
+    assert.ok(startTimer.started_at);
+    assert.ok(startTimer.expires_at);
+    assert.ok(startTimer.time_remaining_seconds > 580);
+    assert.equal(startTimer.is_time_expired, false);
 
     // 4. Student queries submission endpoint and verifies timer matches
     const subRes = await executeVirtualRequest({
@@ -1906,18 +1755,9 @@ test('Student Public API & Teacher Live Monitor HTTP Suite', async (t) => {
     });
     service.assessments.setAssessmentStatus(uploadAssessment.id, "active");
     const uploadItem = uploadAssessment.items[0];
-    const uploadCredential = service.assessments.generateActivityCredentials(uploadAssessment.id)
-      .find(c => (c.studentId || c.student_id) === student2.id);
-    const uploadClaim = await executeVirtualRequest({
-      method: "POST", url: "/api/student/claim-code",
-      body: { accessCode: uploadCredential.accessCode || uploadCredential.access_code }
-    });
-    const uploadToken = uploadClaim.body.session?.token || uploadClaim.body.token;
-    const uploadStart = await executeVirtualRequest({
-      method: "POST", url: `/api/student/activities/${uploadAssessment.id}/start`,
-      headers: { "X-Student-Token": uploadToken }, body: { revision: 1, responses: [] }
-    });
-    assert.equal(uploadStart.statusCode, 200);
+    const uploadStart = await startClassAttemptRequest(uploadAssessment.id, student2.id);
+    assert.equal(uploadStart.statusCode, 201);
+    const uploadToken = uploadStart.body.session.token;
     service.dbManager.prepare(`
       UPDATE assessment_submissions SET started_at = ?
       WHERE assessment_id = ? AND student_id = ?
@@ -1957,16 +1797,9 @@ test('Student Public API & Teacher Live Monitor HTTP Suite', async (t) => {
       items: [{ type: "attachment", questionText: "Allega un'immagine del diagramma", maxScore: 10, assessableSourceId: studentMaterial.id, assessableSourceVersion: 1 }]
     });
     const issueSession = async student => {
-      const credential = service.listActivityCredentials(uploadAssessment.id).find(c => c.studentId === student.id);
-      const claim = await executeVirtualRequest({ method: "POST", url: "/api/student/claim-code", body: { accessCode: credential.accessCode } });
-      assert.equal(claim.statusCode, 200);
-      const token = claim.body.session.token;
-      const started = await executeVirtualRequest({
-        method: "POST", url: `/api/student/activities/${uploadAssessment.id}/start`,
-        headers: { "X-Student-Token": token }, body: { revision: 1, responses: [] }
-      });
-      assert.equal(started.statusCode, 200);
-      return token;
+      const started = await startClassAttemptRequest(uploadAssessment.id, student.id);
+      assert.equal(started.statusCode, 201);
+      return started.body.session.token;
     };
     const uploadToken = await issueSession(uploadStud);
     const otherToken = await issueSession(otherStud);

@@ -21,7 +21,13 @@ test('MCP Server Protocol & Tool Integration Tests', async (t) => {
     async search(query) { return [{ title: 'Synthetic MCP reference', url: 'https://example.org/cpu-spec', snippet: query, provider: 'test-search' }]; },
     async fetchPage(url) { return { title: 'Synthetic MCP reference', url, content: 'Retrieved page content about CPU architecture and Hamming codes.', contentHash: 'sha256-mcp-reference', accessedAt: '2026-10-13T10:00:00.000Z', contentType: 'text/html' }; }
   };
-  const service = new TeacherService({ dbManager, fileStore, mockAi: true, webResearchClient });
+  const service = new TeacherService({
+    dbManager,
+    fileStore,
+    mockAi: true,
+    webResearchClient,
+    classPinSecret: 'synthetic-mcp-class-pin-secret-2026'
+  });
   const authorizeTeacher = async () => ({ teacherAuthorized: true, actorId: 'mcp-test-teacher' });
   const server = createMcpServer(service, { authorizeTeacher });
 
@@ -65,6 +71,9 @@ test('MCP Server Protocol & Tool Integration Tests', async (t) => {
 
     const toolNames = tools.map(t => t.name);
     assert.ok(toolNames.includes('create_class'));
+    assert.ok(toolNames.includes('get_class_activity_pin_status'));
+    assert.ok(toolNames.includes('generate_class_activity_pin'));
+    assert.ok(toolNames.includes('revoke_class_activity_pin'));
     assert.ok(toolNames.includes('create_subject'));
     assert.ok(toolNames.includes('create_lesson'));
     assert.ok(toolNames.includes('create_material'));
@@ -97,6 +106,29 @@ test('MCP Server Protocol & Tool Integration Tests', async (t) => {
     createdClass = JSON.parse(classRes.content[0].text);
     assert.ok(createdClass.id);
     assert.equal(createdClass.name, '3B Informatica');
+
+    const initialPinStatus = await callTool('get_class_activity_pin_status', { classId: createdClass.id });
+    assert.equal(JSON.parse(initialPinStatus.content[0].text).active, false);
+
+    const generatedPin = await callTool('generate_class_activity_pin', { classId: createdClass.id });
+    const generatedPinValue = JSON.parse(generatedPin.content[0].text);
+    assert.match(generatedPinValue.pin, /^\d{4}$/);
+    assert.equal(generatedPinValue.classId, createdClass.id);
+
+    const activePinStatus = await callTool('get_class_activity_pin_status', { classId: createdClass.id });
+    assert.equal(JSON.parse(activePinStatus.content[0].text).active, true);
+    assert.ok(!activePinStatus.content[0].text.includes(generatedPinValue.pin));
+
+    const revokedPin = await callTool('revoke_class_activity_pin', { classId: createdClass.id });
+    assert.equal(JSON.parse(revokedPin.content[0].text).active, false);
+
+    const unauthorizedServer = createMcpServer(service, { authorizeTeacher: async () => false });
+    const unauthorizedCall = await unauthorizedServer._requestHandlers
+      .get(CallToolRequestSchema.shape.method.value)({
+        method: 'tools/call',
+        params: { name: 'generate_class_activity_pin', arguments: { classId: createdClass.id } }
+      });
+    assert.equal(unauthorizedCall.isError, true, 'persistent PIN management requires a teacher principal');
 
     // 2. List Classes
     const listClassRes = await callTool('list_classes', {});
@@ -480,11 +512,6 @@ test('MCP Server Protocol & Tool Integration Tests', async (t) => {
 
     const reactivateRes = await callTool("set_assessment_status", { id: asm.id, status: "active" });
     assert.equal(JSON.parse(reactivateRes.content[0].text).status, "active");
-    const activeCredential = service.generateActivityCredentials(asm.id)
-      .find(credential => credential.studentId === mcpStudent.id);
-    assert.ok(activeCredential);
-    service.claimStudentSession(activeCredential.accessCode);
-
     const reopenRes = await callTool("reopen_submission", {
       submissionId: sub.id,
       reason: "Integrazione codice richiesta dal docente",

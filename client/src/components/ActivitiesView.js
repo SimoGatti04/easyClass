@@ -12,11 +12,6 @@ export function ActivitiesView({ onSelectLiveMonitor }) {
   // Modals state
   const [isNewModalOpen, setIsNewModalOpen] = useState(false);
   const [selectedActivityForItems, setSelectedActivityForItems] = useState(null);
-  const [selectedActivityForCreds, setSelectedActivityForCreds] = useState(null);
-
-  // Credentials modal data
-  const [credentialsList, setCredentialsList] = useState([]);
-  const [credsLoading, setCredsLoading] = useState(false);
 
   // Questions editor state
   const [editingItem, setEditingItem] = useState(null); // null = new, or existing item object
@@ -266,64 +261,6 @@ export function ActivitiesView({ onSelectLiveMonitor }) {
       .catch(err => setError('Errore eliminazione quesito: ' + err.message));
   };
 
-  // Open credentials modal
-  const openCredentialsModal = (activity) => {
-    setSelectedActivityForCreds(activity);
-    setCredsLoading(true);
-    fetch(`/api/assessments/${activity.id}/credentials`)
-      .then(res => res.json())
-      .then(data => {
-        setCredentialsList(data.credentials || []);
-        setCredsLoading(false);
-      })
-      .catch(err => {
-        setError('Errore caricamento codici: ' + err.message);
-        setCredsLoading(false);
-      });
-  };
-
-  const handleReissueSingleCred = (cred) => {
-    if (!selectedActivityForCreds) return;
-    if (!confirm(`Rinnovare il codice di accesso per ${cred.studentName}? Il codice precedente verrà invalidato.`)) return;
-    setCredsLoading(true);
-    fetch(`/api/assessments/${selectedActivityForCreds.id}/credentials/${cred.id}/reissue`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ reason: "Richiesta nuovo codice dal docente" })
-    })
-      .then(res => res.json())
-      .then(data => {
-        setCredentialsList(prev => prev.map(item => item.id === cred.id ? { ...item, accessCode: data.accessCode, status: data.status, reissueCount: data.reissueCount } : item));
-        setCredsLoading(false);
-        setSuccessMsg(`Nuovo codice generato per ${cred.studentName}: ${data.accessCode}`);
-      })
-      .catch(err => {
-        setError("Errore rinnovo codice: " + err.message);
-        setCredsLoading(false);
-      });
-  };
-
-  const handleRegenerateCreds = () => {
-    if (!selectedActivityForCreds) return;
-    if (!confirm('Rigenerare i codici assegnerà nuove credenziali temporanee a tutta la classe. Continuare?')) return;
-    setCredsLoading(true);
-    fetch(`/api/assessments/${selectedActivityForCreds.id}/credentials/generate`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ force: true })
-    })
-      .then(res => res.json())
-      .then(data => {
-        setCredentialsList(data.credentials || []);
-        setCredsLoading(false);
-        setSuccessMsg('Codici rigenerati con successo.');
-      })
-      .catch(err => {
-        setError('Errore rigenerazione codici: ' + err.message);
-        setCredsLoading(false);
-      });
-  };
-
   const selectedClass = classes.find(c => c.id === selectedClassId);
 
   return h('div', { className: 'view-container activities-view' }, [
@@ -402,12 +339,6 @@ export function ActivitiesView({ onSelectLiveMonitor }) {
                 }, `✏️ Quesiti (${a.itemCount || 0})`)
               ]),
               h('td', { className: 'text-right space-x-2' }, [
-                h('button', {
-                  type: 'button',
-                  className: 'btn btn-secondary btn-sm',
-                  title: 'Codici individuali di accesso d\'aula',
-                  onClick: () => openCredentialsModal(a)
-                }, '🔑 Codici Studenti'),
                 h('button', {
                   type: 'button',
                   className: 'btn btn-primary btn-sm',
@@ -721,97 +652,6 @@ export function ActivitiesView({ onSelectLiveMonitor }) {
       ])
     ]),
 
-    // Modal Student Credentials & Access Codes
-    selectedActivityForCreds && h('div', { key: 'modal-creds', className: 'modal-overlay' }, [
-      h('div', { className: 'modal-dialog modal-lg max-w-3xl max-h-[90vh] overflow-y-auto' }, [
-        h('div', { className: 'modal-header flex justify-between items-center' }, [
-          h('div', null, [
-            h('h3', { className: 'modal-title font-bold text-lg' }, `Codici Accesso d'Aula: ${selectedActivityForCreds.title}`),
-            h('p', { className: 'text-xs text-gray-500' }, `Classe: ${selectedClass?.name} • Credenziali individuali monouso per identificazione leggera`)
-          ]),
-          h('button', {
-            type: 'button',
-            className: 'text-gray-400 hover:text-gray-600 text-xl font-bold',
-            onClick: () => setSelectedActivityForCreds(null)
-          }, '✕')
-        ]),
 
-        h('div', { className: 'modal-body p-4 space-y-4' }, [
-          h('div', { className: 'flex justify-between items-center bg-blue-50 p-3 rounded border border-blue-200' }, [
-            h('p', { className: 'text-xs text-blue-900' }, 'Distribuisci individualmente e in modo riservato il codice monouso di 6 caratteri (es. tagliando cartaceo o QR personale). Non proiettare i codici alla lavagna: ogni codice è personale e monouso.'),
-            h('button', {
-              type: 'button',
-              className: 'btn btn-secondary btn-sm shrink-0',
-              onClick: handleRegenerateCreds,
-              disabled: credsLoading
-            }, '🔄 Rigenera Tutti i Codici')
-          ]),
-
-          credsLoading ? h('p', { className: 'text-center p-6 text-gray-500' }, 'Caricamento codici in corso...') :
-          credentialsList.length === 0 ? (
-            h('div', { className: 'p-6 text-center text-gray-400' }, 'Nessun codice generato. Assicurati che l\'attività sia in stato \'ready\' o \'active\'.')
-          ) : (
-            h('table', { className: 'data-table w-full text-sm' }, [
-              h('thead', null, [
-                h('tr', null, [
-                  h('th', null, 'Studente'),
-                  h('th', null, 'Codice Personale'),
-                  h('th', null, 'Stato'),
-                  h('th', { className: 'text-right' }, 'Link Diretto')
-                ])
-              ]),
-              h('tbody', null, credentialsList.map(c => {
-                const directUrl = `${window.location.origin}/studente?code=${c.accessCode}`;
-                return h('tr', { key: c.id }, [
-                  h('td', { className: 'font-semibold' }, c.studentName),
-                  h('td', null, [
-                    h('span', { className: 'font-mono text-base font-bold bg-gray-100 px-2 py-1 rounded tracking-wider border' }, c.accessCode)
-                  ]),
-                  h('td', null, [
-                    h('span', { className: `badge badge-${c.status === 'submitted' ? 'success' : (c.status === 'active' ? 'primary' : 'neutral')}` }, c.status)
-                  ]),
-                  h('td', { className: 'text-right space-x-2' }, [
-                    h('button', {
-                      type: 'button',
-                      className: 'btn btn-secondary btn-sm text-xs',
-                      onClick: () => handleReissueSingleCred(c)
-                    }, '🔄 Rinnova'),
-                    h('button', {
-                      type: 'button',
-                      className: 'btn btn-secondary btn-sm text-xs',
-                      onClick: () => {
-                        navigator.clipboard.writeText(c.accessCode);
-                        alert(`Codice ${c.accessCode} copiato negli appunti!`);
-                      }
-                    }, 'Copia Codice'),
-                    h('button', {
-                      type: 'button',
-                      className: 'btn btn-secondary btn-sm text-xs',
-                      onClick: () => {
-                        navigator.clipboard.writeText(directUrl);
-                        alert(`Link diretto per ${c.studentName} copiato negli appunti!`);
-                      }
-                    }, 'Copia Link')
-                  ])
-                ]);
-              }))
-            ])
-          )
-        ]),
-
-        h('div', { className: 'modal-footer p-3 border-t flex justify-between items-center' }, [
-          h('button', {
-            type: 'button',
-            className: 'btn btn-secondary btn-sm',
-            onClick: () => window.print()
-          }, '🖨️ Stampa Elenco Codici'),
-          h('button', {
-            type: 'button',
-            className: 'btn btn-primary',
-            onClick: () => setSelectedActivityForCreds(null)
-          }, 'Fatto')
-        ])
-      ])
-    ])
   ]);
 }

@@ -111,6 +111,39 @@ export function createMcpServer(service = new TeacherService(), { authorizeTeach
       }
     },
     {
+      name: 'get_class_activity_pin_status',
+      description: 'Returns whether class activity access is enabled; never returns the PIN itself.',
+      annotations: { readOnlyHint: true, destructiveHint: false, openWorldHint: false },
+      inputSchema: {
+        type: 'object',
+        properties: { classId: { type: 'string', description: 'Class ID' } },
+        required: ['classId'],
+        additionalProperties: false
+      }
+    },
+    {
+      name: 'generate_class_activity_pin',
+      description: 'Generates or rotates the shared four-digit class activity PIN. The clear PIN is returned once; active attempt sessions and saved work remain valid.',
+      annotations: { readOnlyHint: false, destructiveHint: false, openWorldHint: false },
+      inputSchema: {
+        type: 'object',
+        properties: { classId: { type: 'string', description: 'Class ID' } },
+        required: ['classId'],
+        additionalProperties: false
+      }
+    },
+    {
+      name: 'revoke_class_activity_pin',
+      description: 'Revokes new class activity access. Already-started attempt sessions and saved work remain valid.',
+      annotations: { readOnlyHint: false, destructiveHint: false, openWorldHint: false },
+      inputSchema: {
+        type: 'object',
+        properties: { classId: { type: 'string', description: 'Class ID' } },
+        required: ['classId'],
+        additionalProperties: false
+      }
+    },
+    {
       name: 'update_class',
       description: 'Updates details of an existing class.',
       annotations: { readOnlyHint: false, destructiveHint: false, openWorldHint: false },
@@ -1341,33 +1374,6 @@ export function createMcpServer(service = new TeacherService(), { authorizeTeach
       }
     },
     {
-      name: "list_activity_credentials",
-      description: "Lists temporary student access codes for an activity (teacher only). Strips all session tokens for privacy.",
-      annotations: { readOnlyHint: true, destructiveHint: false, openWorldHint: false },
-      inputSchema: {
-        type: "object",
-        properties: {
-          assessmentId: { type: "string", description: "Assessment ID" }
-        },
-        required: ["assessmentId"],
-        additionalProperties: false
-      }
-    },
-    {
-      name: "reissue_student_credential",
-      description: "Reissues a fresh temporary access code for an authorized student session that was lost, interrupted, or compromised (teacher only).",
-      annotations: { readOnlyHint: false, destructiveHint: false, openWorldHint: false },
-      inputSchema: {
-        type: "object",
-        properties: {
-          credentialId: { type: "string", description: "Credential ID to reissue" },
-          reason: { type: "string", description: "Reason for reissuing the credential" }
-        },
-        required: ["credentialId"],
-        additionalProperties: false
-      }
-    },
-    {
       name: 'list_student_submissions',
       description: 'Lists teacher-visible submission status and essential grading metadata without response text or teacher notes.',
       annotations: { readOnlyHint: true, destructiveHint: false, openWorldHint: false },
@@ -1458,6 +1464,15 @@ export function createMcpServer(service = new TeacherService(), { authorizeTeach
           break;
         case 'get_class':
           result = service.getClass(args.id);
+          break;
+        case 'get_class_activity_pin_status':
+          result = service.getClassActivityPinStatus(args.classId);
+          break;
+        case 'generate_class_activity_pin':
+          result = service.generateClassActivityPin(args.classId, { createdBy: actor.actorId || 'teacher' });
+          break;
+        case 'revoke_class_activity_pin':
+          result = service.revokeClassActivityPin(args.classId, { revokedBy: actor.actorId || 'teacher' });
           break;
         case 'update_class':
           result = service.updateClass(args.id, args);
@@ -1752,15 +1767,6 @@ export function createMcpServer(service = new TeacherService(), { authorizeTeach
             teacherPrincipal: actor.actorId || "teacher"
           });
           break;
-        case "list_activity_credentials":
-          result = service.listActivityCredentials(args.assessmentId);
-          break;
-        case "reissue_student_credential":
-          result = service.reissueActivityCredential(args.credentialId, {
-            reason: args.reason
-          });
-          break;
-
         default:
           throw new TeacherServiceError(`Unknown tool '${name}'`, 'UNKNOWN_TOOL');
       }

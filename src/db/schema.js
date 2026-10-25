@@ -473,6 +473,60 @@ CREATE INDEX IF NOT EXISTS idx_student_cred_assessment ON student_activity_crede
 CREATE INDEX IF NOT EXISTS idx_student_cred_code ON student_activity_credentials(access_code);
 CREATE INDEX IF NOT EXISTS idx_student_cred_token ON student_activity_credentials(token);
 
+-- 25. Public class access: one shared class PIN, independent from student
+-- navigation sessions and individual attempt bearer sessions. Existing
+-- student_activity_credentials rows are retained as historical data.
+CREATE TABLE IF NOT EXISTS class_activity_pins (
+  id TEXT PRIMARY KEY,
+  class_id TEXT NOT NULL REFERENCES classes(id) ON DELETE CASCADE,
+  pin_hash TEXT NOT NULL,
+  status TEXT NOT NULL CHECK (status IN ('active', 'revoked')),
+  created_at TEXT NOT NULL,
+  created_by TEXT NOT NULL,
+  revoked_at TEXT,
+  revoked_by TEXT
+);
+
+CREATE UNIQUE INDEX IF NOT EXISTS idx_one_active_class_activity_pin
+  ON class_activity_pins(class_id) WHERE status = 'active';
+
+CREATE TABLE IF NOT EXISTS student_class_sessions (
+  id TEXT PRIMARY KEY,
+  class_id TEXT NOT NULL REFERENCES classes(id) ON DELETE CASCADE,
+  pin_id TEXT NOT NULL REFERENCES class_activity_pins(id) ON DELETE CASCADE,
+  token_hash TEXT NOT NULL UNIQUE,
+  created_at TEXT NOT NULL,
+  expires_at TEXT NOT NULL,
+  revoked_at TEXT,
+  last_seen_at TEXT
+);
+
+CREATE INDEX IF NOT EXISTS idx_student_class_sessions_class
+  ON student_class_sessions(class_id, expires_at, revoked_at);
+
+CREATE TABLE IF NOT EXISTS student_attempt_sessions (
+  id TEXT PRIMARY KEY,
+  submission_id TEXT NOT NULL REFERENCES assessment_submissions(id) ON DELETE CASCADE,
+  class_session_id TEXT REFERENCES student_class_sessions(id) ON DELETE CASCADE,
+  assessment_id TEXT NOT NULL REFERENCES assessments(id) ON DELETE CASCADE,
+  student_id TEXT NOT NULL REFERENCES students(id) ON DELETE CASCADE,
+  class_id TEXT NOT NULL REFERENCES classes(id) ON DELETE CASCADE,
+  token_hash TEXT NOT NULL UNIQUE,
+  created_at TEXT NOT NULL,
+  expires_at TEXT NOT NULL,
+  revoked_at TEXT,
+  last_seen_at TEXT
+);
+
+CREATE UNIQUE INDEX IF NOT EXISTS idx_one_live_attempt_session
+  ON student_attempt_sessions(submission_id) WHERE revoked_at IS NULL;
+
+CREATE INDEX IF NOT EXISTS idx_student_attempt_sessions_submission
+  ON student_attempt_sessions(submission_id, expires_at, revoked_at);
+
+-- Rate-limit buckets use the existing SQLite limiter table. Identifiers are
+-- opaque hashes, never raw IP addresses or PINs.
+
 -- Integrity decisions are teacher-only and append-only. Analysis reports are
 -- computed on demand; answer text is deliberately not persisted here.
 CREATE TABLE IF NOT EXISTS integrity_review_events (

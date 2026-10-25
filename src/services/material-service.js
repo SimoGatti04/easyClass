@@ -567,6 +567,127 @@ export class MaterialService {
   }
 
   /* -------------------------------------------------------------------------- */
+  /* -------------------------------------------------------------------------- */
+  /* PUBLIC STUDENT MATERIAL READING                                           */
+  /* -------------------------------------------------------------------------- */
+
+  listPublishedStudentMaterials(classId) {
+    if (!this.dbManager.prepare('SELECT id FROM classes WHERE id = ?').get(classId)) {
+      throw new NotFoundError('Class', classId);
+    }
+    const now = new Date().toISOString();
+    return this.dbManager.prepare(`
+      SELECT r.id AS resource_id, r.description, r.resource_type, r.pedagogical_role,
+             r.format, v.version_number, v.title, e.occurred_at AS published_at,
+             e.available_until
+      FROM resources r
+      JOIN resource_versions v ON v.resource_id = r.id
+      JOIN material_publication_events e
+        ON e.resource_id = r.id AND e.version_number = v.version_number
+      LEFT JOIN lessons l ON l.id = r.lesson_id
+      LEFT JOIN subjects s ON s.id = r.subject_id
+      WHERE COALESCE(r.class_id, l.class_id, s.class_id) = ?
+        AND r.status = 'active'
+        AND r.pedagogical_role IN ('student_material', 'support_material')
+        AND e.pedagogical_role = r.pedagogical_role
+        AND r.resource_type NOT IN ('teacher_script', 'lesson_plan', 'assessment')
+        AND e.rowid = (
+          SELECT e2.rowid FROM material_publication_events e2
+          WHERE e2.resource_id = r.id AND e2.version_number = v.version_number
+          ORDER BY e2.occurred_at DESC, e2.rowid DESC LIMIT 1
+        )
+        AND e.state = 'published'
+        AND (e.available_until IS NULL OR e.available_until > ?)
+      ORDER BY e.occurred_at DESC, v.title COLLATE NOCASE ASC
+    `).all(classId, now).map((row) => ({
+      id: row.resource_id,
+      versionNumber: row.version_number,
+      title: row.title,
+      description: row.description || '',
+      format: row.format,
+      resourceType: row.resource_type,
+      pedagogicalRole: row.pedagogical_role,
+      publishedAt: row.published_at,
+      availableUntil: row.available_until
+    }));
+  }
+
+  getPublishedStudentMaterial(classId, resourceId, versionNumber) {
+    if (!this.dbManager.prepare('SELECT id FROM classes WHERE id = ?').get(classId)) {
+      throw new NotFoundError('Class', classId);
+    }
+    const exactVersion = Number(versionNumber);
+    if (!Number.isInteger(exactVersion) || exactVersion < 1) {
+      throw new ValidationError('An exact positive material version is required');
+    }
+    const now = new Date().toISOString();
+    const row = this.dbManager.prepare(`
+      SELECT r.id, r.title AS current_title, r.description, r.resource_type,
+             r.pedagogical_role, r.format, r.class_id, r.subject_id, r.lesson_id,
+             v.version_number, v.title AS version_title, e.occurred_at AS published_at,
+             e.available_until
+      FROM resources r
+      JOIN resource_versions v ON v.resource_id = r.id AND v.version_number = ?
+      JOIN material_publication_events e
+        ON e.resource_id = r.id AND e.version_number = v.version_number
+      LEFT JOIN lessons l ON l.id = r.lesson_id
+      LEFT JOIN subjects s ON s.id = r.subject_id
+      WHERE r.id = ? AND COALESCE(r.class_id, l.class_id, s.class_id) = ?
+        AND r.status = 'active'
+        AND r.pedagogical_role IN ('student_material', 'support_material')
+        AND e.pedagogical_role = r.pedagogical_role
+        AND r.resource_type NOT IN ('teacher_script', 'lesson_plan', 'assessment')
+        AND e.rowid = (
+          SELECT e2.rowid FROM material_publication_events e2
+          WHERE e2.resource_id = r.id AND e2.version_number = v.version_number
+          ORDER BY e2.occurred_at DESC, e2.rowid DESC LIMIT 1
+        )
+        AND e.state = 'published'
+        AND (e.available_until IS NULL OR e.available_until > ?)
+    `).get(exactVersion, resourceId, classId, now);
+    if (!row) throw new NotFoundError('Published material version', `${resourceId}:v${exactVersion}`);
+    const material = this.getMaterial(resourceId, exactVersion, { role: 'student', includeTeacherSolutions: false });
+    return {
+      id: material.id,
+      versionNumber: exactVersion,
+      title: row.version_title,
+      description: row.description || '',
+      format: row.format,
+      resourceType: row.resource_type,
+      pedagogicalRole: row.pedagogical_role,
+      content: material.content,
+      publishedAt: row.published_at,
+      availableUntil: row.available_until
+    };
+  }
+
+  getPublishedStudentMaterialFile(classId, resourceId, versionNumber) {
+    const material = this.getPublishedStudentMaterial(classId, resourceId, versionNumber);
+    const provenance = this.dbManager.prepare(`
+      SELECT telemetry_json FROM provenance
+      WHERE resource_id = ? AND version_number = ?
+      ORDER BY created_at DESC LIMIT 1
+    `).get(resourceId, Number(versionNumber));
+    if (!provenance?.telemetry_json) return null;
+    let telemetry;
+    try { telemetry = JSON.parse(provenance.telemetry_json); } catch { return null; }
+    const storedPath = telemetry?.storedPath;
+    if (typeof storedPath !== 'string' || !path.isAbsolute(storedPath)) return null;
+    const root = path.resolve(this.fileStore.baseDir);
+    const relativePath = path.relative(root, path.resolve(storedPath));
+    if (!relativePath || relativePath === '..' || relativePath.startsWith(`..${path.sep}`) || path.isAbsolute(relativePath)) {
+      return null;
+    }
+    let stored;
+    try { stored = this.fileStore.readStoredFile(relativePath); } catch { return null; }
+    const allowedMime = new Set(['application/pdf', 'text/plain', 'text/markdown', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document']);
+    const contentType = allowedMime.has(telemetry.mimeType) ? telemetry.mimeType : 'application/octet-stream';
+    const source = this.dbManager.prepare('SELECT origin_uri FROM resources WHERE id = ?').get(resourceId);
+    const originalName = path.basename(String(source?.origin_uri || material.title || 'materiale'))
+      .replace(/[\\r\\n\\0"\\/]/g, '_').slice(0, 160) || 'materiale';
+    return { buffer: stored.buffer, size: stored.size, contentType, filename: originalName };
+  }
+
   /* PUBLICATION & ASSESSABLE AUTHORIZATION (D4 §46 / D5 §56)                  */
   /* -------------------------------------------------------------------------- */
 
