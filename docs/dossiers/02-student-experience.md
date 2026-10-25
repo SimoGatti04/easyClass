@@ -669,3 +669,18 @@ Resta da definire tecnicamente, nel dossier Platform Architecture, il meccanismo
 - evita la perdita di una sessione verifica già salvata.
 
 Questa scelta tecnica non modifica il comportamento UX approvato.
+
+## 31. Decisione finale Domain Owner — Portale pubblico C7B-R3 (25 ottobre 2026)
+
+Questa sezione è la decisione **CURRENT** per il flusso pubblico e sostituisce le precedenti ipotesi incompatibili delle sezioni 4–6 e 29. Il testo precedente resta conservato come storia decisionale.
+
+1. Homepage, directory classi, pagine classe e materiali esplicitamente pubblicati sono consultabili senza sessione studente e senza PIN.
+2. La sezione Attività di una classe richiede un solo PIN condiviso di esattamente quattro cifre. Non esistono credenziali o PIN personali, QR o account studente.
+3. Il PIN è generato dal server, resta valido fino a revoca/rotazione esplicita del docente ed è separato dalla sessione di navigazione Attività e dal token del singolo tentativo.
+4. Dopo aver scelto un'attività, lo studente dichiara il proprio nominativo dal roster e la fila/vicini. La scelta resta esplicitamente una dichiarazione, non una prova di identità forte.
+5. Un PIN ruotato/revocato impedisce nuovi accessi, ma non revoca i tentativi già avviati né cancella risposte, allegati, consegne o timer.
+6. Se si perde la sessione del tentativo, rientro con PIN corrente + stessa attività + stesso nominativo recupera il tentativo server. Le bozze non ancora inviate al server sono recuperabili solo dal medesimo dispositivo/browser quando ancora presenti nella cache locale, e soltanto per la stessa combinazione classe/studente dichiarato/attività.
+7. Rimangono obbligatorie le verifiche lato server di classe, stato attività, proprietà del tentativo, revisioni monotone, allegati e immutabilità della consegna definitiva.
+8. La vecchia credenziale individuale a sei caratteri/QR è **DEPRECATED**; lo schema storico non viene cancellato.
+
+Dettagli applicativi, matrice endpoint e prerequisiti di accesso/rollback sono documentati in `docs/c7b-r3-public-portal-readiness.md`. L'implementazione locale non equivale a pubblicazione né a configurazione live Cloudflare.

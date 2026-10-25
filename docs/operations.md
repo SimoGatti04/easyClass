@@ -310,3 +310,11 @@ state; never copy production data into local tests.
          d. Review and apply the verified rollback plan with `make cf-apply-access-plan`.
        - **Provider Unavailability Fallback:**
          If the Cloudflare API or provider is temporarily unreachable, the application layer acts as the fail-closed defense line. All teacher and management endpoints require JWT assertions with valid teacher identity mapping. If necessary during an outage, the operator can immediately stop or scale down the K3s workload (`kubectl scale deployment class --replicas=0 -n class`) to eliminate exposure until Cloudflare API connectivity is restored and the verified rollback plan is applied.
+
+## C7B-R3 — pubblico classi/materiali e PIN di classe (NON DEPLOYED)
+
+**CURRENT nel codice locale:** directory classi e materiali esplicitamente pubblicati consultabili senza PIN; attività elencate solo dopo PIN condiviso di classe a quattro cifre; sessione di classe separata dai token dei tentativi, selezione nominativo dichiarativa prima dell'avvio. PIN individuali/codici di sei caratteri e QR sono **DEPRECATED**. **CURRENT in produzione:** resta il runtime T1 osservato in precedenza; nessuna modifica edge/K3s è stata eseguita da C7B-R3. **PLANNED:** rollout C7B solo dopo IaC path-scoped approvata, verifica del secret PIN senza esporlo e prova isolata di recovery/rollback specifica R3.
+
+Prima di qualsiasi rollout autorizzato, il gate operativo deve verificare la presenza, senza mostrarne il valore, del segreto stabile `TEACHER_SERVICE_CLASS_PIN_SECRET` (almeno 32 byte) nel percorso già esistente Infisical → External Secrets Operator → Kubernetes Secret. Se manca, le operazioni PIN falliscono chiuse con 503; non avviare attività per la classe. Non copiare il segreto in ConfigMap, Git, ticket o log.
+
+Le route pubbliche, protette e i requisiti di recupero sono specificati in `docs/c7b-r3-public-portal-readiness.md`. Il runbook C7B-P2 deve includere la limitazione di rollback: un'immagine T1 non può riaprire il flusso PIN per tentativi C7B-R3, sebbene il rollback applicativo non debba cancellare i dati SQLite/FileStore. Nessun backup/snapshot produttivo, modifica Cloudflare o rollout è stato eseguito in R3; il preflight live resta un prerequisito separato.

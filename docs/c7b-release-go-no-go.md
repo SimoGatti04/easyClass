@@ -3,10 +3,12 @@
 **Data:** 25 ottobre 2026 (Europe/Rome)  
 **Ruolo:** Release Engineer / Infrastructure Engineer / QA  
 **Supervisione:** ChatGPT  
-**Stato operativo:** **VERIFICA PRE-RELEASE COMPLETATA — NESSUN DEPLOYMENT ESEGUITO**  
-**Verdetto complessivo:** **READY FOR AUTHORIZATION** (Pronto per l'autorizzazione della finestra di manutenzione da parte del Domain Owner)  
+**Stato operativo:** verifica C7B-P2 pre-R3 storica; aggiornata dal checkpoint C7B-R3 — nessun deployment eseguito
+**Verdetto corrente:** **NO-GO / C7B NON PRONTO AL RILASCIO** — software R3 verificato solo localmente; edge, secret di produzione, persistenza e rollback post-R3 non verificati.
 
 ---
+
+> **Avvertenza:** il verdetto `READY FOR AUTHORIZATION` riportato nella sezione 9 si riferisce esclusivamente alla baseline pre-R3 e non è più valido. La sezione 10 è la valutazione corrente e prevale in caso di conflitto.
 
 ## 1. Confini, Preflight e Verifica dello Stato Reale (Sola Lettura)
 
@@ -292,26 +294,27 @@ Eseguire immediatamente i controlli dall'esterno via HTTPS pubblico (`https://cl
 
 ---
 
-## 9. Giudizio Finale Go/No-Go & Checklist di Autorizzazione
+## 9. Verdetto C7B-P2 precedente (storico, superseded da §10)
 
-### 9.1 Matrice dei Verdetti per Area
+### 9.1 Matrice storica dei verdetti per area (baseline pre-R3)
 
 | Area di Valutazione | Esito | Dettaglio Evidenza |
 |---|---|---|
-| **1. Software Readiness** | **PASS** | 33 suite su 33 superate; Playwright browser tests PASS; client Vite build completata; C6 feature gate server-side attivo per default. |
-| **2. Cloudflare Plan Readiness** | **PASS (Ready to refresh & apply)** | Saved plan generato e verificato; 2 add, 1 change, 0 destroy; nessun replacement; AUD invariato; DNS e Tunnel intatti. |
-| **3. Operational Readiness** | **PASS** | Pod K3s stabile da 47h; probes sane; rate limiter protetto multi-livello anche su socket peer Traefik. |
-| **4. Data Recovery Readiness** | **PASS (procedural gate verified)** | Procedure CLI di snapshot e restore testate con simulazione SIGKILL e failure injection; pre-attachment verification gate `verify-target` documentato e vincolante; nodo di recovery off-node identificato. |
+| **1. Software Readiness** | **PASS (storico, pre-R3)** | 33 suite su 33 superate; Playwright browser tests PASS; client Vite build completata; C6 feature gate server-side attivo per default. |
+| **2. Cloudflare Plan Readiness** | **PASS (storico, solo pre-R3)** | Saved plan generato e verificato alla data del report precedente; non valida la policy path-scoped R3. |
+| **3. Operational Readiness** | **PASS (storico, pre-R3)** | Pod K3s stabile da 47h; probes sane; rate limiter protetto multi-livello anche su socket peer Traefik. |
+| **4. Data Recovery Readiness** | **PASS (storico, fixture pre-R3)** | Procedure CLI di snapshot e restore testate con simulazione SIGKILL e failure injection; pre-attachment verification gate `verify-target` documentato e vincolante; nodo di recovery off-node identificato. |
 | **5. Deployment Authorization** | **HOLD / PENDING** | Nessuna azione produttiva eseguita. In attesa di approvazione formale. |
 
-### 9.2 Verdetto Complessivo
+### 9.2 Verdetto storico pre-R3 — non applicabile alla release corrente
 ```text
 ================================================================================
-VERDETTO COMPLESSIVO: READY FOR AUTHORIZATION
+VERDETTO STORICO C7B-P2: READY FOR AUTHORIZATION (SUPERSEDED)
 ================================================================================
-Tutti i prerequisiti tecnici, software, architetturali e infrastrutturali
-verificabili prima della manutenzione sono pienamente soddisfatti.
-Il rilascio NON è stato eseguito ed è pronto per essere autorizzato.
+Questa valutazione descriveva la baseline precedente a C7B-R3.
+Non attesta la compatibilità del runtime T1 con il PIN condiviso, né
+la policy Cloudflare o il recupero dati dopo il nuovo flusso.
+Consultare la sezione 10 per lo stato corrente.
 ================================================================================
 ```
 
@@ -326,3 +329,43 @@ Prima di procedere all'esecuzione del rilascio, il Domain Owner dovrà approvare
   Autorizza l'aggiornamento dei manifest K3s con il nuovo tag immagine e le variabili `TEACHER_SERVICE_ENABLE_INTEGRITY_ANALYSIS=false` e `TEACHER_SERVICE_ALLOW_EXTERNAL_STUDENT_GRADING=false`.
 - [ ] **Autorizzazione 4: Apply del Saved Plan Cloudflare Access**  
   Autorizza l'esecuzione di `make cf-apply-access-plan` nel worktree `infra-class-routing` dopo il superamento del gate interno pre-apertura (`teacher-service-smoke-test.js`).
+
+
+---
+
+## 10. Aggiornamento C7B-R3 — verdetto software e infrastrutturale (25 ottobre 2026)
+
+Questo aggiornamento sostituisce il verdetto pre-R3 della sezione 9. Il lavoro è stato eseguito sul repository applicativo, branch `codex/teacher-service-c6`, partendo da `65316bbf200d46f9b226214154bcf10374298457`. Non sono state modificate risorse Cloudflare, DNS, Tunnel, Terraform, K3s, GHCR, PVC, database o FileStore produttivi. Il working tree `infra/main` e le modifiche concorrenti OmniRoute sono rimasti intatti.
+
+### 10.1 Matrice corrente
+
+| Area | Stato | Evidenza / limite |
+|---|---|---|
+| Flusso applicativo C7B-R3 | **PASS (locale)** | Directory classi e lettura pubblica delle sole versioni materiali pubblicate; PIN condiviso per classe; attività filtrate dopo PIN; roster solo nella selezione pre-avvio; tentativo separato per token. Test server e browser sintetici superati. |
+| T1 / C4 / C5 / C6 | **PASS (locale)** | Browser E2E T1, C4, C5 e C6 eseguiti con bundle compilato; nessun test usa dati produttivi. |
+| Contratti studente e isolamento | **PASS (locale)** | Test HTTP/API coprono PIN errati, isolamento classi, sessioni, revoca PIN, recupero bozze, immutabilità consegne, timer/allegati e rifiuto di rotte legacy. |
+| MCP locale | **PASS (locale, sintetico)** | Suite MCP e C7A unificata superate; strumenti e letture avvengono sullo stesso servizio/store isolato. **MCP remoto da ChatGPT non verificato.** |
+| Cloudflare Access / routing edge | **BLOCKED / NOT VERIFIED** | Lettura non mutativa del manifest IaC locale: l'app `class` attuale usa `primary_path: ''` e destinazione `''`, quindi la dichiarazione è host-wide e non rappresenta ancora il confine R3. Il provider bloccato alla 5.24.0 supporta applicazioni/destinazioni con path; le applicazioni Cloudflare più specifiche prevalgono senza ereditare la policy più ampia. Serve comunque una modifica IaC dedicata e review; nessuna verifica Cloudflare live né apply sono stati effettuati. |
+| Secret PIN in produzione | **NOT VERIFIED** | R3 richiede il secret stabile `TEACHER_SERVICE_CLASS_PIN_SECRET` (almeno 32 byte) in Infisical/ESO. Non letto né modificato. In assenza il codice fallisce chiuso; il preflight release deve verificare solo presenza/lunghezza, mai il valore. |
+| Storage, backup e rollback di produzione | **NOT VERIFIED** | Backup/restore testati solo su fixture isolate in precedenti checkpoint; nessun backup né restore produttivo C7B-R3. Il rollback all'immagine T1 non supporta i tentativi creati col flusso PIN. Non ripristinare o cancellare il database automaticamente. |
+| Release / C7B | **NO-GO** | C7B resta bloccato e non autorizzato. Mancano verifica edge, secret e procedura dati specifica per lo schema/flusso R3, oltre all'autorizzazione separata al rilascio. |
+
+### 10.2 Test effettivamente eseguiti
+
+- `pnpm test` — **PASS**, 34 suite, 0 fallite; database e file temporanei/sintetici.
+- `pnpm test:browser:c4` — **PASS**, un test browser end-to-end con due studenti e lettura materiale.
+- `pnpm test:browser:c5` — **PASS**, un test browser C5; attività creata via dashboard, PIN generato dall'interfaccia Registro studenti, due browser di studenti, monitoraggio, azioni docente, correzione e export.
+- `pnpm test:browser:c6` — **PASS**, un test browser C6.
+- `pnpm test:browser:c7a` — **PASS**, un test unificato sullo stesso assessment con due sessioni, SQLite/FileStore, API, grading, export, MCP e review C6.
+- `node --test tests/browser/t1-browser.test.js` — **PASS**, workflow T1 dal bundle React compilato.
+- `pnpm run build:client` — **PASS**, eseguito anche dalle suite browser.
+
+La prima esecuzione completa aveva rilevato un fixture C5 senza `assessableSourceId`; il fixture è stato corretto per rispettare il grounding richiesto e il successivo `pnpm test` è passato integralmente. La suite unitaria non è stata usata come sostituto delle verifiche browser.
+
+### 10.3 Contratto di accesso e rollback aggiornato
+
+La matrice completa degli endpoint è in `docs/c7b-r3-public-portal-readiness.md`. In sintesi: `/`, `/studente/**` e le API esplicitamente pubbliche di directory/materiali sono anonime; attività, elenco studenti e avvio richiedono una sessione di classe; le operazioni sul tentativo richiedono il token bearer associato; `/docente/**`, CRUD, export gestionali e le altre API restano protetti da Access e autorizzazione teacher; MCP mantiene host e percorso invariati. Il routing reale è stato verificato da browser locale, non dall'edge.
+
+La rotazione/revoca PIN impedisce nuovi accessi ma non invalida tentativi avviati né resetta risposte, timer, allegati o consegne. Rientro: PIN valido → stessa attività → stesso nominativo → recupero della bozza server esistente; IndexedDB è indicizzata per classe/studente dichiarato/attività, non per token, e non deve mai essere riassociata automaticamente a un diverso nominativo. Nessun dato mai persistito non è dichiarato recuperabile.
+
+Prima di qualsiasi C7B futuro: aggiornare IaC su branch dedicato per esprimere esplicitamente `/`, `/studente/**` e `/api/student/**` pubblici, `/docente/**` e API gestionali protetti, con default-deny per gestionali non previsti; preservare MCP invariato. Validare staticamente il piano e verificare live solo in finestra autorizzata. Aggiungere provisioning/verifica del PIN secret e un gate di backup/restore specifico per schema e FileStore R3. **Non eseguire Terraform apply, push, publish o deployment sulla base di questo checkpoint.**

@@ -1,9 +1,20 @@
 # Teacher Service — Stato operativo
 
-**Aggiornato:** 2026-10-24 (Europe/Rome)
-**Fase attiva:** C7A-R1 correzioni mirate completate localmente; C7B BLOCKED/PLANNED e non autorizzato (Supervisione: ChatGPT)
+**Aggiornato:** 2026-10-25 (Europe/Rome)
+**Fase attiva:** C7B-R3 implementato e verificato localmente; C7B produzione resta BLOCKED / NOT AUTHORIZED (Supervisione: ChatGPT)
 **Perimetro:** Workspace locale `teacher-service-design`.
 **Fonte normativa:** `docs/` e decisioni del Domain Owner (13 ottobre 2026); **evidenze storiche:** `validation/results/`.
+
+
+## C7B-R3 — Portale pubblico classi, materiali e attività (2026-10-25)
+
+**CURRENT (codice locale):** homepage e directory classi pubbliche; lettura anonima delle sole versioni materiale pubblicate e disponibili; un PIN condiviso di quattro cifre per classe protegge il catalogo attività; sessione di navigazione di classe distinta dal token del tentativo; selezione dichiarativa del nominativo e vicini prima dell'avvio; autosave, ripresa, timer e consegna restano associati al tentativo esistente. I codici individuali a sei caratteri e il flusso QR sono **DEPRECATED**; le tabelle storiche restano senza cancellazione distruttiva.
+
+**CURRENT (produzione):** invariato rispetto allo stato T1 osservato in precedenza. Nessun deploy, modifica Cloudflare/DNS/Tunnel, K3s, GHCR, PVC, database o FileStore è stato eseguito. Il MCP remoto non è stato verificato in questa fase.
+
+**Verifiche locali sintetiche:** `pnpm test` — 34 suite passate, 0 fallite; browser E2E `test:browser:c4`, `:c5`, `:c6`, `:c7a` e `tests/browser/t1-browser.test.js` tutti PASS; build Vite PASS. La verifica C5 usa la UI docente per generare il PIN e due sessioni browser indipendenti. Il C7A unificato legge lo stesso assessment tramite UI/API/SQLite/FileStore/MCP e review C6. Nessuna di queste prove costituisce verifica production/Cloudflare o ChatGPT remoto.
+
+**Readiness corrente:** Software **PASS locale su dati sintetici**. Infrastructure **BLOCKED / NOT VERIFIED**: la dichiarazione Cloudflare letta è ancora host-wide per `class`; la separazione path-scoped di `/`, `/studente/**`, `/api/student/**`, `/docente/**` e API gestionali richiede IaC dedicato e review; presenza del secret PIN, persistenza e rollback del database/FileStore post-R3 non sono stati verificati in produzione. C7B resta **NO-GO / non autorizzato**. Vedere `docs/c7b-r3-public-portal-readiness.md` e l'addendum corrente in `docs/c7b-release-go-no-go.md` §10.
 
 ## 1. Transizione a Product MVP e completamento dei Checkpoint (2026-10-13)
 

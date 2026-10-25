@@ -1,10 +1,12 @@
 # Teacher Service — Roadmap & Contratti di Dominio C3–C7
 **Sistema Integrato di Esercitazioni, Verifiche, Studenti, Consegne, Correzioni, Monitoraggio Live e Anticopiatura**
 
-**Aggiornato:** 2026-10-23 (Europe/Rome)
+**Aggiornato:** 2026-10-25 (Europe/Rome)
 **Ruolo:** Software Engineering / UI-UX Engineering
 **Stato Normativo:** Approvato dal Domain Owner
 **Riferimenti di Dominio:** Dossier 01–11, in particolare Dossier 04 (§46–48), Dossier 05 (§56–57), Dossier 06 (§1–4), Dossier 09 (§1–6).
+
+**Aggiornamento normativo C7B-R3 (25 ottobre 2026):** per directory classi, materiali pubblicati e accesso alle attività, la decisione finale del Domain Owner in `docs/dossiers/02-student-experience.md` §31 sostituisce le ipotesi precedenti di codici individuali/QR. Gli stati **CURRENT / DEPRECATED / PLANNED** sotto descrivono il comportamento aggiornato; le decisioni precedenti sono conservate solo come storia.
 
 ---
 
@@ -12,7 +14,7 @@
 
 Il sistema Teacher Service si estende oltre la preparazione lezioni ("Tomorrow is ready" - T1) integrando in un unico flusso digitale:
 1. **Homepage Unificata**: punto di ingresso chiaro con biforcazione immediata tra **Area Studenti** (pubblica) e **Area Docente** (protetta).
-2. **Identificazione Leggera Studenti**: nessun account permanente o password. Il docente distribuisce un codice/QR monouso individuale per attività; il riscatto emette una sessione temporanea, revocabile e legata allo studente e alla prova. La rubrica non è esposta come metodo di autenticazione.
+2. **Accesso Studenti C7B-R3**: nessun account permanente, password, PIN individuale o QR. Classi e materiali pubblicati sono pubblici; il docente può abilitare un unico PIN condiviso di quattro cifre per classe per accedere alle attività. Prima di avviare lo studente dichiara il proprio nominativo e la postazione. L'identificazione è leggera e dichiarativa, non autenticazione forte.
 3. **Dominio Unificato Attività (Dossier 05 §1)**: verifiche sommative ed esercitazioni formative condividono la stessa struttura (quesiti a scelta multipla, a risposta aperta, codice sorgente e quesiti con allegati file).
 4. **Postazione d'Aula & Seat Map (Dossier 05)**: all'inizio di ogni attività, lo studente dichiara obbligatoriamente fila, banco e i vicini di banco immediati (con opzione esplicita «Nessuno»).
 5. **Autosalvataggio Persistente & Resilienza**: salvataggio continuo in background delle risposte fornite, con possibilità di chiusura accidentale del browser e ripristino istantaneo della sessione.
@@ -30,11 +32,13 @@ Il sistema Teacher Service si estende oltre la preparazione lezioni ("Tomorrow i
 | Componente / Area | Stato | Dettagli Architetturali |
 |---|---|---|
 | **Preparazione Lezioni T1 ("Tomorrow is ready")** | **CURRENT** | Lesson Plan, Teacher Script, Dispensa Studente, Esercizi, Modali, Conferma e Versionamento. Intatto e funzionante. |
-| **Homepage Portale con Biforcazione Studente/Docente** | **CURRENT** | Homepage e routing client (`#/`, `#/studente`, `#/docente`); il routing hash è solo navigazione, mai autorizzazione. |
-| **Identificazione Leggera Studente** | **CURRENT** | Codice/QR individuale monouso per attività e sessione breve revocabile; nessun account permanente e nessuna autenticazione tramite elenco pubblico. |
+| **Homepage e routing HTTP Studente/Docente** | **CURRENT** | Percorsi reali `/`, `/studente/**` e `/docente/**`; la route docente resta soggetta a Cloudflare Access e autorizzazione teacher lato server. Gli hash precedenti sono solo compatibilità, mai autorizzazione. |
+| **Directory Classi e Materiali Pubblicati** | **CURRENT (codice locale)** | Consultazione anonima delle classi e delle sole versioni di materiali pubblicate e disponibili; nessun PIN o selezione studente per la lettura. Produzione non verificata dopo C7B-R3. |
+| **Accesso alle Attività** | **CURRENT (codice locale)** | Un PIN condiviso di quattro cifre per classe; sessione di navigazione di classe separata dal token del tentativo. Nominativo e vicini sono dichiarati prima dell'avvio. |
+| **Credenziali studente individuali / QR** | **DEPRECATED** | I vecchi endpoint di emissione/riscatto sono disabilitati; la struttura storica resta per compatibilità additiva e non viene usata dal nuovo flusso. |
 | **Dichiarazione Seat Map (Fila, Banco, Vicini)** | **CURRENT** | Modulo obbligatorio con fila, banco e scelta «Nessuno» per i vicini; persistenza lato server. |
 | **Autosalvataggio e Svolgimento Prova (Frontend)** | **CURRENT** | Quesiti multipli, aperti, codice e allegati; revisioni monotone, cache IndexedDB isolata per sessione, ripristino offline e riconciliazione esplicita dei conflitti. La copia locale non è presentata come salvata sul server. |
-| **API Studente Isolate (`/api/student/*`)** | **CURRENT** | Consultazione pubblica dove appropriato; ogni accesso/modifica al tentativo è vincolato a session token individuale. Soluzioni e rubriche sono filtrate lato server. |
+| **API Studente Isolate (`/api/student/*`)** | **CURRENT (codice locale)** | Directory/materiali leggibili anonimamente; roster e catalogo attività solo dopo sessione PIN della classe; dati di un tentativo solo con il relativo token di sessione. Soluzioni e rubriche sono filtrate lato server. |
 | **Timer & Scadenza (C4)** | **CURRENT** | Scadenza calcolata dal server e persistente attraverso i refresh; conto alla rovescia e avvisi UI a 10/5 minuti. Upload e scritture tardive vengono respinti; l’eventuale tempo extra è gestito dal dato server esistente. |
 | **Editor di Codice e Allegati (C4)** | **CURRENT** | Editor leggero con numeri riga, indentazione e supporto touch; anteprima protetta per immagini, PDF e testo/codice. |
 | **Consegna Definitiva (C4)** | **CURRENT** | Riepilogo risposte/allegati prima della conferma, snapshot dell’invio, blocco delle modifiche concorrenti e tentativo sigillato lato server. |
