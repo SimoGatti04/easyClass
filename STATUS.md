@@ -955,3 +955,35 @@ In conformità alle disposizioni di rettifica minima pre-saved plan, sono stati 
 - Pre-opening Smoke Test Suite: **7/7 PASS**.
 - Snapshot & Partial Failures Suite: **10/10 PASS**.
 - Stato Git: pronto per commit locale. Nessun push o operazione produttiva eseguita. C7B rimane non autorizzato.
+
+#### Addendum — C7B-P2: Release Go/No-Go & Operational Readiness (25 ottobre 2026)
+In conformità alle direttive C7B-P2, è stata condotta la verifica operativa e pre-release completa di Teacher Service:
+
+1. **Preflight e Stato Runtime K3s (Sola Lettura):**
+   - Pod `class-5744fcfb8-97v8f` (1/1 Running, IP 10.42.1.42, nodo `<backup-host>`, uptime 47h dall'ultimo restart del 23 ottobre).
+   - Deployment `deployment.apps/class` su immagine `ghcr.io/simogatti04/class:20261020-f962706` (image ID `@sha256:79d7c084233c60049c18e24459fde84160178cdf58b9e52461c97906180b455c`).
+   - PVC `class-teacher-db` (2Gi) e `class-teacher-files` (5Gi) entrambi Bound su `StorageClass: class-local` su `<backup-host>` con `reclaimPolicy: Retain`. Nessun dato utente letto o copiato.
+   - ConfigMap `class-config`: AUD Web ed AUD MCP separati e conformi. Probes liveness e readiness sane su `/health`.
+
+2. **Revisione Piano Cloudflare Access (Worktree `infra-class-routing`):**
+   - Saved plan generato da commit `b5b4b05` con token Infisical in-memory: `2 to add, 1 to change, 0 to destroy`.
+   - `class` (docente) aggiornata in-place (`domain = class.simogatti.it/docente`, `destinations = [/docente, /api]`), ID risorsa preservato (`61b7861a-3587-479d-91d3-063b66a6ef96`), **nessuna variazione dell'Application AUD docente**.
+   - `class-student-api` creata con policy Bypass su `/api/student`.
+   - Nessuna modifica a DNS, Tunnel, MCP o altre applicazioni Access. L'attestazione (15 minuti) è scaduta come previsto; procedura di refresh documentata prima del futuro apply.
+
+3. **Trusted Proxy e Identificazione IP:**
+   - La catena di rete Cloudflare -> Tunnel -> Traefik (10.42.0.173) -> Pod (10.42.1.42) invia le richieste con peer TCP interno al cluster.
+   - In assenza di `TEACHER_SERVICE_TRUSTED_PROXY_CIDRS`, l'applicazione opera in modalità fail-closed contro IP spoofing ignorando gli header `CF-Connecting-IP` non verificati.
+   - `ClaimRateLimiter` garantisce la compatibilità con l'aula scolastica (30 studenti sotto lo stesso NAT) grazie a bucketing per-device via cookie/header e soglie separate.
+
+4. **Superficie Studente Pubblica:**
+   - Analisi degli endpoint `/api/student/*` conferma l'assenza di data leak didattici o personali: elenco studenti privacy-preserving (cognome puntato), soluzioni e rubriche docente rimosse lato server, attività bozza inaccessibili, consegne vincolate alla sessione studente, upload protetto.
+
+5. **Recovery e Destinazione Off-Node:**
+   - Identificata destinazione off-node su nodo secondario `<backup-host>` (`/srv/backup/teacher-service/`).
+   - Procedura di snapshot in quiescenza (`bin/teacher-service-store-snapshot.js create`) e gate obbligatorio pre-attachment (`verify-target`) documentati nel runbook.
+   - Politica chiara: rollback pre-cutover a zero data loss; rollback post-cutover vincolato a salvataggio delta dei dati nuovi.
+
+6. **Verdetto Complessivo:** **READY FOR AUTHORIZATION**.
+   - Prodotto documento conclusivo di release `docs/c7b-release-go-no-go.md` con checklist formale delle 4 autorizzazioni distinte per il Domain Owner.
+   - Nessun apply, push, publish o deployment K3s eseguito. Modifiche concorrenti OmniRoute in `infra/main` preservate intatte.
