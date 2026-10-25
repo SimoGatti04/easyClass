@@ -678,6 +678,14 @@ export async function handleStudentApi(req, res, pathname, parsedUrl, service, p
         return;
       }
 
+      // Validate accessCode presence before recording rate-limiting failures.
+      // Missing or malformed payloads are client schema errors (400), not access code guessing attempts.
+      if (!accessCode || typeof accessCode !== "string" || accessCode.trim().length === 0) {
+        res.writeHead(400, { "Content-Type": "application/json" });
+        res.end(JSON.stringify({ error: "ValidationError", message: "Codice di accesso richiesto" }));
+        return;
+      }
+
       try {
         const session = service.claimStudentSession(accessCode);
         activeRateLimiter.recordSuccess({ ip: clientIp, deviceId, code: accessCode });

@@ -43,7 +43,6 @@ test('Pre-opening internal read-only smoke checks suite', async (t) => {
     req.url = url;
     const reqHeaders = {
       host: 'localhost:8770',
-      origin: 'http://localhost:8770',
       ...headers
     };
     req.headers = Object.fromEntries(Object.entries(reqHeaders).map(([k, v]) => [k.toLowerCase(), v]));
@@ -136,20 +135,49 @@ test('Pre-opening internal read-only smoke checks suite', async (t) => {
     assert.ok([401, 403].includes(mgmtRes.statusCode), `Must reject unauthenticated with 401 or 403, got ${mgmtRes.statusCode}`);
   });
 
-  await t.test('5. Student claim router responds 400 Bad Request on empty payload without crashing or writing', async () => {
-    const claimRes = await executeCheck({
-      method: 'POST',
-      url: '/api/student/claim-code',
-      headers: { 'Content-Type': 'application/json' },
-      body: {}
-    });
-    assert.equal(claimRes.statusCode, 400);
-    assert.equal(claimRes.body.error, 'ValidationError');
+  await t.test('5. Student claim schema validation responds 400 Bad Request on empty payload without mutating rate limits', async () => {
+    const countBefore = dbManager.prepare('SELECT count(*) as count FROM student_claim_rate_limits').get().count;
+
+    // Run 5 consecutive smoke checks with empty payload
+    for (let i = 0; i < 5; i++) {
+      const claimRes = await executeCheck({
+        method: 'POST',
+        url: '/api/student/claim-code',
+        headers: { 'Content-Type': 'application/json' },
+        body: {}
+      });
+      assert.equal(claimRes.statusCode, 400);
+      assert.equal(claimRes.body.error, 'ValidationError');
+    }
+
+    const countAfter = dbManager.prepare('SELECT count(*) as count FROM student_claim_rate_limits').get().count;
+    assert.equal(countAfter, countBefore, 'Repeated empty claim smoke checks must not record rate-limiting failures or mutate database');
   });
 
-  await t.test('6. MCP endpoint /mcp is active and responds to transport probing', async () => {
-    const mcpRes = await executeCheck({ method: 'POST', url: '/mcp', headers: { origin: undefined, 'content-type': 'application/json' }, body: {} });
-    assert.ok([400, 401, 405].includes(mcpRes.statusCode));
-    assert.ok([200, 400, 401, 405].includes(mcpRes.statusCode));
+  await t.test('6. MCP endpoint /mcp rejects unauthenticated requests with 401 JSON-RPC and distinguishes transport vs Origin errors', async () => {
+    // 1. Unauthenticated request without Origin -> 401 JSON-RPC (active server, fail-closed auth active)
+    const mcpRes = await executeCheck({
+      method: 'POST',
+      url: '/mcp',
+      headers: { 'content-type': 'application/json' },
+      body: { jsonrpc: '2.0', method: 'ping', id: 1 }
+    });
+    assert.equal(mcpRes.statusCode, 401);
+    assert.equal(mcpRes.body.jsonrpc, '2.0');
+    assert.equal(mcpRes.body.error.code, -32000);
+    assert.match(mcpRes.body.error.message, /Unauthorized/);
+
+    // 2. Request with unauthorized local Origin -> 403 Forbidden (demonstrates why smoke-test must not send local Origin)
+    const badOriginRes = await executeCheck({
+      method: 'POST',
+      url: '/mcp',
+      headers: {
+        origin: 'http://127.0.0.1:8770',
+        'content-type': 'application/json'
+      },
+      body: { jsonrpc: '2.0', method: 'ping', id: 1 }
+    });
+    assert.equal(badOriginRes.statusCode, 403);
+    assert.match(badOriginRes.body.error.message, /Invalid Origin/);
   });
 });

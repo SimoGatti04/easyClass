@@ -193,22 +193,22 @@ test('Snapshot & Restore partial failure handling, cleanup, and retry suite', as
     assert.equal(fs.existsSync(targetFiles), false, "targetFiles must not exist");
   });
 
-  await t.test("8. Real child process SIGKILL proves catch cannot run and mandatory pre-attachment verification catches incomplete state", async () => {
-    const killTargetDir = path.join(root, "sigkill-dest");
+  await t.test("8. Real child process SIGKILL before database install proves catch cannot run and verifyStorePair rejects target", async () => {
+    const killTargetDir = path.join(root, "sigkill1-dest");
     fs.mkdirSync(killTargetDir, { recursive: true });
     const killDb = path.join(killTargetDir, "teacher.sqlite");
     const killFiles = path.join(killTargetDir, "files");
 
-    // Spawn child script that starts restore and pauses midway to ensure it gets killed during execution
+    // Spawn child script that starts restore and pauses BEFORE the first rename (database install)
     const childScript = `
       import fs from "node:fs";
       import path from "node:path";
       import { restoreStoreSnapshot } from "${path.resolve(process.cwd(), "src/storage/store-snapshot.js")}";
 
-      // Intercept fs.renameSync to hang and wait for SIGKILL
+      // Intercept fs.renameSync to hang before performing the first rename
       const origRename = fs.renameSync;
       fs.renameSync = function(from, to) {
-        process.stdout.write("RENAMING_DB\\n");
+        process.stdout.write("PRE_DB_RENAME\\n");
         // Hang indefinitely waiting for SIGKILL
         while (true) {}
       };
@@ -230,8 +230,7 @@ test('Snapshot & Restore partial failure handling, cleanup, and retry suite', as
     let output = "";
     child.stdout.on("data", chunk => {
       output += chunk.toString("utf8");
-      if (output.includes("RENAMING_DB")) {
-        // Child is currently in the middle of restore: SIGKILL it now!
+      if (output.includes("PRE_DB_RENAME")) {
         child.kill("SIGKILL");
       }
     });
@@ -239,28 +238,105 @@ test('Snapshot & Restore partial failure handling, cleanup, and retry suite', as
     const exitPromise = new Promise(resolve => child.on("exit", (code, signal) => resolve({ code, signal })));
     const exitResult = await exitPromise;
 
-    // Verify child was killed by SIGKILL
     assert.equal(exitResult.signal, "SIGKILL");
-    // Verify JS catch and finally NEVER RAN!
     assert.equal(output.includes("CAUGHT_ERROR"), false, "Catch must NOT run on SIGKILL");
     assert.equal(output.includes("FINALLY_RAN"), false, "Finally must NOT run on SIGKILL");
+    assert.equal(fs.existsSync(killDb), false, "DB must not exist because process was killed before first rename");
 
-    // Mandatory pre-attachment check must reject this incomplete/interrupted target
     assert.throws(() => {
       verifyStorePair({
         databasePath: killDb,
         fileStorePath: killFiles,
         snapshotPath
       });
-    }, /Restored FileStore directory does not exist|does not exist or is not a regular file|Lingering restore staging detected/);
+    }, /does not exist or is not a regular file/);
+  });
 
-    // Clean up staging debris left behind by killed process
+  await t.test("9. Real child process SIGKILL after database install but before FileStore install leaves half-restored state that verifyStorePair rejects", async () => {
+    const killTargetDir = path.join(root, "sigkill2-dest");
+    fs.mkdirSync(killTargetDir, { recursive: true });
+    const killDb = path.join(killTargetDir, "teacher.sqlite");
+    const killFiles = path.join(killTargetDir, "files");
+
+    // Spawn child script that completes the database rename (step 1) but hangs before FileStore rename (step 2)
+    const childScript = `
+      import fs from "node:fs";
+      import path from "node:path";
+      import { restoreStoreSnapshot } from "${path.resolve(process.cwd(), "src/storage/store-snapshot.js")}";
+
+      const origRename = fs.renameSync;
+      let renameCount = 0;
+      fs.renameSync = function(from, to) {
+        renameCount++;
+        if (renameCount === 1) {
+          // Complete database rename: targetDb is now on disk!
+          origRename(from, to);
+          process.stdout.write("DB_INSTALLED_BEFORE_FILES\\n");
+          // Hang before FileStore rename
+          while (true) {}
+        }
+        return origRename(from, to);
+      };
+
+      try {
+        restoreStoreSnapshot({
+          snapshotPath: "${snapshotPath}",
+          databasePath: "${killDb}",
+          fileStorePath: "${killFiles}"
+        });
+      } catch (err) {
+        process.stdout.write("CAUGHT_ERROR\\n");
+      } finally {
+        process.stdout.write("FINALLY_RAN\\n");
+      }
+    `;
+
+    const child = cp.spawn("node", ["--input-type=module", "-e", childScript]);
+    let output = "";
+    child.stdout.on("data", chunk => {
+      output += chunk.toString("utf8");
+      if (output.includes("DB_INSTALLED_BEFORE_FILES")) {
+        child.kill("SIGKILL");
+      }
+    });
+
+    const exitPromise = new Promise(resolve => child.on("exit", (code, signal) => resolve({ code, signal })));
+    const exitResult = await exitPromise;
+
+    assert.equal(exitResult.signal, "SIGKILL");
+    assert.equal(output.includes("CAUGHT_ERROR"), false, "Catch must NOT run on SIGKILL");
+    assert.equal(output.includes("FINALLY_RAN"), false, "Finally must NOT run on SIGKILL");
+
+    // Critical invariant check: DB exists on disk, FileStore does NOT!
+    assert.equal(fs.existsSync(killDb), true, "Database was installed before SIGKILL");
+    assert.equal(fs.existsSync(killFiles), false, "FileStore was NOT installed before SIGKILL");
+
+    // Pre-attachment check must reject this half-installed target due to missing FileStore and lingering staging
+    assert.throws(() => {
+      verifyStorePair({
+        databasePath: killDb,
+        fileStorePath: killFiles,
+        snapshotPath
+      });
+    }, /Restored FileStore directory does not exist or is not a directory|Lingering restore staging detected/);
+
+    // Also verify that CLI verify-target exits with error
+    const cliCheck = cp.spawnSync("node", [
+      path.resolve(process.cwd(), "bin/teacher-service-store-snapshot.js"),
+      "verify-target",
+      killDb,
+      killFiles,
+      snapshotPath
+    ]);
+    assert.notEqual(cliCheck.status, 0, "CLI verify-target must exit non-zero on half-restored targets");
+
+    // Clean up debris left by the killed process
     const parentEntries = fs.readdirSync(killTargetDir);
     for (const entry of parentEntries) {
       fs.rmSync(path.join(killTargetDir, entry), { recursive: true, force: true });
     }
 
-    // Now execute a clean, uninterrupted restore and verify that mandatory pre-attachment check PASSES
+    // A clean, uninterrupted restore into this directory passes verification
     restoreStoreSnapshot({
       snapshotPath,
       databasePath: killDb,
@@ -276,5 +352,4 @@ test('Snapshot & Restore partial failure handling, cleanup, and retry suite', as
     assert.equal(verifyResult.manifestMatch, true);
     assert.equal(verifyResult.integrity, "ok");
   });
-
 });

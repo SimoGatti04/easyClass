@@ -130,7 +130,22 @@ After the procedure is authorized and the CLI is included in a reviewed image:
      "$SNAPSHOT_DIR" "$RESTORE_DB_PATH" "$RESTORE_FILESTORE_PATH"
    ```
 
-6. Before switching traffic, start the intended image against the restored
+6. Mandatory procedural Pre-Attachment Gate:
+   Before mounting or connecting the restored store targets to the application Pod/workload,
+   the operator MUST execute the programmatic pre-attachment verification gate against the original snapshot:
+
+   ```bash
+   node bin/teacher-service-store-snapshot.js verify-target \
+     "$RESTORE_DB_PATH" "$RESTORE_FILESTORE_PATH" "$SNAPSHOT_DIR"
+   ```
+
+   *Procedural vs. Automated Distinction:* This pre-attachment verification is a strictly enforced
+   operational/procedural runbook gate executed by the release engineer prior to PVC reassignment;
+   it is NOT an automatic in-cluster Kubernetes admission hook or init-container check. Both components
+   (the SQLite database file and the FileStore directory tree with its full SHA-256 hash manifest)
+   must be explicitly verified. If `verify-target` exits non-zero, mounting is blocked.
+
+7. Before switching traffic, start the intended image against the restored
    copies, inspect `/health`, SQLite integrity/foreign keys, exact material
    version history and representative attachment hashes, then run the
    synthetic C4–C6/MCP smoke checks. Never use the only original PVC as a
@@ -158,15 +173,14 @@ PVCs remain node-local and their loss/corruption risk remains open.
 
 ## Teacher access and MCP
 
-- Cloudflare Access assertion validation and teacher identity mapping are
-  enforced in the application; an authenticated identity without an explicit
-  teacher mapping is not a teacher.
-- Teacher REST routes under `/api/*`, except the isolated `/api/student/*`
-  surface, require authentication plus explicit teacher membership. The public
-  student route uses revocable, expiring application sessions and server-side
-  class/submission checks; it does not accept a client-supplied `studentId` as
-  identity proof. `/mcp` keeps its existing separate transport/authentication
-  contract and also requires teacher authorization for teacher-only tools.
+- **Edge and Application Protection Architecture:**
+  - **Teacher Web UI (`/docente*`):** Protected at the edge by **Cloudflare Access** (access application requiring Google IdP authentication and valid session cookies for authorized teacher accounts). At the application layer, the Node.js server serves the SPA HTML shell (with SPA route fallback for deep links).
+  - **Teacher REST APIs (`/api/*`, excluding `/api/student/*`):** Protected with strict **defense-in-depth**:
+    1. At the Cloudflare edge: Protected by Cloudflare Access rules covering `/api/*`.
+    2. At the application layer: Protected **also** by Node.js server-side authorization (`authenticateRequest()` validating the signed `Cf-Access-Jwt-Assertion` against `TEACHER_SERVICE_WEB_CF_ACCESS_AUD` and matching the authenticated identity against explicitly authorized teachers in SQLite).
+    Unauthenticated or unauthorized requests to `/api/*` are rejected fail-closed with HTTP 401 Unauthorized or 403 Forbidden by the Node.js process, regardless of edge configuration.
+  - **Student Surface (`/studente`, `/api/student/*`):** The student UI (`/studente`) is accessible publicly. Student APIs (`/api/student/*`) are bypass routes at Cloudflare Access but enforce revocable, expiring application session tokens generated upon claiming a valid access code, alongside server-side submission checks and classroom-compatible rate limiting. Student APIs do not accept a client-supplied `studentId` as identity proof.
+  - **MCP Service (`/mcp`):** Exposed on `https://mcp-teacher.simogatti.it/mcp` through a dedicated Cloudflare Access OAuth application, requiring teacher authorization for teacher-only tools and enforcing fail-closed token validation.
 - Do not add role headers/query parameters or share a non-teacher bearer token.
   Edge routing is a separate control: local hash routing does not protect
   routes at Cloudflare, and this runbook does not prove student-public/teacher-
@@ -232,16 +246,22 @@ state; never copy production data into local tests.
 - **Mandatory Pre-Attachment Verification Gate:**
   Before any restored volume or directory can be connected or mounted to the running application workload, the operator or automation **must** execute:
   ```bash
-  node bin/teacher-service-store-snapshot.js verify-target <database.sqlite> <filestore-dir> [snapshot-dir]
+  node bin/teacher-service-store-snapshot.js verify-target <database.sqlite> <filestore-dir> <snapshot-dir>
   ```
+  Specifying `<snapshot-dir>` is mandatory so that both components are explicitly verified against the authoritative snapshot manifest.
   This gate programmatically verifies:
   1. Both target database and FileStore exist and are regular file / directory.
   2. No lingering staging artifacts (`.teacher-service-*-restore-*`) remain in target parent directories.
   3. SQLite database passes `PRAGMA integrity_check` (`ok`) and `PRAGMA foreign_key_check` (0 violations).
   4. FileStore tree matches the snapshot `manifest.json` exactly in file count, paths, sizes, and SHA-256 hashes.
   If any check fails, the target is rejected, cleaned, and the restore retried from the verified snapshot before mounting.
+- **Procedural Gate vs. Kubernetes Automation:**
+  This verification is an explicit **procedural operational gate** executed via CLI by the operator or release engineer prior to volume attachment. There is **no automated Kubernetes admission controller or init-container hook** implemented in the cluster to validate store consistency automatically. Relying on Kubernetes to prevent mounting corrupted or partially restored volumes without running this procedural verification is an operational error.
 - **Verified in Automated Suites:**
-  `tests/integration/snapshot-partial-failures.test.js` (9/9 tests PASS), including fault injection and real child process `SIGKILL` testing proving that unhandled terminations leave incomplete states that the mandatory verification gate successfully catches.
+  `tests/integration/snapshot-partial-failures.test.js` (10/10 tests PASS), including fault injection, crash simulation, and two distinct real child process `SIGKILL` tests:
+  - Test 8: `SIGKILL` before database install (before the first rename) leaves only temporary staging directories without installed target files.
+  - Test 9: `SIGKILL` after database install (after the first rename) but before FileStore install (before the second rename) leaves a half-restored target (database present on disk, FileStore absent, staging debris lingering).
+  In both scenarios, JavaScript exception handlers (`catch`/`finally`) cannot run, and the mandatory `verifyStorePair()` / `verify-target` gate deterministically catches and rejects the incomplete state.
 
 ## Verified T1 Container Rollback Compatibility (C7B-P0)
 

@@ -6,19 +6,17 @@
  * internal application instance (e.g. http://127.0.0.1:8770 or container http://127.0.0.1:80)
  * before any Cloudflare edge routing change is applied.
  *
- * Verifies:
- * 1. Health probe (/health) -> 200 OK, service metadata
- * 2. Web UI root (/) -> 200 OK, SPA shell HTML
- * 3. Student UI (/studente) -> 200 OK, SPA shell HTML
- * 4. Database read path (/api/student/classes) -> 200 OK, JSON classes list (0 writes)
- * 5. Fail-closed teacher auth (/api/classes) -> 401/403 Forbidden (fail-closed check)
- * 6. Student claim router (/api/student/claim-code) -> 400 Bad Request on empty body (0 writes)
- * 7. MCP transport (/mcp) -> 400/405 active transport
+ * Invariants:
+ * 1. Must NOT mutate SQLite database or FileStore.
+ * 2. Must NOT record rate limiting failure counters or block classroom IPs/devices.
+ * 3. Must NOT send unauthorized local Origin headers that trigger CORS/Origin rejections.
+ * 4. Distinguishes fail-closed authentication (401) from transport errors.
  */
 
 const targetUrl = (process.argv[2] || process.env.TEACHER_SERVICE_TARGET_URL || 'http://127.0.0.1:8770').replace(/\/+$/, '');
 
-console.log(`[PRE-OPENING GATE] Running internal read-only smoke checks against: ${targetUrl}\n`);
+console.log(`[PRE-OPENING GATE] Running internal read-only smoke checks against: ${targetUrl}
+`);
 
 const checks = [
   {
@@ -80,7 +78,7 @@ const checks = [
     }
   },
   {
-    name: '6. Student claim router (/api/student/claim-code)',
+    name: '6. Student claim schema validation (/api/student/claim-code)',
     method: 'POST',
     path: '/api/student/claim-code',
     headers: { 'Content-Type': 'application/json' },
@@ -88,16 +86,33 @@ const checks = [
     expectedStatus: [400],
     validate: (res, json, text) => {
       if (!json || (json.error !== 'BadRequest' && json.error !== 'ValidationError')) {
-        throw new Error(`Expected BadRequest on empty claim body, got: ${text.slice(0, 100)}`);
+        throw new Error(`Expected BadRequest / ValidationError on empty claim body, got: ${text.slice(0, 100)}`);
       }
     }
   },
   {
-    name: '7. MCP streamable HTTP endpoint (/mcp)',
-    method: 'GET',
+    name: '7. MCP streamable HTTP transport (/mcp)',
+    method: 'POST',
     path: '/mcp',
-    expectedStatus: [400, 405],
-    validate: (res) => {}
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ jsonrpc: '2.0', method: 'ping', id: 1 }),
+    expectedStatus: [401, 200, 400, 405],
+    validate: (res, json, text) => {
+      const ct = res.headers.get('content-type') || '';
+      if (!ct.includes('application/json')) {
+        throw new Error(`Expected application/json response from MCP endpoint, got: ${ct}`);
+      }
+      if (!json || json.jsonrpc !== '2.0') {
+        throw new Error(`Expected JSON-RPC 2.0 response from MCP endpoint, got: ${text.slice(0, 120)}`);
+      }
+      if (res.status === 401) {
+        // Authenticated access is required and fail-closed is active; this is healthy protocol behavior, not a transport error
+        const msg = json.error?.message || '';
+        if (!msg.toLowerCase().includes('unauthorized') && !msg.toLowerCase().includes('cf_access_aud')) {
+          throw new Error(`Expected 401 Unauthorized JSON-RPC error, got: ${text.slice(0, 120)}`);
+        }
+      }
+    }
   }
 ];
 
@@ -108,13 +123,16 @@ for (const check of checks) {
   try {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 5000);
+    // Note: Do NOT automatically send Origin: targetUrl.
+    // MCP clients and API probes are not cross-origin browsers; sending an unauthorized
+    // local origin triggers strict Origin rejection (403) before authentication/protocol checks.
+    const headers = {
+      Host: new URL(targetUrl).host,
+      ...(check.headers || {})
+    };
     const res = await fetch(url, {
       method: check.method,
-      headers: {
-        Host: new URL(targetUrl).host,
-        Origin: targetUrl,
-        ...(check.headers || {})
-      },
+      headers,
       body: check.body || undefined,
       signal: controller.signal
     });

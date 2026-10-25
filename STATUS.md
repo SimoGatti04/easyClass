@@ -931,3 +931,27 @@ In ottemperanza alle disposizioni di supervisione *C7B-P0 Errata Finale*, sono s
 - Master Test Suite (`node tests/run-all.js`): **33 suite eseguite, 33 passed, 0 failed (186 test totali PASS)**.
 - Browser E2E Suites (`c4`, `c5`, `c6`, `c7a`, `t1`): **Tutti PASS**.
 - Stato Git applicativo: pulito, pronto per il commit mirato.
+
+#### Addendum — Ultimo Allineamento Prima del Saved Plan (25 ottobre 2026)
+In conformità alle disposizioni di rettifica minima pre-saved plan, sono stati finalizzati i seguenti interventi:
+
+1. **Smoke Test Pre-Apertura (`bin/teacher-service-smoke-test.js`):**
+   - Corretto il check 6 (`/api/student/claim-code`): valida la gestione del payload vuoto (`400 ValidationError`) senza generare o incrementare tentativi falliti nel database produttivo (`student_claim_rate_limits`). Verificato che esecuzioni ripetute non alterino i contatori di rate limiting.
+   - Allineato il check 7 (`/mcp`): rimosso l'invio automatico dell'header `Origin` locale (che innescava 403 Invalid Origin); distinto un 401 Unauthorized (comportamento atteso del protocollo fail-closed in assenza di credenziali OAuth/Access) da errori di trasporto TCP/HTTP.
+   - Verificato con suite dedicata `tests/server/pre-opening-smoke.test.js` (7/7 test PASS).
+
+2. **Recovery e Procedura di Ripristino:**
+   - Estesa la suite `tests/integration/snapshot-partial-failures.test.js` (10/10 test PASS):
+     - Test 8: verifica `SIGKILL` prima dell'installazione del database (prima del primo rename), con residuo di staging e rigetto da parte di `verifyStorePair`.
+     - Test 9: verifica `SIGKILL` post-installazione del database (dopo il primo rename) ma prima dell'installazione del FileStore, dimostrando che il target semiripristinato (DB presente, FileStore assente) viene determinatamente intercettato e respinto.
+   - Runbook `docs/operations.md` aggiornato: reso obbligatorio il passaggio del percorso `<snapshot-dir>` a `verify-target` prima del collegamento dei volumi, validando esplicitamente sia l'integrità SQLite (`PRAGMA integrity_check`) sia la corrispondenza dei file FileStore e hash SHA-256 contro il `manifest.json`.
+   - Distinto formalmente il gate procedurale (obbligo per l'operatore di eseguire la CLI prima del binding dei volumi K3s) da controlli Kubernetes automatici (non implementati nel cluster).
+
+3. **Autorizzazione Docente e Confini di Sicurezza:**
+   - Allineata la documentazione in `docs/operations.md`: `/docente` (interfaccia web SPA) è protetta all'edge da Cloudflare Access; le API gestionali docente (`/api/*`) sono protette con difesa in profondità sia da Cloudflare Access all'edge sia dall'autorizzazione applicativa Node.js fail-closed (`authenticateRequest` con validazione assertion JWT, AUD e mapping identità in SQLite).
+
+#### Riepilogo Verifiche Suite
+- Master Test Suite (`node tests/run-all.js`): **33 suite eseguite, 33 passed, 0 failed (187 test totali PASS)**.
+- Pre-opening Smoke Test Suite: **7/7 PASS**.
+- Snapshot & Partial Failures Suite: **10/10 PASS**.
+- Stato Git: pronto per commit locale. Nessun push o operazione produttiva eseguita. C7B rimane non autorizzato.
