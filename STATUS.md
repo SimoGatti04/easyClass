@@ -896,3 +896,38 @@ In riscontro alla review indipendente della pianificazione di rilascio, sono sta
 4. **Evidenza Container T1 Reale:**
    - Documentati immagine (`ghcr.io/simogatti04/class:20261020-f962706`), digest immutabile (`sha256:79d7c084233c60049c18e24459fde84160178cdf58b9e52461c97906180b455c`), architettura (`linux/amd64`) ed esecuzione in OrbStack.
    - Chiarito che il downgrade tecnico del container a T1 è sicuro e non corrompe il database migrato, ma un container T1 non può gestire o visualizzare le verifiche C4–C6 svolte dagli studenti post-migrazione.
+
+#### Addendum C7B-P0 Errata Finale (25 ottobre 2026)
+In ottemperanza alle disposizioni di supervisione *C7B-P0 Errata Finale*, sono state completate le seguenti correzioni mirate:
+
+1. **Recovery e Fallimenti Non Catturabili (SIGKILL / Crash):**
+   - Eliminata categoricamente l'assunzione secondo cui un blocco `catch` JavaScript o hook di rollback in-process possa garantire la pulizia dello storage dopo `SIGKILL`, crash di processo, OOM killer o interruzione di corrente.
+   - Introdotto il controllo obbligatorio dello stato completo SQLite + FileStore tramite la funzione `verifyStorePair()` in `src/storage/store-snapshot.js` e il comando CLI `node bin/teacher-service-store-snapshot.js verify-target <database.sqlite> <filestore-dir> [snapshot-dir]`. Questo gate verifica integrità e foreign key SQLite, assenza di residui di staging (`.teacher-service-*-restore-*`), e corrispondenza del FileStore col manifest del backup prima che i volumi possano essere montati.
+   - Aggiunto test n. 8 in `tests/integration/snapshot-partial-failures.test.js` che avvia un processo figlio reale e lo termina con `SIGKILL` durante il restore, dimostrando che `catch` e `finally` non vengono eseguiti e che il controllo obbligatorio rileva puntualmente lo stato incompleto (9/9 test PASS).
+
+2. **Rollback Cloudflare su Stato Aggiornato e Gestione Outage:**
+   - Eliminata la riapplicazione automatica o cieca di un piano salvato precedente (`tfplan`), intrinsecamente stale rispetto a uno stato Terraform mutato.
+   - Definita la procedura di rollback basata su ripristino della configurazione dichiarativa precedente in `infra` e generazione di un **nuovo saved plan di rollback** calcolato sullo stato reale aggiornato, verificato e applicato con i wrapper ufficiali (`make cf-save-access-plan`, `make cf-verify-access-plan`).
+   - Documentato il comportamento in caso di indisponibilità delle API Cloudflare: la difesa fail-closed del backend applicativo (validazione JWT con AUD e identità docente autorizzata per ogni rotta riservata) impedisce esposizioni accidentali anche ad edge aperto, con facoltà per l'operatore di azzerare le repliche K3s (`kubectl scale deployment class --replicas=0`) in caso di emergenza.
+
+3. **Gate Pre-Apertura con Smoke Test Interni Read-Only:**
+   - Il gate pre-apertura è stato integrato oltre il semplice `/health` con la CLI dedicata `bin/teacher-service-smoke-test.js` e la suite `tests/server/pre-opening-smoke.test.js` (7/7 test PASS).
+   - Esegue verifiche non distruttive e a zero scritture su:
+     - `/health` (200 OK, metadati servizio)
+     - SPA root `/` e `/studente` (200 OK, shell HTML)
+     - Percorso di lettura SQLite `/api/student/classes` (200 OK, array classi, zero scritture)
+     - Autorizzazione fail-closed `/api/classes` (401/403 Forbidden per richieste anonime)
+     - Router claim `/api/student/claim-code` con payload vuoto (400 ValidationError, validazione JSON senza toccare credenziali)
+     - Handshake di trasporto MCP su `/mcp`
+   - Stabilito l'invariante operativo: le modifiche edge Cloudflare non possono essere applicate finché tutti gli smoke test interni non risultano PASS.
+
+4. **Rate Limiting Aula e Browser Anonimi:**
+   - Corretto il fallback di `POST /api/student/claim-code`: eliminato il raggruppamento delle richieste prive di header in un unico bucket di dispositivo `anon:IP` con soglia a 5 errori, che rischiava di bloccare l'intera aula dopo 5 errori aggregati.
+   - Il server rilascia un cookie HttpOnly `ts_device_id` che isola il bucket per ciascun browser anonimo senza intaccare gli altri studenti sotto lo stesso IP NAT. Anche nel caso limite di cookie e storage disabilitati, gli studenti non condividono un bucket ristretto a 5 errori.
+   - Mantenuta rigorosamente la protezione anti-brute-force: `codeMaxFails = 5` blocca attacchi mirati contro codici specifici, `ipBurstMaxFails = 75` blocca raffiche automatizzate, e `ipMaxFails = 120` protegge l'IP nel suo complesso.
+   - Verificato in `tests/server/classroom-rate-limiting.test.js` (10/10 test PASS) e `tests/server/student-api.test.js` (37/37 test PASS).
+
+#### Riepilogo Verifiche Suite
+- Master Test Suite (`node tests/run-all.js`): **33 suite eseguite, 33 passed, 0 failed (186 test totali PASS)**.
+- Browser E2E Suites (`c4`, `c5`, `c6`, `c7a`, `t1`): **Tutti PASS**.
+- Stato Git applicativo: pulito, pronto per il commit mirato.

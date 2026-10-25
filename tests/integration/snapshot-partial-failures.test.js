@@ -7,7 +7,8 @@ import { DatabaseSync } from 'node:sqlite';
 import { DatabaseManager } from '../../src/db/database.js';
 import { FileStore } from '../../src/storage/filestore.js';
 import { TeacherService } from '../../src/services/teacher-service.js';
-import { createStoreSnapshot, restoreStoreSnapshot, verifyStoreSnapshot } from '../../src/storage/store-snapshot.js';
+import cp from 'node:child_process';
+import { createStoreSnapshot, restoreStoreSnapshot, verifyStoreSnapshot, verifyStorePair } from '../../src/storage/store-snapshot.js';
 
 test('Snapshot & Restore partial failure handling, cleanup, and retry suite', async (t) => {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'snapshot-failures-'));
@@ -191,4 +192,89 @@ test('Snapshot & Restore partial failure handling, cleanup, and retry suite', as
     assert.equal(fs.existsSync(targetDb), false, "targetDb must be uninstalled if FileStore install fails");
     assert.equal(fs.existsSync(targetFiles), false, "targetFiles must not exist");
   });
+
+  await t.test("8. Real child process SIGKILL proves catch cannot run and mandatory pre-attachment verification catches incomplete state", async () => {
+    const killTargetDir = path.join(root, "sigkill-dest");
+    fs.mkdirSync(killTargetDir, { recursive: true });
+    const killDb = path.join(killTargetDir, "teacher.sqlite");
+    const killFiles = path.join(killTargetDir, "files");
+
+    // Spawn child script that starts restore and pauses midway to ensure it gets killed during execution
+    const childScript = `
+      import fs from "node:fs";
+      import path from "node:path";
+      import { restoreStoreSnapshot } from "${path.resolve(process.cwd(), "src/storage/store-snapshot.js")}";
+
+      // Intercept fs.renameSync to hang and wait for SIGKILL
+      const origRename = fs.renameSync;
+      fs.renameSync = function(from, to) {
+        process.stdout.write("RENAMING_DB\\n");
+        // Hang indefinitely waiting for SIGKILL
+        while (true) {}
+      };
+
+      try {
+        restoreStoreSnapshot({
+          snapshotPath: "${snapshotPath}",
+          databasePath: "${killDb}",
+          fileStorePath: "${killFiles}"
+        });
+      } catch (err) {
+        process.stdout.write("CAUGHT_ERROR\\n");
+      } finally {
+        process.stdout.write("FINALLY_RAN\\n");
+      }
+    `;
+
+    const child = cp.spawn("node", ["--input-type=module", "-e", childScript]);
+    let output = "";
+    child.stdout.on("data", chunk => {
+      output += chunk.toString("utf8");
+      if (output.includes("RENAMING_DB")) {
+        // Child is currently in the middle of restore: SIGKILL it now!
+        child.kill("SIGKILL");
+      }
+    });
+
+    const exitPromise = new Promise(resolve => child.on("exit", (code, signal) => resolve({ code, signal })));
+    const exitResult = await exitPromise;
+
+    // Verify child was killed by SIGKILL
+    assert.equal(exitResult.signal, "SIGKILL");
+    // Verify JS catch and finally NEVER RAN!
+    assert.equal(output.includes("CAUGHT_ERROR"), false, "Catch must NOT run on SIGKILL");
+    assert.equal(output.includes("FINALLY_RAN"), false, "Finally must NOT run on SIGKILL");
+
+    // Mandatory pre-attachment check must reject this incomplete/interrupted target
+    assert.throws(() => {
+      verifyStorePair({
+        databasePath: killDb,
+        fileStorePath: killFiles,
+        snapshotPath
+      });
+    }, /Restored FileStore directory does not exist|does not exist or is not a regular file|Lingering restore staging detected/);
+
+    // Clean up staging debris left behind by killed process
+    const parentEntries = fs.readdirSync(killTargetDir);
+    for (const entry of parentEntries) {
+      fs.rmSync(path.join(killTargetDir, entry), { recursive: true, force: true });
+    }
+
+    // Now execute a clean, uninterrupted restore and verify that mandatory pre-attachment check PASSES
+    restoreStoreSnapshot({
+      snapshotPath,
+      databasePath: killDb,
+      fileStorePath: killFiles
+    });
+
+    const verifyResult = verifyStorePair({
+      databasePath: killDb,
+      fileStorePath: killFiles,
+      snapshotPath
+    });
+    assert.equal(verifyResult.valid, true);
+    assert.equal(verifyResult.manifestMatch, true);
+    assert.equal(verifyResult.integrity, "ok");
+  });
+
 });

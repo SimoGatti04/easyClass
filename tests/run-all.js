@@ -28,6 +28,7 @@ const testFiles = [
   'tests/server/client-ip.test.js',
   'tests/server/application-routing.test.js',
   'tests/server/classroom-rate-limiting.test.js',
+  'tests/server/pre-opening-smoke.test.js',
   'tests/server/integrity-gate.test.js',
   'tests/server/student-api.test.js',
   'tests/unit/migration-additive.test.js',

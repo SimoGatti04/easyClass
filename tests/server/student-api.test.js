@@ -1206,9 +1206,10 @@ test('Student Public API & Teacher Live Monitor HTTP Suite', async (t) => {
     assert.equal(deleteItemRes.body.success, true);
   });
 
-  await t.test("26. Brute-force Defense: 5 failed claim attempts from same IP blocks with 429", async () => {
+  await t.test("26. Brute-force Defense: 5 failed claim attempts from a browser device block with 429", async () => {
     const fakeIp = "198.51.100.42";
-    for (let i = 0; i < 4; i++) {
+    let browserCookie = null;
+    for (let i = 0; i < 5; i++) {
       const failRes = await executeVirtualRequest({
         method: "POST",
         url: "/api/student/claim-code",
@@ -1216,25 +1217,16 @@ test('Student Public API & Teacher Live Monitor HTTP Suite', async (t) => {
         headers: {
           "Content-Type": "application/json",
           // Direct peer is authoritative; this client-controlled header is ignored.
-          "X-Forwarded-For": "192.0.2.77"
+          "X-Forwarded-For": "192.0.2.77",
+          ...(browserCookie ? { Cookie: browserCookie } : {})
         },
         body: { accessCode: "WRONG" + i }
       });
       assert.equal(failRes.statusCode, 403);
+      if (failRes.headers["set-cookie"]) {
+        browserCookie = failRes.headers["set-cookie"].split(";")[0];
+      }
     }
-
-    // 5th failed attempt triggers block
-    const fifthFail = await executeVirtualRequest({
-      method: "POST",
-      url: "/api/student/claim-code",
-      remoteAddress: fakeIp,
-      headers: {
-        "Content-Type": "application/json",
-        "X-Forwarded-For": "192.0.2.77"
-      },
-      body: { accessCode: "WRONG5" }
-    });
-    assert.equal(fifthFail.statusCode, 403);
 
     // 6th attempt is blocked immediately with 429 TooManyRequests
     const blockedRes = await executeVirtualRequest({
@@ -1243,7 +1235,8 @@ test('Student Public API & Teacher Live Monitor HTTP Suite', async (t) => {
       remoteAddress: fakeIp,
       headers: {
         "Content-Type": "application/json",
-        "X-Forwarded-For": "192.0.2.77"
+        "X-Forwarded-For": "192.0.2.77",
+        ...(browserCookie ? { Cookie: browserCookie } : {})
       },
       body: { accessCode: "WRONG6" }
     });
@@ -1760,6 +1753,7 @@ test('Student Public API & Teacher Live Monitor HTTP Suite', async (t) => {
   await t.test("34. IP Proxy & Header Anti-Spoofing: Direct public connections ignore client-forged IP headers", async () => {
     // Direct public IP attempting to rotate X-Forwarded-For and Cf-Connecting-Ip headers on every attempt
     const directPublicIp = "203.0.113.88";
+    let clientCookie = null;
 
     for (let i = 0; i < 5; i++) {
       const res = await executeVirtualRequest({
@@ -1769,11 +1763,15 @@ test('Student Public API & Teacher Live Monitor HTTP Suite', async (t) => {
         headers: {
           "Content-Type": "application/json",
           "X-Forwarded-For": `1.2.3.${i}`,
-          "Cf-Connecting-Ip": `10.0.0.${i}`
+          "Cf-Connecting-Ip": `10.0.0.${i}`,
+          ...(clientCookie ? { Cookie: clientCookie } : {})
         },
         body: { accessCode: `WRONGSPOOF${i}` }
       });
       assert.equal(res.statusCode, 403);
+      if (res.headers["set-cookie"]) {
+        clientCookie = res.headers["set-cookie"].split(";")[0];
+      }
     }
 
     // 6th attempt with yet another spoofed IP in header must be blocked with 429 TooManyRequests
@@ -1784,7 +1782,8 @@ test('Student Public API & Teacher Live Monitor HTTP Suite', async (t) => {
       headers: {
         "Content-Type": "application/json",
         "X-Forwarded-For": "8.8.8.8",
-        "Cf-Connecting-Ip": "8.8.4.4"
+        "Cf-Connecting-Ip": "8.8.4.4",
+        ...(clientCookie ? { Cookie: clientCookie } : {})
       },
       body: { accessCode: "WRONGSPOOF6" }
     });

@@ -645,10 +645,24 @@ export async function handleStudentApi(req, res, pathname, parsedUrl, service, p
       // Note: X-Student-Device-Id is an untrusted client hint used solely for localized
       // device rate-limiting bucketing so an individual student does not exhaust the room quota.
       // It is never treated as an authentication token, authorization credential, or security boundary.
-      const clientDeviceId = (typeof rawDeviceId === "string" && rawDeviceId.trim().length > 0)
+      let clientDeviceId = (typeof rawDeviceId === "string" && rawDeviceId.trim().length > 0)
         ? rawDeviceId.trim()
         : (cookieDeviceId || null);
-      const deviceId = clientDeviceId ? `dev:${clientDeviceId}` : `anon:${clientIp}`;
+
+      // If client did not provide a cookie-based device identifier, issue a cookie hint so
+      // subsequent browser requests are bucketed per-device instead of relying purely on IP.
+      // We never bucket anonymous requests into a shared anon:IP bucket, which would lock out
+      // 30+ students in a classroom after only 5 typos. Each browser without a device header
+      // receives an isolated device cookie and its own independent 5-typo allowance.
+      if (!cookieDeviceId) {
+        const assignedCookieId = clientDeviceId || crypto.randomUUID();
+        res.setHeader("Set-Cookie", `ts_device_id=${encodeURIComponent(assignedCookieId)}; Path=/api/student; HttpOnly; SameSite=Lax; Max-Age=2592000`);
+        if (!clientDeviceId) {
+          clientDeviceId = assignedCookieId;
+        }
+      }
+
+      const deviceId = `dev:${clientDeviceId}`;
       const now = Date.now();
 
       const blockInfo = activeRateLimiter.checkLimit({ ip: clientIp, deviceId, code: accessCode, now });

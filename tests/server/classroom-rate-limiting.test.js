@@ -287,23 +287,125 @@ test("Classroom-compatible claim code rate limiting suite", async (t) => {
     assert.equal(peerRes.statusCode, 200, "Peer student on same NAT must succeed unhindered");
   });
 
-  await t.test("6. Anonymous clients without device ID bucket by anon:IP for fallback protection", async () => {
+  await t.test("6. Anonymous browsers without device headers establish cookie-isolated device buckets without classroom lockout", async () => {
     const anonymousIp = "198.51.100.99";
-    // 5 distinct requests without any device ID making 1 typo each
+
+    // 10 distinct students under same NAT make typos without sending custom device headers.
+    // In previous naive fallback, after 5 typos the entire classroom was blocked.
+    // With cookie-based device isolation, each browser establishes its own device bucket.
+    const studentCookies = [];
+    for (let i = 1; i <= 10; i++) {
+      const res = await executeClaim({
+        ip: anonymousIp,
+        deviceId: null,
+        accessCode: `CLASS-TYPO-${i}`
+      });
+      assert.equal(res.statusCode, 403, `Student ${i} typo must return 403 Forbidden, not 429`);
+      assert.ok(res.headers["set-cookie"], "Server must issue ts_device_id cookie to anonymous browser");
+      const match = res.headers["set-cookie"].match(/ts_device_id=([^;]+)/);
+      assert.ok(match, "Cookie must contain ts_device_id");
+      studentCookies.push(decodeURIComponent(match[1]));
+    }
+
+    // Student 1 continues making typos using their issued cookie until reaching device limit (5 fails total)
+    const s1Cookie = studentCookies[0];
+    for (let attempt = 2; attempt <= 5; attempt++) {
+      const res = await executeClaim({
+        ip: anonymousIp,
+        deviceId: null,
+        headers: { cookie: `ts_device_id=${encodeURIComponent(s1Cookie)}` },
+        accessCode: `S1-TYPO-${attempt}`
+      });
+      assert.equal(res.statusCode, 403);
+    }
+
+    // 6th attempt by Student 1: blocked by device limit
+    const s1Blocked = await executeClaim({
+      ip: anonymousIp,
+      deviceId: null,
+      headers: { cookie: `ts_device_id=${encodeURIComponent(s1Cookie)}` },
+      accessCode: "S1-TYPO-6"
+    });
+    assert.equal(s1Blocked.statusCode, 429, "Student 1 must be blocked after 5 device failures");
+    assert.match(s1Blocked.body.message, /dispositivo/);
+
+    // Crucial check: Student 2 on the same NAT IP enters their valid code and succeeds!
+    // Classroom is NOT blocked!
+    const anonStudent = service.addStudent({ classId: testClass.id, firstName: "AnonPeer", lastName: "AnonLastName" });
+    const validStudentCred = service.generateActivityCredentials(assessment.id).find(c => c.studentId === anonStudent.id);
+    const s2Success = await executeClaim({
+      ip: anonymousIp,
+      deviceId: null,
+      headers: { cookie: `ts_device_id=${encodeURIComponent(studentCookies[1])}` },
+      accessCode: validStudentCred.accessCode
+    });
+    assert.equal(s2Success.statusCode, 200, "Student 2 under same NAT must succeed unhindered despite Student 1 device block");
+
+    // Anti-brute-force: automated script without cookies targeting a single code is blocked after 5 attempts
+    const targetedCode = "TARGETED-CODE-99";
     for (let i = 1; i <= 5; i++) {
       const res = await executeClaim({
         ip: anonymousIp,
         deviceId: null,
-        accessCode: `ANON-TYPO-${i}`
+        accessCode: targetedCode
       });
       assert.equal(res.statusCode, 403);
     }
-    const blockedRes = await executeClaim({
+    const codeBlocked = await executeClaim({
       ip: anonymousIp,
       deviceId: null,
-      accessCode: "ANON-TYPO-6"
+      accessCode: targetedCode
     });
-    assert.equal(blockedRes.statusCode, 429, "Anonymous client on 6th fail triggers fallback device limit");
+    assert.equal(codeBlocked.statusCode, 429, "Targeted code attack without cookies must trigger code limit");
+    assert.match(codeBlocked.body.message, /codice di accesso/);
+  });
+
+  await t.test("6b. 30 anonymous students with cookies disabled under same NAT can make typos without blocking classroom", async () => {
+    const noCookieIp = "198.51.100.123";
+    const assess2 = service.createAssessment({
+      title: "Verifica Senza Cookie",
+      classId: testClass.id,
+      subjectId: testSubject.id,
+      status: "active",
+      items: [
+        {
+          type: "multiple_choice",
+          questionText: "Cos è un cookie?",
+          options: ["Stato locale", "Pacchetto IP"],
+          maxScore: 10,
+          assessableSourceId: studentMaterial.id,
+          assessableSourceVersion: 1
+        }
+      ]
+    });
+    const assess2Creds = service.generateActivityCredentials(assess2.id);
+    const assess2Codes = assess2Creds.map(c => c.accessCode);
+    // 30 students without device headers and without cookies make 2 typos each = 60 typos total
+    for (let i = 0; i < 30; i++) {
+      const typo1 = await executeClaim({
+        ip: noCookieIp,
+        deviceId: null,
+        accessCode: `NO-COOKIE-TYPO-${i}-A`
+      });
+      assert.equal(typo1.statusCode, 403, `Student ${i} typo A must return 403`);
+
+      const typo2 = await executeClaim({
+        ip: noCookieIp,
+        deviceId: null,
+        accessCode: `NO-COOKIE-TYPO-${i}-B`
+      });
+      assert.equal(typo2.statusCode, 403, `Student ${i} typo B must return 403`);
+    }
+
+    // Now all 30 students submit their valid codes without cookies
+    for (let i = 0; i < 30; i++) {
+      const successRes = await executeClaim({
+        ip: noCookieIp,
+        deviceId: null,
+        accessCode: assess2Codes[i]
+      });
+      assert.equal(successRes.statusCode, 200, `Student ${i} must successfully claim valid code even with cookies disabled`);
+    }
   });
 
   await t.test("7. Anti-spoofing: Untrusted peers cannot forge CF-Connecting-IP or X-Forwarded-For", async () => {

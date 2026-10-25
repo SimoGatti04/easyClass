@@ -197,10 +197,11 @@ state; never copy production data into local tests.
 ## Rate Limiting & Proxy Trust Configuration (C7A-R2)
 
 - Student claim code endpoint (`POST /api/student/claim-code`) enforces multi-tiered rate limits persisted in SQLite (`student_claim_rate_limits`):
-  - `TEACHER_SERVICE_CLAIM_RATE_LIMIT_DEVICE_MAX`: 5 consecutive failures per device (header `X-Student-Device-Id`).
-  - `TEACHER_SERVICE_CLAIM_RATE_LIMIT_CODE_MAX`: 5 failures per IP + code.
-  - `TEACHER_SERVICE_CLAIM_RATE_LIMIT_IP_MAX`: 120 failures per 5 minutes per IP (tuned in C7B-P0 to prevent collective lockout for 30-35 students under shared NAT router making 2-3 typos each).
-  - `TEACHER_SERVICE_CLAIM_RATE_LIMIT_IP_BURST`: 75 failures per 10 seconds per IP (protects against automated burst enumeration while absorbing simultaneous classroom submissions).
+  - `TEACHER_SERVICE_CLAIM_RATE_LIMIT_DEVICE_MAX`: 5 consecutive failures per device. Device identification supports both the client header `X-Student-Device-Id` / body `deviceId` and automatic server-issued HttpOnly cookie `ts_device_id`.
+  - *Classroom Fallback Protection:* When a browser does not send a custom device header, the server issues a unique `ts_device_id` cookie. We strictly avoid grouping anonymous requests into a naive, tiny shared device bucket (such as `anon:IP` with a 5-failure threshold), which would involuntarily lock out 30+ students in an entire classroom after 5 collective typos. Each browser receives its own isolated device allowance.
+  - `TEACHER_SERVICE_CLAIM_RATE_LIMIT_CODE_MAX`: 5 failures per IP + code (prevents targeted guessing of a specific access code, even if device IDs or cookies are rotated or omitted).
+  - `TEACHER_SERVICE_CLAIM_RATE_LIMIT_IP_MAX`: 120 failures per 5 minutes per IP (absorbs 30-35 students under shared NAT router making 2-3 typos each while blocking sustained brute-force enumeration).
+  - `TEACHER_SERVICE_CLAIM_RATE_LIMIT_IP_BURST`: 75 failures per 10 seconds per IP (protects against automated rapid burst enumeration while absorbing simultaneous classroom exam starts).
 - Proxy trust is governed by `TEACHER_SERVICE_TRUSTED_PROXY_CIDRS`. In production, this must match only the specific, verified peer IP of Traefik or the Tunnel egress. If unset or non-matching, `resolveClientIp` falls back fail-closed to the direct TCP socket address, preventing any IP header spoofing.
 
 ## Feature Gates & Operational Controls (C7A-R2)
@@ -222,15 +223,25 @@ state; never copy production data into local tests.
   - The SQLite schema migration is additive (columns with defaults, new non-conflicting tables), allowing older T1 versions of the service to read existing baseline records without failure.
   - If a PVC restoration is ever executed on K3s/Longhorn, restore into a NEW isolated volume or path. Never overwrite the original PVCs in-place.
 
-## Non-Atomic Store Recovery Mechanics & Partial Failure Handling (C7B-P0)
+## Non-Atomic Store Recovery Mechanics & Mandatory Pre-Attachment Verification (C7B-P0 Errata)
 
 - **Non-Atomic Filesystem Invariant:**
   SQLite snapshot (`VACUUM INTO`) and FileStore replication (`fs.cpSync`) do **not** constitute a single POSIX atomic transaction. An interruption (process kill, disk full, node failure) between or during these operations could leave an incomplete snapshot or mismatched data versions.
-- **Defensive Safeguards in Tooling (`src/storage/store-snapshot.js`):**
-  - *Snapshot Isolation:* Snapshots are initially assembled in an isolated temporary staging directory (`.teacher-service-snapshot-<uuid>`). The database and all attachment files are checksummed into an immutable SHA-256 `manifest.json`. Only after strict manifest self-verification succeeds is the directory renamed to the target destination path. On failure or error, staging artifacts are immediately removed.
-  - *Non-Overwrite Guarantee:* Restore operations strictly refuse to overwrite existing database files or non-empty directories (`Refusing to overwrite existing target...`).
-  - *Rollback Cleanup Handlers:* During restore, staging copies and newly installed targets are tracked with atomic cleanup rollback hooks (`dbInstalled`, `filesInstalled`). If a database verification, manifest integrity check, or FileStore copy fails midway, all installed targets in the restore destination are unlinked and cleaned, guaranteeing no partial or corrupted store state remains.
-  - *Verified in Automated Suites:* `tests/integration/snapshot-partial-failures.test.js` (6/6 tests PASS).
+- **Limits of JavaScript Exception Handlers:**
+  A JavaScript `try/catch` or `finally` block only handles caught JavaScript exceptions. It **cannot** run or guarantee filesystem cleanup after `SIGKILL`, an abrupt process crash, kernel OOM kill, hardware crash, or power outage. If an ungraceful termination occurs midway through restore, staging files (`.teacher-service-*-restore-*`) or partially copied targets may remain on the filesystem.
+- **Mandatory Pre-Attachment Verification Gate:**
+  Before any restored volume or directory can be connected or mounted to the running application workload, the operator or automation **must** execute:
+  ```bash
+  node bin/teacher-service-store-snapshot.js verify-target <database.sqlite> <filestore-dir> [snapshot-dir]
+  ```
+  This gate programmatically verifies:
+  1. Both target database and FileStore exist and are regular file / directory.
+  2. No lingering staging artifacts (`.teacher-service-*-restore-*`) remain in target parent directories.
+  3. SQLite database passes `PRAGMA integrity_check` (`ok`) and `PRAGMA foreign_key_check` (0 violations).
+  4. FileStore tree matches the snapshot `manifest.json` exactly in file count, paths, sizes, and SHA-256 hashes.
+  If any check fails, the target is rejected, cleaned, and the restore retried from the verified snapshot before mounting.
+- **Verified in Automated Suites:**
+  `tests/integration/snapshot-partial-failures.test.js` (9/9 tests PASS), including fault injection and real child process `SIGKILL` testing proving that unhandled terminations leave incomplete states that the mandatory verification gate successfully catches.
 
 ## Verified T1 Container Rollback Compatibility (C7B-P0)
 
@@ -253,10 +264,29 @@ state; never copy production data into local tests.
   - Resource replacement **rotates the Cloudflare Access Application AUD**.
   - If the AUD rotates, the existing Pod running with the old `TEACHER_SERVICE_WEB_CF_ACCESS_AUD` will reject all valid teacher JWT assertions with `401 Unauthorized` (fail-closed behavior).
   - **Coordinated Cutover Procedure:**
-    1. *Pre-Maintenance:* Generate and review saved plans for Access and routing. Identify whether `class` application shows `~ update in-place` or `-/+ destroy and then create replacement`.
-    2. *Maintenance Start:* Quiesce traffic, execute SQLite + FileStore snapshot, verify integrity.
-    3. *Workload Deploy:* Apply K3s deployment manifest with the new container image tag. Verify Pod enters `Running`, readiness probes pass, and `curl http://127.0.0.1:8770/health` returns `200 OK`.
-    4. *Edge Apply:* Apply Cloudflare Access plan.
+    1. *Pre-Maintenance:* Generate and review saved plans for Access and routing using canonical wrappers. Identify whether `class` application shows `~ update in-place` or `-/+ destroy and then create replacement`.
+    2. *Maintenance Start:* Quiesce traffic, execute SQLite + FileStore snapshot, run `node bin/teacher-service-store-snapshot.js verify <snapshot-dir>` to verify integrity before making any changes.
+    3. *Workload Deploy & Internal Pre-Opening Gate:*
+       - Apply K3s deployment manifest with the new container image tag.
+       - Verify Pod enters `Running` and Kubernetes readiness probes pass.
+       - **Execute Internal Read-Only Smoke Test Gate:** `node bin/teacher-service-smoke-test.js http://127.0.0.1:8770` (verified by `tests/server/pre-opening-smoke.test.js`).
+         Validates:
+         - `/health` -> 200 OK, service metadata.
+         - SPA root `/` and `/studente` -> 200 OK, HTML shell.
+         - Database read path `/api/student/classes` -> 200 OK, JSON classes list (0 writes).
+         - Fail-closed teacher authorization `/api/classes` -> 401/403 Forbidden.
+         - Student claim router `/api/student/claim-code` -> 400 Bad Request / ValidationError on empty body (0 writes).
+         - MCP transport `/mcp` -> active transport response.
+       - *Strict Invariant:* If any internal smoke check fails, do NOT proceed with edge changes.
+    4. *Edge Apply:* Apply Cloudflare Access plan only after step 3 passes completely.
     5. *AUD Reconciliation:* If the Access application was replaced, read the new AUD from the Terraform output/state, update `TEACHER_SERVICE_WEB_CF_ACCESS_AUD` in `infra/k3s/apps/class/configmap.yaml`, apply the ConfigMap, and restart the Pod.
-    6. *Post-Cutover Smoke Tests:* Validate teacher login on `/docente`, student access on `/studente`, claim API on `/api/student/claim-code`, and MCP on `https://mcp-teacher.simogatti.it/mcp`.
-    7. *Emergency Abort:* If cutover fails smoke testing, immediately re-apply the previous Cloudflare Access plan to restore full-domain root protection on `class.simogatti.it`, ensuring zero unprotected paths.
+    6. *Post-Cutover Public Smoke Tests:* Validate external teacher login on `/docente`, student access on `/studente`, claim API on `/api/student/claim-code`, and MCP on `https://mcp-teacher.simogatti.it/mcp`.
+    7. *Emergency Abort & Cloudflare Rollback:*
+       - **Do NOT re-apply an old saved plan:** A previously saved plan is potentially stale against mutated Terraform state and must never be applied blindly.
+       - **Fresh Rollback Plan Workflow:**
+         a. Revert declarative manifests in `infra` to the baseline configuration (full-domain root Access protection on `class.simogatti.it`).
+         b. Run `make cf-save-access-plan` against the *current* state to produce a fresh, verified rollback plan.
+         c. Verify the bundle with `make cf-verify-access-plan`.
+         d. Review and apply the verified rollback plan with `make cf-apply-access-plan`.
+       - **Provider Unavailability Fallback:**
+         If the Cloudflare API or provider is temporarily unreachable, the application layer acts as the fail-closed defense line. All teacher and management endpoints require JWT assertions with valid teacher identity mapping. If necessary during an outage, the operator can immediately stop or scale down the K3s workload (`kubectl scale deployment class --replicas=0 -n class`) to eliminate exposure until Cloudflare API connectivity is restored and the verified rollback plan is applied.
