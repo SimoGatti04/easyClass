@@ -22,7 +22,17 @@ test('C7B-R3 public class portal, shared PIN, published materials and attempt re
     authorizeTeacher: async () => false,
     authConfig: { webAud: 'synthetic-public-portal-audience', allowSyntheticAuth: false }
   });
-  const { url } = await app.start(0, '127.0.0.1');
+  let serverBinding;
+  try {
+    serverBinding = await app.start(0, '127.0.0.1');
+  } catch (error) {
+    if (error?.code === 'EPERM') {
+      t.skip('Sandbox policy denied loopback bind; run on host with network permission');
+      return;
+    }
+    throw error;
+  }
+  const { url } = serverBinding;
   const jars = new Map();
 
   t.after(async () => {

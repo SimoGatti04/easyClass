@@ -369,3 +369,42 @@ La matrice completa degli endpoint è in `docs/c7b-r3-public-portal-readiness.md
 La rotazione/revoca PIN impedisce nuovi accessi ma non invalida tentativi avviati né resetta risposte, timer, allegati o consegne. Rientro: PIN valido → stessa attività → stesso nominativo → recupero della bozza server esistente; IndexedDB è indicizzata per classe/studente dichiarato/attività, non per token, e non deve mai essere riassociata automaticamente a un diverso nominativo. Nessun dato mai persistito non è dichiarato recuperabile.
 
 Prima di qualsiasi C7B futuro: aggiornare IaC su branch dedicato per esprimere esplicitamente `/`, `/studente/**` e `/api/student/**` pubblici, `/docente/**` e API gestionali protetti, con default-deny per gestionali non previsti; preservare MCP invariato. Validare staticamente il piano e verificare live solo in finestra autorizzata. Aggiungere provisioning/verifica del PIN secret e un gate di backup/restore specifico per schema e FileStore R3. **Non eseguire Terraform apply, push, publish o deployment sulla base di questo checkpoint.**
+
+
+---
+
+## 11. Aggiornamento C7B-R3-P1 — Chiusura dell'integrazione di rilascio e riconciliazione finale (26 ottobre 2026)
+
+Questo aggiornamento integra e chiude i prerequisiti di integrazione tra il portale pubblico R3 e il rilascio, riconciliando l'infrastruttura Cloudflare già predisposta, lo smoke test pre-apertura, il provisioning del secret PIN e il drill di recovery.
+
+### 11.1 Matrice di Integrazione e Readiness R3-P1
+
+| Area | Stato | Evidenza e Note Operative |
+|---|---|---|
+| **Software R3 (Portale & Core)** | **PASS (locale)** | Master suite: **35/35 test suite passate (100% PASS)**. Verificato portale pubblico, visualizzazione materiali pubblicati, 4-digit class PIN, isolamento tentativi con token bearer, timer, salvataggio risposte e allegati. |
+| **Cloudflare Access IaC** | **PREPARED / NOT APPLIED** | Worktree `~/Workspace/infra-class-routing` (branch `feature/class-student-routing`, commit `b5b4b05808781b8bcc1f13d069e975e8c608b1f4`). Configurazione dichiarata in `config/exposure.yaml` e `terraform/cloudflare/`: app `class` protetta su `/docente` e `/api`; app `class-student-api` con policy Bypass su `/api/student`; `/`, `/studente` e statici fall-through diretti a K3s; DNS, Tunnel e host MCP `mcp-teacher.simogatti.it` invariati. Saved plan precedente scaduto (15 min): rigenerazione obbligatoria in finestra manutenzione tramite `make cf-save-access-plan` e verifica `make cf-verify-access-plan`. Nessuna modifica applicata. |
+| **Secret Provisioning (`CLASS_PIN_SECRET`)** | **PREPARED / NOT VERIFIED IN PROD** | Percorso dichiarativo Infisical `/class/TEACHER_SERVICE_CLASS_PIN_SECRET` -> External Secrets Operator (`k3s/apps/class/external-secret.yaml`) -> K3s Secret `class-secrets` -> Pod env `TEACHER_SERVICE_CLASS_PIN_SECRET`. Requisiti: >= 32 byte UTF-8 ad alta entropia. Comando di verifica non esponente pronto per l'operatore live. Fail-closed a 503 in caso di assenza. Nessuna lettura o modifica effettuata sul vault produttivo. |
+| **Gate Interno Pre-Apertura** | **PASS (locale)** | `bin/teacher-service-smoke-test.js` aggiornato con 10 controlli non distruttivi (0 scritture DB). Verificato con `tests/server/pre-opening-smoke.test.js` (10/10 PASS). Include verifica 410 Gone su endpoint ritirato `/api/student/claim-code`, 401 fail-closed su attività/roster senza PIN, e discriminazione tra 401 autenticazione e fallimenti di trasporto TCP/HTTP. |
+| **Recovery & Rollback R3** | **PASS (drill completato)** | Eseguito drill 8-step (`tests/integration/r3-recovery-rollback-drill.test.js`) su store sintetico: migrazione T1->R3, generazione PIN, avvio tentativo con timer e allegato FileStore, revoca/rotazione PIN, simulazione downgrade a container T1 (store integro, query T1 passano, assenza route PIN chiarita), re-deploy R3 con ripresa del tentativo, timer, risposte e allegato identici. `verifyStorePair` conferma 0 violazioni. Policy rigorosa: Pre-cutover rollback (ripristino snapshot pre-migrazione) vs Post-cutover rollback (divieto assoluto di cancellare PVC; preservazione dati e tentativi). Gate `verify-target <snapshot-dir>` obbligatorio prima del riaggancio volumi. |
+| **Autorizzazione al Deployment** | **STRICTLY NOT AUTHORIZED (NO-GO)** | Nessun cambiamento applicato a K3s, Cloudflare, DNS, Tunnel o PVC produttivi. In attesa di approvazione della finestra di manutenzione da parte del Domain Owner. |
+
+### 11.2 Verdetto Finale C7B-R3-P1
+```text
+================================================================================
+VERDETTO INTEGRATO C7B-R3-P1: CONDITIONAL / PENDING PRODUCTION MAINTENANCE WINDOW
+================================================================================
+Tutti i componenti software, manifest dichiarativi, contratti di rete Cloudflare,
+smoke test pre-apertura e procedure di recovery risultano COMPLETAMENTE RICONCILIATI
+e verificati con successo in ambiente isolato locale (35/35 suite PASS).
+
+L'esecuzione del rilascio richiede l'autorizzazione esplicita del Domain Owner
+per l'apertura della finestra di manutenzione e l'esecuzione ordinata del runbook:
+1. Provisioning di TEACHER_SERVICE_CLASS_PIN_SECRET in Infisical.
+2. Quiescenza traffico e snapshot consistente SQLite + FileStore con verifica hash.
+3. Deploy del nuovo container R3 su K3s e attesa probe sane.
+4. Esecuzione gate interno: node bin/teacher-service-smoke-test.js http://127.0.0.1:8770 (10/10 PASS).
+5. Rigenerazione fresh saved plan Cloudflare (make cf-save-access-plan && make cf-verify-access-plan).
+6. Apply del piano Cloudflare Access (make cf-apply-access-plan).
+7. Collaudo pubblico edge esterno (docente, studente, materiali, PIN, MCP).
+================================================================================
+```

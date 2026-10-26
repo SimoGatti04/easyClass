@@ -998,3 +998,48 @@ In conformità alle direttive C7B-P2, è stata condotta la verifica operativa e 
 6. **Verdetto Complessivo:** **READY FOR AUTHORIZATION**.
    - Prodotto documento conclusivo di release `docs/c7b-release-go-no-go.md` con checklist formale delle 4 autorizzazioni distinte per il Domain Owner.
    - Nessun apply, push, publish o deployment K3s eseguito. Modifiche concorrenti OmniRoute in `infra/main` preservate intatte.
+
+#### Checkpoint C7B-R3-P1 — Release Integration Closure (26 ottobre 2026)
+- **Supervisione & Ruolo:** Release Engineer / Infrastructure QA (Supervisione: ChatGPT).
+- **Stato:** COMPLETATO localmente su `teacher-service-design` (branch `codex/teacher-service-c6`). Nessuna operazione remota, GHCR publish, K3s deploy, Cloudflare apply o modifica a PVC di produzione. C7B rimane **STRICTLY NOT AUTHORIZED**.
+
+##### Attività Eseguite e Verificate:
+1. **Riconciliazione Cloudflare IaC (§1):**
+   - Verificato il worktree dedicato `~/Workspace/infra-class-routing` (branch `feature/class-student-routing`, commit `b5b4b05808781b8bcc1f13d069e975e8c608b1f4`).
+   - Le dichiarazioni in `config/exposure.yaml` e `terraform/cloudflare/` coprono esattamente le esigenze R3:
+     - App `class`: protetta su `/docente` e `/api` con policy `cloudflare_access`.
+     - App `class-student-api`: policy Bypass su `/api/student` (copre directory classi, materiali, PIN access e tentativi).
+     - Percorsi `/`, `/studente`, `/client/*` inoltrati senza autenticazione Access a K3s.
+     - DNS, Tunnel e `mcp-teacher.simogatti.it` invariati.
+   - Stato riconciliato: **PREPARED / NOT APPLIED**. Il saved plan precedente è scaduto e dovrà essere rigenerato e verificato nel preflight della finestra di manutenzione (`make cf-save-access-plan` && `make cf-verify-access-plan`).
+
+2. **Aggiornamento Smoke Test Pre-Apertura (`bin/teacher-service-smoke-test.js`, §2):**
+   - Aggiornata la CLI ai 10 contratti R3:
+     1. `/health` -> 200, status: ok, service: teacher-service.
+     2. SPA root (`/`) -> 200 HTML shell.
+     3. Student SPA route (`/studente`) -> 200 HTML shell.
+     4. Public class directory (`/api/student/classes`) -> 200 array classi.
+     5. Anonymous read of published materials (`/api/student/classes/:id/materials`) -> 200 (solo student/support, no teacher solutions).
+     6. Anonymous rejection of activities without class PIN (`/api/student/classes/:id/activities`) -> 401 AuthorizationError.
+     7. Anonymous rejection of roster without class PIN (`/api/student/classes/:id/activities/:aid/students`) -> 401 AuthorizationError.
+     8. Retired individual student claim endpoint (`/api/student/claim-code`) -> 410 Gone, non-distruttivo, 0 mutazioni rate-limit.
+     9. Fail-closed teacher authorization (`/api/classes`) -> 401/403.
+     10. MCP streamable transport (`/mcp`) -> 401 fail-closed protocol response (JSON-RPC 2.0).
+   - Testata con `tests/server/pre-opening-smoke.test.js` (10/10 PASS).
+
+3. **Provisioning del Secret PIN (`TEACHER_SERVICE_CLASS_PIN_SECRET`, §3):**
+   - Mappatura definita: Infisical `/class/TEACHER_SERVICE_CLASS_PIN_SECRET` -> ESO (`infra/k3s/apps/class/external-secret.yaml`) -> K3s Secret `class-secrets` -> Pod env.
+   - Requisiti: >= 32 byte UTF-8 ad alta entropia. Mai memorizzato in Git, ConfigMap o log.
+   - Comando di verifica non esponente validato e documentato.
+   - Stato: **PREPARED / NOT VERIFIED IN PROD**.
+
+4. **Recovery & Rollback Drill R3 (§4):**
+   - Sviluppata suite `tests/integration/r3-recovery-rollback-drill.test.js` (inclusa in `tests/run-all.js`).
+   - Verificato ciclo completo in 8 fasi: migrazione schema T1->R3, PIN di classe, avvio tentativo con timer e allegato FileStore, rotazione/revoca PIN, downgrade container a T1 (query T1 ok, assenza rotte PIN chiarita, nessun dato cancellato), re-deploy R3 con ripresa del tentativo (stesso ID, timer, 3 risposte e allegato su disco intatti). `verifyStorePair` conferma 0 violazioni.
+   - Distinte rigorosamente le policy di Pre-cutover rollback (ripristino snapshot pre-migrazione) e Post-cutover rollback (divieto assoluto di cancellare PVC; preservazione dati e tentativi).
+
+5. **Runbook Operativo (`docs/operations.md`, §5):**
+   - Aggiornato runbook per eliminare riferimenti obsoleti all'endpoint ritirato `/api/student/claim-code` e documentare il portale R3, il class PIN rate limiter, la procedura non esponente del secret, i 10 controlli pre-apertura e la policy di ripristino dati.
+
+6. **Esito Suite Globale:**
+   - `node tests/run-all.js`: **35 suite eseguite, 35 passed, 0 failed (100% PASS)**.

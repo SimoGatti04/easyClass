@@ -179,7 +179,7 @@ PVCs remain node-local and their loss/corruption risk remains open.
     1. At the Cloudflare edge: Protected by Cloudflare Access rules covering `/api/*`.
     2. At the application layer: Protected **also** by Node.js server-side authorization (`authenticateRequest()` validating the signed `Cf-Access-Jwt-Assertion` against `TEACHER_SERVICE_WEB_CF_ACCESS_AUD` and matching the authenticated identity against explicitly authorized teachers in SQLite).
     Unauthenticated or unauthorized requests to `/api/*` are rejected fail-closed with HTTP 401 Unauthorized or 403 Forbidden by the Node.js process, regardless of edge configuration.
-  - **Student Surface (`/studente`, `/api/student/*`):** The student UI (`/studente`) is accessible publicly. Student APIs (`/api/student/*`) are bypass routes at Cloudflare Access but enforce revocable, expiring application session tokens generated upon claiming a valid access code, alongside server-side submission checks and classroom-compatible rate limiting. Student APIs do not accept a client-supplied `studentId` as identity proof.
+  - **Student Surface (`/studente`, `/api/student/*`):** The student UI (`/studente`), SPA shell (`/`), and public class portal directory (`/api/student/classes`, `/api/student/classes/:id/materials`) are accessible publicly and anonymously without Cloudflare Access or credentials. Only explicitly published student and support materials are returned (teacher solutions are strictly stripped server-side). Activity listing (`/api/student/classes/:id/activities`), student roster selection (`/api/student/classes/:id/activities/:aid/students`), and attempt initiation require a valid shared 4-digit class PIN (`POST /api/student/classes/:id/access`), which issues an HMAC-SHA256 signed class activity session token. In-flight attempts enforce individual bearer session tokens (`POST /api/student/classes/:id/activities/:aid/start` returning an attempt bearer token), preventing spoofing and ensuring full isolation. Individual student claim codes (`POST /api/student/claim-code`) are **DEPRECATED and RETIRED**, returning HTTP 410 Gone (zero rate limit mutations).
   - **MCP Service (`/mcp`):** Exposed on `https://mcp-teacher.simogatti.it/mcp` through a dedicated Cloudflare Access OAuth application, requiring teacher authorization for teacher-only tools and enforcing fail-closed token validation.
 - Do not add role headers/query parameters or share a non-teacher bearer token.
   Edge routing is a separate control: local hash routing does not protect
@@ -208,9 +208,16 @@ project Node/pnpm versions, `.env.local` (owner-only and ignored), and the
 commands in `README.md`. Local SQLite and FileStore are separate development
 state; never copy production data into local tests.
 
-## Rate Limiting & Proxy Trust Configuration (C7A-R2)
+## Rate Limiting & Proxy Trust Configuration (C7A-R2 / C7B-R3)
 
-- Student claim code endpoint (`POST /api/student/claim-code`) enforces multi-tiered rate limits persisted in SQLite (`student_claim_rate_limits`):
+- **Class PIN Rate Limiting (`POST /api/student/classes/:id/access`):**
+  Protected by in-memory multi-tiered rate limiting (`ClassPinRateLimiter`) designed for classroom shared PIN security:
+  - 5 failed PIN attempts per class (`IP + classId`) within a 15-minute sliding window (locks that specific class from that IP upon brute-force attempts).
+  - 10 failed PIN attempts globally per IP across all classes within 15 minutes (prevents distributed class scanning).
+  - 5 failed PIN attempts per client device within 15 minutes.
+  - This protects the 4-digit PIN space (10,000 combinations) while completely isolating classrooms under the same NAT.
+- **Retired Student Claim Endpoint (`POST /api/student/claim-code`):**
+  Returns HTTP 410 Gone immediately. It does NOT increment rate limit counters or perform SQLite writes. Legacy SQLite table (`student_claim_rate_limits`) is preserved for schema compatibility:
   - `TEACHER_SERVICE_CLAIM_RATE_LIMIT_DEVICE_MAX`: 5 consecutive failures per device. Device identification supports both the client header `X-Student-Device-Id` / body `deviceId` and automatic server-issued HttpOnly cookie `ts_device_id`.
   - *Classroom Fallback Protection:* When a browser does not send a custom device header, the server issues a unique `ts_device_id` cookie. We strictly avoid grouping anonymous requests into a naive, tiny shared device bucket (such as `anon:IP` with a 5-failure threshold), which would involuntarily lock out 30+ students in an entire classroom after 5 collective typos. Each browser receives its own isolated device allowance.
   - `TEACHER_SERVICE_CLAIM_RATE_LIMIT_CODE_MAX`: 5 failures per IP + code (prevents targeted guessing of a specific access code, even if device IDs or cookies are rotated or omitted).
@@ -290,17 +297,21 @@ state; never copy production data into local tests.
        - Apply K3s deployment manifest with the new container image tag.
        - Verify Pod enters `Running` and Kubernetes readiness probes pass.
        - **Execute Internal Read-Only Smoke Test Gate:** `node bin/teacher-service-smoke-test.js http://127.0.0.1:8770` (verified by `tests/server/pre-opening-smoke.test.js`).
-         Validates:
-         - `/health` -> 200 OK, service metadata.
-         - SPA root `/` and `/studente` -> 200 OK, HTML shell.
-         - Database read path `/api/student/classes` -> 200 OK, JSON classes list (0 writes).
-         - Fail-closed teacher authorization `/api/classes` -> 401/403 Forbidden.
-         - Student claim router `/api/student/claim-code` -> 400 Bad Request / ValidationError on empty body (0 writes).
-         - MCP transport `/mcp` -> active transport response.
+         Validates 10 R3 contracts non-destructively (0 database writes):
+         1. Health endpoint (`/health`) -> 200 OK, status: ok, service: teacher-service.
+         2. Web SPA root (`/`) -> 200 OK, HTML shell.
+         3. Student SPA route (`/studente`) -> 200 OK, HTML shell.
+         4. Public class directory (`/api/student/classes`) -> 200 OK, JSON array.
+         5. Anonymous read of published materials (`/api/student/classes/:id/materials`) -> 200 OK (only student/support materials, no teacher solutions).
+         6. Anonymous rejection of activities without class PIN (`/api/student/classes/:id/activities`) -> 401 AuthorizationError.
+         7. Anonymous rejection of roster without class PIN (`/api/student/classes/:id/activities/:aid/students`) -> 401 AuthorizationError.
+         8. Retired individual student claim endpoint returns 410 Gone (`/api/student/claim-code`) -> 410 Gone, non-destructive, 0 rate-limit mutations.
+         9. Fail-closed teacher authorization (`/api/classes`) -> 401/403 Forbidden.
+         10. MCP streamable HTTP transport (`/mcp`) -> 401 fail-closed protocol response (JSON-RPC 2.0).
        - *Strict Invariant:* If any internal smoke check fails, do NOT proceed with edge changes.
     4. *Edge Apply:* Apply Cloudflare Access plan only after step 3 passes completely.
     5. *AUD Reconciliation:* If the Access application was replaced, read the new AUD from the Terraform output/state, update `TEACHER_SERVICE_WEB_CF_ACCESS_AUD` in `infra/k3s/apps/class/configmap.yaml`, apply the ConfigMap, and restart the Pod.
-    6. *Post-Cutover Public Smoke Tests:* Validate external teacher login on `/docente`, student access on `/studente`, claim API on `/api/student/claim-code`, and MCP on `https://mcp-teacher.simogatti.it/mcp`.
+    6. *Post-Cutover Public Smoke Tests:* Validate external teacher login on `/docente`, public portal on `/`, student access on `/studente`, public class directory on `/api/student/classes`, public materials on `/api/student/classes/:id/materials`, activities 401 without PIN, legacy claim endpoint returning 410 Gone, and MCP on `https://mcp-teacher.simogatti.it/mcp`.
     7. *Emergency Abort & Cloudflare Rollback:*
        - **Do NOT re-apply an old saved plan:** A previously saved plan is potentially stale against mutated Terraform state and must never be applied blindly.
        - **Fresh Rollback Plan Workflow:**
@@ -311,10 +322,46 @@ state; never copy production data into local tests.
        - **Provider Unavailability Fallback:**
          If the Cloudflare API or provider is temporarily unreachable, the application layer acts as the fail-closed defense line. All teacher and management endpoints require JWT assertions with valid teacher identity mapping. If necessary during an outage, the operator can immediately stop or scale down the K3s workload (`kubectl scale deployment class --replicas=0 -n class`) to eliminate exposure until Cloudflare API connectivity is restored and the verified rollback plan is applied.
 
-## C7B-R3 — pubblico classi/materiali e PIN di classe (NON DEPLOYED)
+## C7B-R3 / C7B-R3-P1 — Pubblico Classi/Materiali, PIN di Classe e Release Integration (NON DEPLOYED)
 
-**CURRENT nel codice locale:** directory classi e materiali esplicitamente pubblicati consultabili senza PIN; attività elencate solo dopo PIN condiviso di classe a quattro cifre; sessione di classe separata dai token dei tentativi, selezione nominativo dichiarativa prima dell'avvio. PIN individuali/codici di sei caratteri e QR sono **DEPRECATED**. **CURRENT in produzione:** resta il runtime T1 osservato in precedenza; nessuna modifica edge/K3s è stata eseguita da C7B-R3. **PLANNED:** rollout C7B solo dopo IaC path-scoped approvata, verifica del secret PIN senza esporlo e prova isolata di recovery/rollback specifica R3.
+**CURRENT nel codice locale:**
+- Directory classi e materiali esplicitamente pubblicati consultabili senza autenticazione o PIN (`/api/student/classes`, `/api/student/classes/:id/materials`).
+- Attività ed elenchi studenti accessibili solo dopo riscatto del PIN condiviso di classe a 4 cifre (`/api/student/classes/:id/access`).
+- Sessione di classe con token HMAC separata dal token del tentativo studente; nominativo selezionato prima dell'avvio.
+- Codici individuali a 6 caratteri e QR sono **DEPRECATED e RETIRATI** con HTTP 410 Gone (`/api/student/claim-code`).
+- Suite master: 35/35 test suite passate (100% PASS).
 
-Prima di qualsiasi rollout autorizzato, il gate operativo deve verificare la presenza, senza mostrarne il valore, del segreto stabile `TEACHER_SERVICE_CLASS_PIN_SECRET` (almeno 32 byte) nel percorso già esistente Infisical → External Secrets Operator → Kubernetes Secret. Se manca, le operazioni PIN falliscono chiuse con 503; non avviare attività per la classe. Non copiare il segreto in ConfigMap, Git, ticket o log.
+**CURRENT in produzione:**
+- Runtime T1 attivo e stabile; nessuna modifica K3s, PVC o Cloudflare eseguita.
+- C7B deployment rimane **NON AUTORIZZATO**.
 
-Le route pubbliche, protette e i requisiti di recupero sono specificati in `docs/c7b-r3-public-portal-readiness.md`. Il runbook C7B-P2 deve includere la limitazione di rollback: un'immagine T1 non può riaprire il flusso PIN per tentativi C7B-R3, sebbene il rollback applicativo non debba cancellare i dati SQLite/FileStore. Nessun backup/snapshot produttivo, modifica Cloudflare o rollout è stato eseguito in R3; il preflight live resta un prerequisito separato.
+**PLANNED — Release Integration Prerequisiti & Procedure:**
+
+1. **Riconciliazione Cloudflare IaC (PREPARED / NOT APPLIED):**
+   - Worktree `~/Workspace/infra-class-routing` (branch `feature/class-student-routing`, commit `b5b4b05808781b8bcc1f13d069e975e8c608b1f4`).
+   - App `class`: protetta su `/docente` e `/api` con policy `cloudflare_access`.
+   - App `class-student-api`: Bypass policy su `/api/student` (copre directory, materiali, PIN access e tentativi).
+   - Percorsi pubblici (`/`, `/studente`, `/client/*`) inoltrati direttamente a K3s.
+   - DNS, Tunnel e `mcp-teacher.simogatti.it` invariati.
+   - Saved plan precedente scaduto; rigenerazione obbligatoria in finestra di manutenzione con `make cf-save-access-plan` e verifica `make cf-verify-access-plan`.
+
+2. **Provisioning del Secret PIN (`TEACHER_SERVICE_CLASS_PIN_SECRET`):**
+   - Percorso Infisical: `/class/TEACHER_SERVICE_CLASS_PIN_SECRET` (Progetto Homelab, Environment prod).
+   - Sync ESO: `infra/k3s/apps/class/external-secret.yaml` -> Secret K3s `class-secrets` -> Pod env `TEACHER_SERVICE_CLASS_PIN_SECRET`.
+   - Requisiti: almeno 32 byte UTF-8 ad alta entropia. MAI salvare in Git, ConfigMap o log.
+   - Comando di verifica non esponente:
+     ```bash
+     kubectl -n class exec deploy/class -- node -e "const s = process.env.TEACHER_SERVICE_CLASS_PIN_SECRET || ; console.log(JSON.stringify({ present: s.length > 0, byteLength: Buffer.byteLength(s, utf8), validLength: Buffer.byteLength(s, utf8) >= 32, sha256Prefix: require(crypto).createHash(sha256).update(s).digest(hex).slice(0, 8) }))"
+     ```
+   - Comportamento fail-closed: se assente o non valido, gli endpoint PIN restituiscono HTTP 503 (`CLASS_PIN_SECRET_UNAVAILABLE`).
+
+3. **Data Recovery & Rollback Policy (Pre-Cutover vs Post-Cutover):**
+   - **Pre-Cutover Rollback (prima dell'apertura del traffico studente):**
+     In caso di fallimento del container o del gate pre-apertura, è sicuro eseguire il rollback dell'immagine K3s a T1 e ripristinare lo snapshot pre-migrazione su nuovi volumi (preservando i PVC originali), poiché non esistono nuove scritture di produzione.
+   - **Post-Cutover Rollback (dopo l'avvio di tentativi o consegne studenti):**
+     È **STRETTAMENTE VIETATO** eseguire un ripristino distruttivo dello snapshot pre-migrazione: tutte le consegne, bozze, allegati e voti creati durante la sessione andrebbero irrimediabilmente persi!
+     Il drill isolato (`tests/integration/r3-recovery-rollback-drill.test.js`) ha provato che:
+     a. Il downgrade del container all'immagine precedente T1 preserva integralmente lo store SQLite e il FileStore; le query T1 leggono classi e lezioni senza errori SQL.
+     b. L'immagine T1 non supporta le route del PIN studente; pertanto l'accesso studente resta disabilitato durante il downgrade ma nessun dato viene corrotto o cancellato.
+     c. Al ripristino del container R3, i tentativi in corso riprendono senza interruzioni con timer, risposte salvate, allegati su disco e revisioni intatte.
+   - **Integrità Store Non-Atomica:** SQLite e FileStore sono gestiti come coppie indipendenti. È obbligatorio eseguire `verifyStorePair` / `verify-target <snapshot-dir>` prima di collegare qualsiasi volume ripristinato al workload.
