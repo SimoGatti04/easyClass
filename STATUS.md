@@ -1043,3 +1043,28 @@ In conformità alle direttive C7B-P2, è stata condotta la verifica operativa e 
 
 6. **Esito Suite Globale:**
    - `node tests/run-all.js`: **35 suite eseguite, 35 passed, 0 failed (100% PASS)**.
+
+#### Checkpoint C7B — Final Infrastructure Preparation (26 ottobre 2026)
+##### Attività Eseguite e Verificate:
+1. **Manifest K3s in Worktree Isolato (`infra-class-release`):**
+   - Creato worktree isolato `~/Workspace/infra-class-release` su branch `feature/class-r3-release` basato su `feature/class-student-routing` (commit `3f8db72`). Nessun tocco a `infra/main`, modifiche concorrenti OmniRoute integralmente preservate.
+   - **ExternalSecret (`k3s/apps/class/external-secret.yaml`):** mapping dichiarativo di `TEACHER_SERVICE_CLASS_PIN_SECRET` puntando a `/class/TEACHER_SERVICE_CLASS_PIN_SECRET` su `infisical-cluster-store`. Nessun segreto letto, creato o modificato nel vault di produzione.
+   - **ConfigMap (`k3s/apps/class/configmap.yaml`):** configurate feature flag conservative C6 (`TEACHER_SERVICE_ENABLE_INTEGRITY_ANALYSIS: "false"`, `TEACHER_SERVICE_ALLOW_EXTERNAL_STUDENT_GRADING: "false"`).
+   - **Deployment (`k3s/apps/class/app.yaml`):** dichiarata immagine candidata `ghcr.io/simogatti04/class:20261026-77dde49` (da convertire in digest immutabile solo post-pubblicazione autorizzata). Mount e volumi PVC (`class-teacher-db` e `class-teacher-files`) verificati al 100% compatibili.
+   - **Validazione Kustomize:** `kubectl kustomize k3s/apps/class` eseguito con successo, output privo di errori di schema o riferimenti non risolti.
+
+2. **Downgrade Drill con Vero Container Docker T1 (`tests/integration/t1-real-container-r3-drill.test.js`):**
+   - Creato store sintetico R3 isolato contenente: classe, materia, lezione, dispensa pubblicata, verifica C7B attiva, PIN di classe, sessione di classe, tentativo studente avviato con timer a 45 min, bozze di risposta salvate e file allegato in FileStore (`config-r3.conf`).
+   - Avviato il container reale con l'immagine di produzione T1 (`ghcr.io/simogatti04/class:20261020-f962706`, Linux amd64 in OrbStack) contro i dati migrati.
+   - Verificato che T1 si avvia con successo, supera il check di salute (`GET /health` -> 200 OK) e serve la shell SPA root. Le route del portale studente non supportate rispondono fail-closed (`401/403/404`) senza crash né mutazioni distruttive dei dati.
+   - Arrestato il container T1 e riavviato il runtime R3: il tentativo studente è stato ripreso con successo (`resumed: true`, stesso ID submission, stesso timer residuo, risposte e allegato FileStore verificati byte-for-byte).
+   - `verifyStorePair` ha confermato consistenza `ok` e 0 violazioni foreign-key.
+   - Gestione trasparente dell'ambiente: se Docker non è accessibile, il test salta conservativamente distinguendo chiaramente SKIPPED/NOT RUN da PASS (nessun fallback su sole query SQLite).
+
+3. **Integrazione Runbook e Matrice Go/No-Go:**
+   - Aggiornato `docs/operations.md` e `docs/c7b-release-go-no-go.md` (Addendum Sezione 12).
+   - Confermato lo stato del piano Cloudflare come **PREPARED / NOT APPLIED** (saved plan scaduto da rigenerare nel preflight della finestra di manutenzione autorizzata).
+   - Confermato lo stato del provisioning PIN come **PREPARED / NOT VERIFIED IN PROD** (il valore effettivo verrà inserito in Infisical solo durante la finestra di rilascio).
+
+4. **Esito Suite Globale:**
+   - `node tests/run-all.js`: **36 suite eseguite, 36 passed, 0 failed (100% PASS)**.

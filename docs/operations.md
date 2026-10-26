@@ -346,8 +346,9 @@ state; never copy production data into local tests.
    - Saved plan precedente scaduto; rigenerazione obbligatoria in finestra di manutenzione con `make cf-save-access-plan` e verifica `make cf-verify-access-plan`.
 
 2. **Provisioning del Secret PIN (`TEACHER_SERVICE_CLASS_PIN_SECRET`):**
+   - **Stato:** PREPARED / NOT VERIFIED IN PROD (nessuna lettura, creazione o modifica di segreti nel vault di produzione è stata effettuata durante la fase preparatoria).
    - Percorso Infisical: `/class/TEACHER_SERVICE_CLASS_PIN_SECRET` (Progetto Homelab, Environment prod).
-   - Sync ESO: `infra/k3s/apps/class/external-secret.yaml` -> Secret K3s `class-secrets` -> Pod env `TEACHER_SERVICE_CLASS_PIN_SECRET`.
+   - Manifest K3s preparato in worktree isolato (`feature/class-r3-release`): `k3s/apps/class/external-secret.yaml` mappa la chiave remota su `secretKey: TEACHER_SERVICE_CLASS_PIN_SECRET` per il Secret `class-secrets`.
    - Requisiti: almeno 32 byte UTF-8 ad alta entropia. MAI salvare in Git, ConfigMap o log.
    - Comando di verifica non esponente:
      ```bash
@@ -360,8 +361,9 @@ state; never copy production data into local tests.
      In caso di fallimento del container o del gate pre-apertura, è sicuro eseguire il rollback dell'immagine K3s a T1 e ripristinare lo snapshot pre-migrazione su nuovi volumi (preservando i PVC originali), poiché non esistono nuove scritture di produzione.
    - **Post-Cutover Rollback (dopo l'avvio di tentativi o consegne studenti):**
      È **STRETTAMENTE VIETATO** eseguire un ripristino distruttivo dello snapshot pre-migrazione: tutte le consegne, bozze, allegati e voti creati durante la sessione andrebbero irrimediabilmente persi!
-     Il drill isolato (`tests/integration/r3-recovery-rollback-drill.test.js`) ha provato che:
-     a. Il downgrade del container all'immagine precedente T1 preserva integralmente lo store SQLite e il FileStore; le query T1 leggono classi e lezioni senza errori SQL.
-     b. L'immagine T1 non supporta le route del PIN studente; pertanto l'accesso studente resta disabilitato durante il downgrade ma nessun dato viene corrotto o cancellato.
-     c. Al ripristino del container R3, i tentativi in corso riprendono senza interruzioni con timer, risposte salvate, allegati su disco e revisioni intatte.
+     Il drill isolato con query sintetiche (`tests/integration/r3-recovery-rollback-drill.test.js`) e il drill con **vero container Docker T1** (`tests/integration/t1-real-container-r3-drill.test.js` eseguito su immagine di produzione `ghcr.io/simogatti04/class:20261020-f962706`) hanno provato che:
+     a. Il downgrade reale del container all'immagine precedente T1 preserva integralmente lo store SQLite e il FileStore; il container si avvia correttamente, supera le probe di salute (`/health` -> 200) e serve la shell Web.
+     b. L'immagine T1 non supporta le route del PIN studente R3; le chiamate falliscono chiuse (`401/403/404`) senza causare crash del processo o modifiche distruttive allo schema e ai dati.
+     c. Al ripristino del container R3, i tentativi in corso riprendono senza interruzioni con status `resumed: true`, timer invariato, tutte le risposte parziali preservate e allegati su FileStore verificati byte-for-byte.
+     d. La consistenza dello store pair post-drill è attestata da `verifyStorePair` con 0 violazioni di integrità o foreign key.
    - **Integrità Store Non-Atomica:** SQLite e FileStore sono gestiti come coppie indipendenti. È obbligatorio eseguire `verifyStorePair` / `verify-target <snapshot-dir>` prima di collegare qualsiasi volume ripristinato al workload.

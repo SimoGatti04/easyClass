@@ -408,3 +408,43 @@ per l'apertura della finestra di manutenzione e l'esecuzione ordinata del runboo
 7. Collaudo pubblico edge esterno (docente, studente, materiali, PIN, MCP).
 ================================================================================
 ```
+
+
+---
+
+## 12. Addendum C7B-P2 / Final Infrastructure Preparation (26 ottobre 2026)
+
+In adempimento delle disposizioni di final infrastructure preparation, sono state chiuse le ultime due pendenze tecniche:
+
+### 12.1 Manifest Dichiarativi K3s in Worktree Isolato (`infra-class-release`)
+- Creato worktree isolato `~/Workspace/infra-class-release` su branch `feature/class-r3-release` (basato su `feature/class-student-routing`).
+- **ExternalSecret (`k3s/apps/class/external-secret.yaml`):**
+  Aggiunto il mapping dichiarativo per `TEACHER_SERVICE_CLASS_PIN_SECRET` puntando a `/class/TEACHER_SERVICE_CLASS_PIN_SECRET` su `infisical-cluster-store`.
+- **ConfigMap (`k3s/apps/class/configmap.yaml`):**
+  Aggiunte le feature flag server-side conservative per C6:
+  `TEACHER_SERVICE_ENABLE_INTEGRITY_ANALYSIS: "false"`
+  `TEACHER_SERVICE_ALLOW_EXTERNAL_STUDENT_GRADING: "false"`
+- **Deployment (`k3s/apps/class/app.yaml`):**
+  Dichiarata l'immagine candidata `ghcr.io/simogatti04/class:20261026-77dde49` (da convertire in digest immutabile solo post-pubblicazione autorizzata). Mount e volumi PVC (`class-teacher-db` e `class-teacher-files`) verificati al 100% compatibili.
+- **Validazione Manifest:** `kubectl kustomize` eseguito con successo, output privo di errori di schema o riferimenti non risolti.
+- Commit isolato registrato: `3f8db72` in `feature/class-r3-release`. Nessun push, nessun tocco a `infra/main`.
+
+### 12.2 Verifica con Reale Immagine Container Docker T1
+- Eseguito drill end-to-end con reale container Docker (`ghcr.io/simogatti04/class:20261020-f962706`, Linux amd64 in OrbStack) contro uno store sintetico R3:
+  - Lo store R3 migrato conteneva: classe, materia, lezione, dispensa pubblicata, verifica C7B attiva, PIN di classe, sessione di classe, tentativo Ada Lovelace avviato con timer 45 min, bozze di risposta salvate e file allegato in FileStore (`config-r3.conf`).
+  - Il container T1 reale si è avviato con successo, superando il gate di salute (`GET /health` -> 200 OK) e servendo la SPA shell root.
+  - Le chiamate alle nuove route studente su container T1 hanno risposto fail-closed (`401/403/404`) senza crash o alterazioni dei dati.
+  - Al riavvio con il runtime R3, il tentativo dello studente è stato ripreso determinatamente (`resumed: true`, stesso ID submission, stesso timer residuo, 2 risposte recuperate integre, allegato su FileStore verificato byte-for-byte).
+  - `verifyStorePair` ha confermato consistenza `ok` e 0 violazioni foreign-key.
+- Suite automatizzata registrata: `tests/integration/t1-real-container-r3-drill.test.js` (**PASS** con Docker).
+
+### 12.3 Matrice di Chiusura Finale
+
+| Componente | Stato Operativo | Note di Sicurezza & Verifiche |
+|---|---|---|
+| **Software R3** | **PASS** | 36/36 test suite superate (100% PASS). |
+| **Cloudflare Access IaC** | **PREPARED / NOT APPLIED** | Worktree `infra-class-routing` (commit `b5b4b058`) intatto e pronto. Saved plan scaduto da rigenerare in finestra con `cf-save-access-plan`. |
+| **K3s Release Manifests** | **PREPARED (locale)** | Worktree `infra-class-release` (commit `3f8db72`) con mapping ESO e flag C6. `kustomize` validato. |
+| **PIN Secret Provisioning** | **PREPARED / NOT VERIFIED IN PROD** | Mapping pronto; secret non creato nel vault produttivo per rispetto dei divieti. Da inserire solo durante la finestra di rilascio. |
+| **T1 Container Downgrade Drill** | **PASS (reale)** | Eseguito contro vera immagine `ghcr.io/simogatti04/class:20261020-f962706` in Docker/OrbStack. Zero data loss. |
+| **Deployment Authorization** | **STRICTLY NOT AUTHORIZED (NO)** | Nessun cambio in produzione. |

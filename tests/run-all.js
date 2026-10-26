@@ -39,7 +39,8 @@ const testFiles = [
   'tests/integration/store-snapshot.test.js',
   'tests/integration/migration-rollback-drill.test.js',
   'tests/integration/snapshot-partial-failures.test.js',
-  'tests/integration/r3-recovery-rollback-drill.test.js'
+  'tests/integration/r3-recovery-rollback-drill.test.js',
+  'tests/integration/t1-real-container-r3-drill.test.js'
 ];
 
 console.log('====================================================');
