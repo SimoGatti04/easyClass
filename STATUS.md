@@ -1,10 +1,46 @@
 # Teacher Service — Stato operativo
 
-**Aggiornato:** 2026-10-25 (Europe/Rome)
+**Aggiornato:** 2026-10-28 (Europe/Rome)
 **Fase attiva:** C7B-R3 implementato e verificato localmente; C7B produzione resta BLOCKED / NOT AUTHORIZED (Supervisione: ChatGPT)
 **Perimetro:** Workspace locale `teacher-service-design`.
 **Fonte normativa:** `docs/` e decisioni del Domain Owner (13 ottobre 2026); **evidenze storiche:** `validation/results/`.
 
+
+## C7B-G2-R1 — Chiusura accettazione funzionale e correzione smoke test CSRF (2026-10-28)
+
+**CURRENT (codice locale):**
+- **Flusso studente completo isolato (Task A):** suite E2E isolata `tests/integration/student-full-workflow-isolated.test.js` verificata al 100% su istanza HTTP reale (loopback), SQLite e FileStore sintetici effettivi. I 14 punti di accettazione funzionale sono PASS:
+  1. Accesso pubblico alla directory classi (`GET /api/student/classes`, `GET /api/student/classes/:id`).
+  2. Lettura materiali pubblicati (`GET /api/student/classes/:id/materials`).
+  3. Esclusione materiali non pubblicati, materiali docente e soluzioni riservate.
+  4. Rifiuto PIN errato (`POST /api/student/classes/:id/access` -> HTTP 403; accesso attività senza PIN -> HTTP 401).
+  5. Riscatto positivo PIN valido 4 cifre -> HTTP 200 con cookie di sessione classe `class_access`.
+  6. Visualizzazione catalogo attività e nominativi studenti disponibili.
+  7. Avvio del tentativo studente (`POST .../activities/:id/start`) con selezione postazione e vicini -> HTTP 201, rilascio token tentativo (`X-Student-Token`) e avvio timer autoritativo server-side (`expires_at`).
+  8. Salvataggio parziale progressivo (Autosave monotono su revisione) -> HTTP 200.
+  9. Ripresa del tentativo dopo perdita di sessione/ricaricamento tramite cookie classe -> HTTP 200 (`status: "resumed"`), recupero stato e risposte pregresse.
+  10. Conservazione rigorosa del timer originario (`expires_at` invariato alla ripresa).
+  11. Caricamento e download allegato multipart -> HTTP 201, archiviazione FileStore con verifica hash SHA-256 e metadati su SQLite.
+  12. Consegna definitiva (`POST .../activities/:id/submit`) con immutabilità assoluta (autosave o ulteriori consegne rifiutate con HTTP 409 Conflict).
+  13. Rigoroso isolamento fail-closed tra studenti: token distinti, risposte separate, divieto di accesso ad allegati altrui (HTTP 403/404).
+  14. Coerenza del database e dello storage: `PRAGMA integrity_check` = `ok`, transazioni e file su disco verificati.
+- **Correzione mirata smoke test CSRF (Task B):**
+  - Diagnosi: `fetch` nativo di Node.js invia automaticamente l'header `sec-fetch-mode: cors`. Il middleware `validateCsrf` in `src/server/auth.js` identifica la richiesta come originata da browser e applica la regola fail-closed richiedendo un header `Origin` o `Referer` valido. In `bin/teacher-service-smoke-test.js`, il check 8 (`POST /api/student/claim-code`) inviava solo `Content-Type: application/json` senza Referer, venendo legittimamente respinto con HTTP 403 Forbidden.
+  - Risoluzione: corretto esclusivamente il client di test (`bin/teacher-service-smoke-test.js`) fornendo `Referer: ${targetUrl}/studente` per simulare fedelmente la chiamata originata dal portale web studenti. Nessuna deroga o allentamento di sicurezza applicato al server. La sonda ottiene il previsto HTTP 410 Gone.
+  - Regressione mirata: aggiunto test 10 a `tests/server/pre-opening-smoke.test.js` che certifica il rifiuto 403 senza Referer e l'accettazione 410 con Referer valido.
+- **Suite di test:** `pnpm test` (37 suite su 37 PASS); test browser Playwright (`test:browser:c4`, `:c5`, `:c6`, `:c7a`) tutti PASS; build Vite PASS.
+
+**CURRENT (produzione https://class.simogatti.it):**
+- Release R3 operativa su cluster K3s (`12e5a9490fb3c639ed3534cd0a51fda2d9923e32`).
+- Verifiche pubbliche live PASS: probe `/health` (HTTP 200), portale `/` e `/studente` (HTTP 200), directory classi `/api/student/classes` (HTTP 200, classi `1I`, `2I`, `3I`, `4I`), endpoint dismesso `/api/student/claim-code` con Referer (HTTP 410 Gone).
+- Protezioni edge live PASS: `/api/classes` intercettato da Cloudflare Access (HTTP 302/200 login screen), `/mcp` non autenticato (HTTP 401), attività studenti senza PIN (HTTP 401).
+- Verifiche positive docente e MCP autenticato: **BLOCKED / NON ESEGUIBILI AUTONOMAMENTE** dall'agente per non violare l'invariante di sicurezza sulle credenziali del Domain Owner. Predisposta checklist manuale docente/MCP.
+
+**DEPRECATED:**
+- Endpoint e codici individuali a sei caratteri (`/api/student/claim-code` risponde con 410 Gone); flusso QR. I dati storici rimangono conservati nel database senza cancellazioni distruttive.
+
+**PLANNED:**
+- Eventuale collaudo sintetico minimale end-to-end in produzione con classe dedicata fittizia, previo consenso e autorizzazione esplicita del Domain Owner. Nessuna scrittura non autorizzata su dati produttivi.
 
 ## C7B-R3 — Portale pubblico classi, materiali e attività (2026-10-25)
 
