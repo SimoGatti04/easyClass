@@ -227,4 +227,59 @@ test('Pre-opening internal read-only smoke checks suite', async (t) => {
     assert.equal(summary.failed, 0, `Expected 0 failed smoke checks, got ${summary.failed}`);
     assert.equal(summary.passed, 10, `Expected 10 passed checks, got ${summary.passed}`);
   });
+
+  await t.test("10. CSRF regression: POST /api/student/claim-code rejects browser requests without Referer with 403 and accepts valid student portal Referer with 410", async () => {
+    // A browser client (sending sec-fetch-mode: cors) without Origin or Referer is strictly rejected by CSRF middleware
+    const rejectedRes = await executeCheck({
+      method: "POST",
+      url: "/api/student/claim-code",
+      headers: {
+        "Content-Type": "application/json",
+        "sec-fetch-mode": "cors"
+      },
+      body: {}
+    });
+    assert.equal(rejectedRes.statusCode, 403, "Must reject browser client missing Origin/Referer with 403 Forbidden");
+    assert.equal(rejectedRes.body.error, "Forbidden");
+    assert.match(rejectedRes.body.message, /CSRF check failed/);
+
+    // A valid student portal probe supplying Referer: .../studente passes CSRF and reaches 410 Gone handler
+    const validProbeRes = await executeCheck({
+      method: "POST",
+      url: "/api/student/claim-code",
+      headers: {
+        "Content-Type": "application/json",
+        "sec-fetch-mode": "cors",
+        referer: "http://localhost:8770/studente"
+      },
+      body: {}
+    });
+    assert.equal(validProbeRes.statusCode, 410, "Valid probe with student portal Referer must reach 410 Gone");
+    assert.equal(validProbeRes.body.error, "Gone");
+    assert.match(validProbeRes.body.message, /PIN/);
+  });
+
+  await t.test("11. Real HTTP loopback execution with native fetch passes all 10 smoke checks", async () => {
+    let started;
+    try {
+      started = await app.start(0, "127.0.0.1");
+    } catch (err) {
+      if (err?.code === "EPERM") {
+        t.skip("Sandbox policy denied loopback bind; run on host with network permission");
+        return;
+      }
+      throw err;
+    }
+
+    try {
+      const summary = await runSmokeChecks(started.url, {
+        customFetch: fetch,
+        logger: { log: () => {}, error: () => {} }
+      });
+      assert.equal(summary.failed, 0, `Expected 0 failed smoke checks with native fetch, got ${summary.failed}`);
+      assert.equal(summary.passed, 10, `Expected 10 passed checks with native fetch, got ${summary.passed}`);
+    } finally {
+      await app.close();
+    }
+  });
 });

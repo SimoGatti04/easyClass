@@ -124,7 +124,10 @@ export const checks = [
     name: '8. Retired individual student claim endpoint returns 410 Gone (/api/student/claim-code)',
     method: 'POST',
     path: () => '/api/student/claim-code',
-    headers: { 'Content-Type': 'application/json' },
+    headers: (context, targetUrl) => ({
+      'Content-Type': 'application/json',
+      Referer: `${targetUrl}/studente`
+    }),
     body: JSON.stringify({}),
     expectedStatus: [410],
     validate: (res, json, text) => {
@@ -191,9 +194,12 @@ export async function runSmokeChecks(targetUrl, { customFetch = fetch, logger = 
       // Note: Do NOT automatically send Origin: targetUrl.
       // MCP clients and API probes are not cross-origin browsers; sending an unauthorized
       // local origin triggers strict Origin rejection (403) before authentication/protocol checks.
+      const rawHeaders = typeof check.headers === 'function'
+        ? check.headers(context, normalizedUrl)
+        : (check.headers || {});
       const headers = {
         Host: new URL(normalizedUrl).host,
-        ...(check.headers || {})
+        ...rawHeaders
       };
       const res = await customFetch(url, {
         method: check.method,
