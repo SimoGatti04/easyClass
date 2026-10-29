@@ -361,6 +361,51 @@ test('version-bound teacher publication API enforces authorization, eligibility,
     assert.equal(studentList.materials.some(item => item.id === studentMaterial.id && item.versionNumber === 1), false);
   });
 
+  await t.test('student file access follows the exact published version and stops at withdrawal', async () => {
+    const filePath = `/api/student/classes/${classroom.id}/materials/${supportMaterial.id}/versions/2/download`;
+    const before = await studentRequest(filePath);
+    assert.equal(before.status, 200);
+    assert.match(before.headers.get('content-disposition') || '', /^attachment;/);
+    assert.match(await before.text(), /Esercizio di supporto versione 2/);
+
+    const withdrawn = await teacherRequest('DELETE', publicationPath(supportMaterial.id, 2));
+    assert.equal(withdrawn.status, 200);
+    assert.equal((await studentRequest(filePath)).status, 404);
+
+    const studentList = await studentRequest(`/api/student/classes/${classroom.id}/materials`).then(response => response.json());
+    assert.equal(studentList.materials.some(item => item.id === supportMaterial.id), false);
+  });
+
+  await t.test('archiving a material makes its published version unavailable without deleting history', async () => {
+    const archivable = addMaterial(service, {
+      classId: classroom.id,
+      subjectId: subject.id,
+      lessonId: lesson.id,
+      title: 'Dispensa archiviabile UX2-C',
+      role: 'student_material',
+      type: 'custom',
+      contentText: 'Contenuto sintetico prima dell’archiviazione.'
+    });
+    assert.equal((await teacherRequest('POST', publicationPath(archivable.id, 1), { body: {} })).status, 201);
+    const studentListBefore = await studentRequest(`/api/student/classes/${classroom.id}/materials`).then(response => response.json());
+    assert.equal(studentListBefore.materials.some(item => item.id === archivable.id), true);
+
+    service.deleteMaterial(archivable.id);
+    const status = await readPublication(archivable.id, 1);
+    assert.equal(status.publication.status, 'unavailable');
+    assert.equal(status.publication.blockedReason, 'material_inactive');
+    assert.equal(status.publication.canPublish, false);
+    assert.equal(status.publication.canUnpublish, false);
+    assert.equal(status.publication.otherAvailableVersions.length, 0);
+    assert.equal(eventCount(archivable.id, 1), 1);
+
+    const studentListAfter = await studentRequest(`/api/student/classes/${classroom.id}/materials`).then(response => response.json());
+    assert.equal(studentListAfter.materials.some(item => item.id === archivable.id), false);
+    assert.equal((await studentRequest(`/api/student/classes/${classroom.id}/materials/${archivable.id}/versions/1`)).status, 404);
+    assert.equal((await teacherRequest('POST', publicationPath(archivable.id, 1), { body: {} })).status, 400);
+    assert.equal((await teacherRequest('DELETE', publicationPath(archivable.id, 1))).status, 409);
+  });
+
   await t.test('withdrawal from an expired or never-published version is a state conflict', async () => {
     const neverPublished = await teacherRequest('DELETE', publicationPath(teacherOnly.id, 1));
     assert.equal(neverPublished.status, 409);

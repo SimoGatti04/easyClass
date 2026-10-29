@@ -180,26 +180,35 @@ export function AvailabilityPanel({ pack }) {
         return;
       }
     }
-    setPendingAction('publish');
+    setPendingAction({ type: 'publish', versionNumber, title: exactTitle });
   };
 
   const requestWithdrawal = () => {
     setActionError('');
     setNotice('');
-    setPendingAction('withdraw');
+    setPendingAction({ type: 'withdraw', versionNumber, title: exactTitle });
+  };
+
+  const requestOtherWithdrawal = (entry) => {
+    setActionError('');
+    setNotice('');
+    setExpiryInput('');
+    setPendingAction({ type: 'withdraw', versionNumber: entry.versionNumber, title: entry.title });
   };
 
   const executeAction = async () => {
     if (!publicationUrl || !pendingAction || actionPending) return;
     const action = pendingAction;
+    const actionVersion = action.versionNumber;
+    const actionUrl = `/api/materials/${encodeURIComponent(materialId)}/versions/${actionVersion}/publication`;
     setActionPending(true);
     setActionError('');
     setNotice('');
     try {
-      const response = await fetch(publicationUrl, {
-        method: action === 'publish' ? 'POST' : 'DELETE',
+      const response = await fetch(actionUrl, {
+        method: action.type === 'publish' ? 'POST' : 'DELETE',
         credentials: 'same-origin',
-        ...(action === 'publish' ? {
+        ...(action.type === 'publish' ? {
           headers: { 'content-type': 'application/json' },
           body: JSON.stringify({ availableUntil: expiryInput ? new Date(expiryInput).toISOString() : null })
         } : {})
@@ -210,19 +219,20 @@ export function AvailabilityPanel({ pack }) {
         error.status = response.status;
         throw error;
       }
-      if (!payload.publication || payload.publication.material?.versionNumber !== versionNumber) {
+      if (!payload.publication || payload.publication.material?.versionNumber !== actionVersion) {
         throw new Error('La risposta non corrisponde alla versione selezionata.');
       }
-      setPublication(payload.publication);
+      if (actionVersion === versionNumber) setPublication(payload.publication);
+      else await refreshStatus();
       setPendingAction(null);
       setExpiryInput('');
-      setNotice(action === 'publish'
+      setNotice(action.type === 'publish'
         ? payload.outcome === 'already_available'
-          ? `La versione v${versionNumber} era già disponibile agli studenti.`
-          : `La versione v${versionNumber} è ora disponibile agli studenti.`
+          ? `La versione v${actionVersion} era già disponibile agli studenti.`
+          : `La versione v${actionVersion} è ora disponibile agli studenti.`
         : payload.outcome === 'already_withdrawn'
-          ? `La versione v${versionNumber} era già stata ritirata.`
-          : `La versione v${versionNumber} è stata ritirata.`);
+          ? `La versione v${actionVersion} era già stata ritirata.`
+          : `La versione v${actionVersion} è stata ritirata.`);
     } catch (error) {
       setPendingAction(null);
       setActionError(error.status === 409
@@ -302,9 +312,9 @@ export function AvailabilityPanel({ pack }) {
     : pendingAction
       ? h('div', { key: 'confirmation', className: 'publication-confirmation', role: 'group', 'aria-labelledby': 'publication-confirmation-title' }, [
         h('div', { key: 'copy' }, [
-          h('p', { key: 'eyebrow', className: 'publication-confirmation-kicker' }, pendingAction === 'publish' ? 'Conferma pubblicazione' : 'Conferma ritiro'),
-          h('h4', { key: 'title', id: 'publication-confirmation-title' }, pendingAction === 'publish' ? `Rendere visibile ${exactTitle} · v${exactVersion}?` : `Ritirare ${exactTitle} · v${exactVersion}?`),
-          h('p', { key: 'detail' }, pendingAction === 'publish'
+          h('p', { key: 'eyebrow', className: 'publication-confirmation-kicker' }, pendingAction.type === 'publish' ? 'Conferma pubblicazione' : 'Conferma ritiro'),
+          h('h4', { key: 'title', id: 'publication-confirmation-title' }, pendingAction.type === 'publish' ? `Rendere visibile ${pendingAction.title} · v${pendingAction.versionNumber}?` : `Ritirare ${pendingAction.title} · v${pendingAction.versionNumber}?`),
+          h('p', { key: 'detail' }, pendingAction.type === 'publish'
             ? expiryInput
               ? `Gli studenti potranno consultarla fino al ${formatDateTime(new Date(expiryInput).toISOString())}.`
               : 'Gli studenti potranno consultarla senza una scadenza programmata.'
@@ -315,12 +325,12 @@ export function AvailabilityPanel({ pack }) {
             key: 'confirm',
             ref: confirmationButtonRef,
             type: 'button',
-            className: pendingAction === 'publish' ? 'btn btn-primary' : 'btn btn-danger',
+            className: pendingAction.type === 'publish' ? 'btn btn-primary' : 'btn btn-danger',
             disabled: actionPending,
             onClick: executeAction
           }, actionPending
-            ? pendingAction === 'publish' ? 'Pubblicazione in corso…' : 'Ritiro in corso…'
-            : pendingAction === 'publish' ? 'Conferma pubblicazione' : 'Conferma ritiro'),
+            ? pendingAction.type === 'publish' ? 'Pubblicazione in corso…' : 'Ritiro in corso…'
+            : pendingAction.type === 'publish' ? 'Conferma pubblicazione' : 'Conferma ritiro'),
           h('button', {
             key: 'cancel',
             type: 'button',
@@ -370,12 +380,21 @@ export function AvailabilityPanel({ pack }) {
         h('p', { key: 'kicker', className: 'publication-confirmation-kicker' }, 'Disponibilità separate'),
         h('h4', { key: 'title', id: 'publication-other-versions-title' }, 'Altre versioni sono ancora disponibili')
       ]),
-      h('ul', { key: 'list' }, publication.otherAvailableVersions.map((entry) => h('li', { key: entry.versionNumber }, [
-        h('span', { key: 'version', className: 'publication-version-tag' }, `v${entry.versionNumber}`),
-        h('span', { key: 'title', className: 'publication-version-title' }, entry.title),
-        h('span', { key: 'date', className: 'publication-version-date' }, entry.availableUntil
-          ? `Disponibile fino al ${formatDateTime(entry.availableUntil)}`
-          : 'Senza scadenza programmata')
+      h('ul', { key: 'list' }, publication.otherAvailableVersions.map((entry) => h('li', { key: entry.versionNumber, className: 'publication-other-version-row' }, [
+        h('div', { key: 'copy', className: 'publication-other-version-copy' }, [
+          h('span', { key: 'version', className: 'publication-version-tag' }, `v${entry.versionNumber}`),
+          h('span', { key: 'title', className: 'publication-version-title' }, entry.title),
+          h('span', { key: 'date', className: 'publication-version-date' }, entry.availableUntil
+            ? `Disponibile fino al ${formatDateTime(entry.availableUntil)}`
+            : 'Senza scadenza programmata')
+        ]),
+        h('button', {
+          key: 'withdraw',
+          type: 'button',
+          className: 'btn btn-secondary btn-sm publication-other-withdraw',
+          disabled: actionPending,
+          onClick: () => requestOtherWithdrawal(entry)
+        }, `Ritira v${entry.versionNumber}`)
       ])))
     ])
     : null;

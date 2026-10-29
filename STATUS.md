@@ -1,8 +1,8 @@
 # Teacher Service — Stato operativo
 
 **Aggiornato:** 2026-10-29 (Europe/Rome)
-**Produzione CURRENT:** Teacher Service R3 già distribuito tramite C7B su K3s. UX1–UX2-C non sono in produzione; ogni modifica o deploy produttivo resta non autorizzato.
-**Sviluppo CURRENT:** UX1, UX2-A, UX2-B e UX2-C sono presenti esclusivamente nel branch locale `codex/teacher-service-c6` e non sono distribuiti (nessun push, merge o deploy).
+**Produzione CURRENT:** Teacher Service R3 già distribuito tramite C7B su K3s. UX1–UX2-C e le correzioni UX2-D non sono in produzione; ogni modifica o deploy produttivo resta non autorizzato.
+**Sviluppo CURRENT:** UX1, UX2-A, UX2-B, UX2-C e UX2-D sono presenti esclusivamente nel branch locale `codex/teacher-service-c6` e non sono distribuiti (nessun push, merge o deploy).
 **Perimetro:** Workspace locale `teacher-service-design`.
 **Fonte normativa:** `docs/` e decisioni del Domain Owner (13 ottobre 2026); **evidenze storiche:** `validation/results/`.
 
@@ -25,6 +25,30 @@
 - Report completo: `.impeccable/ux2c/UX2-C-report.md`.
 
 **Produzione:** invariata e non verificata. Nessuna operazione K3s, Cloudflare, Infisical, database/FileStore produttivi, GHCR, push, merge o deployment autorizzata o eseguita.
+
+## UX2-D — Accettazione E2E docente→studente e release readiness (2026-10-29)
+
+**CURRENT (solo locale, branch `codex/teacher-service-c6`; base UX2-C `e41a12f`; verifiche con dati sintetici):**
+- Consolidato UX2-C in un commit locale dedicato; nessun push, merge o deploy. Intestazione separata tra produzione R3/C7B e sviluppo locale non distribuito.
+- Corretto un vuoto funzionale: dopo la creazione di una nuova versione, la UI non permetteva di ritirare una versione precedente ancora disponibile. La sezione “Altre versioni sono ancora disponibili” ora offre `Ritira vN` con conferma esplicita e chiamata version-bound.
+- Corretto l’overflow orizzontale dell’intestazione docente a 320 px (26 px → 0 px) con wrapping e riduzione del badge a ≤480 px.
+- Il deep link studente a un materiale ritirato/scaduto mostra ora un messaggio italiano comprensibile invece del 404 tecnico.
+- Rimossi i due accenti `border-inline-start: 4px` introdotti in UX2-C; il detector Impeccable non segnala nuovi anti-pattern (restano 9 `side-tab` preesistenti).
+- Nuovo test E2E `tests/browser/teacher-student-ux2d-e2e.test.js` con due contesti browser isolati: docente autorizzato e studente anonimo. Copre conferma pacchetto, pubblicazione v1 con scadenza locale→UTC, modifica v2, consultazione e download studente, ritiro selettivo di v1, conflitto reale 409 da seconda sessione, ritiro finale e deep link.
+- Esteso il test API: download file pubblicato 200 → 404 dopo ritiro; materiale archiviato `unavailable`/`material_inactive`, esclusione dal portale, publish 400, withdraw 409 e storico conservato.
+
+**Verifiche locali finali (dati/utenti sintetici, ambiente isolato):**
+- `pnpm test`: **38 suite passate, 0 fallite; 161 test passati** (loopback consentito, nessuno skip).
+- `node --test tests/server/material-publication-api.test.js`: **12 passati, 0 falliti**.
+- `UX2D_SCREENSHOTS_DIR=.impeccable/ux2d/screenshots pnpm run test:browser:ux2d`: **1 passato, 0 falliti, 0 skip**; viewport docente 1440/1024/320, lista e lettore studente 1024/320, overflow orizzontale 0 px; conflitto 409 reale.
+- `pnpm run test:browser:ux2b`: 1 passato; `pnpm run test:browser:ux2c`: 1 passato; `pnpm run test:browser:c5`: 1 passato; `pnpm run build:client`: superato.
+- Impeccable 4.8.0 `detect --no-advisory`: 9 anti-pattern `side-tab` preesistenti, 0 nuovi. La verifica automatica non equivale a certificazione WCAG.
+- Evidenze: `.impeccable/ux2d/screenshots/` e report `.impeccable/ux2d/UX2-D-report.md`.
+
+**Limiti residui:** la UI Disponibilità gestisce il Student Material del pacchetto; i Support Material eleggibili restano coperti da API/test senza selettore UI dedicato. Resta invariato il rischio SQLite/FileStore su singolo nodo. Chromium headless e viewport emulati, nessun device fisico o screen reader.
+
+**Produzione:** invariata e non autorizzata. Nessuna operazione K3s, Cloudflare, Infisical, database/FileStore produttivi, GHCR, push, merge o deployment eseguita.
+
 
 ## UX2-B — Percorso di preparazione docente (2026-10-29)
 

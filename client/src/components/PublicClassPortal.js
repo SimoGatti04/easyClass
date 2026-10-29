@@ -93,7 +93,14 @@ export function PublicClassPortal({ onAttemptStarted, notice = '' }) {
     let cancelled = false;
     readJson(`/api/student/classes/${encodeURIComponent(location.classId)}/materials/${encodeURIComponent(location.materialId)}/versions/${location.version}`)
       .then((data) => { if (!cancelled) setSelectedMaterial(data.material); })
-      .catch((err) => { if (!cancelled) { setSelectedMaterial(null); setError(err.message); } });
+      .catch((err) => {
+        if (!cancelled) {
+          setSelectedMaterial(null);
+          setError(err.status === 404
+            ? 'Questo materiale non è più disponibile: potrebbe essere stato ritirato o la scadenza è terminata.'
+            : err.message);
+        }
+      });
     return () => { cancelled = true; };
   }, [location.classId, location.materialId, location.version]);
 
