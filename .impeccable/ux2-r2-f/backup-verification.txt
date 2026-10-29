@@ -1,0 +1,22 @@
+# UX2-R2-F — historical backup verification (read-only)
+
+Target : <backup-host>:/srv/backup/teacher-service/pre-r3-cutover/
+Method : read-only SSH; snapshot-manifest.json v1 compared against files/ and database.sqlite
+Written: nothing (SQLite opened with mode=ro&immutable=1)
+
+Result (aggregate only, no filenames or content):
+  formatVersion             1
+  databasePresent           true
+  databaseBytesMatch        true
+  databaseSha256Match       true
+  manifestFileCount         6
+  filesPresentCount         6
+  missingFiles              0
+  unexpectedFiles           0
+  bytesMismatch             0
+  hashMismatch              0
+  sqliteIntegrity           ok
+  sqliteTables              28
+  hasPublicationEventsTable true
+
+Verdict: PASS — manifest fully consistent, no drift, no modification.

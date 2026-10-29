@@ -1,0 +1,43 @@
+# UX2-R3 — build & acceptance evidence (2026-10-29T23:19:50Z)
+
+source_commit=40791ebb4bd42845ba01ae374450aa805a2a671b
+source_commit_subject=build(oci): pin base image digest and drive OCI metadata from build args
+
+## Builds (clean worktrees, pinned base, SOURCE_DATE_EPOCH)
+tag=teacher-service:ux2-r3-40791eb-A id=sha256:a2e321b05a87656ac434f9ad37d404e94e74ec0c877a00bad2a17160f69c5d78 size=715479323 created=2026-10-29T23:13:11Z
+tag=teacher-service:ux2-r3-40791eb-B id=sha256:7c9fea6bab69537bca50e697a05487a257b3e43c70c15d53428833fb2f04b3e4 size=715479304 created=2026-10-29T23:13:11Z
+
+## Determinism
+config_digest_A=f81d98cf1b06abcfc0e8a6221a145b0d5c2f07d7030e30cfc6f31e328685625c
+config_digest_B=f81d98cf1b06abcfc0e8a6221a145b0d5c2f07d7030e30cfc6f31e328685625c
+app_tree_hash_A=301f54c85f7e3e6f637af3de8088a46c8dc1277e59cc0748205c0d67dc9144b2
+layers_A=14
+app_tree_hash_B=301f54c85f7e3e6f637af3de8088a46c8dc1277e59cc0748205c0d67dc9144b2
+layers_B=14
+
+## Container-bound acceptance (image A, isolated tmpfs, synthetic principals)
+PASS  0. health endpoint on container — status=200 service=teacher-service
+PASS  1. authorized synthetic teacher principal accepted — status=200 teacherAuthorized=true
+PASS  2. authenticated non-teacher rejected by teacher API — auth/me=200 teacherAuthorized=false /api/materials=403
+PASS  fixture. class/subject/lesson created inside container — class=class-1e5234c7-4dd6-4d3a-9836-02d1023c165e subject=subj-c05ed79f-be06-451e-83a2-9322778d44b9 lesson=les-7420b7ce-014b-40a9-b97f-4943dcadf49a
+PASS  3. synthetic v1 starts unpublished and hidden from students — publication=never_published visible=false
+PASS  10a. CSRF blocks publication mutation without Origin and writes nothing — no-origin=403 state=never_published
+PASS  2b. non-teacher cannot publish — status=403
+PASS  4. teacher publishes v1 (POST /publication) — status=201 publication=available
+PASS  5. anonymous student list confirms availability — status=200 version=1 listedCount=1
+PASS  6. student reads the correct content and downloads it unchanged — read=200 download=200 disposition=attachment; filename*=UTF-8''Dispensa%20relazioni%20%E2%80%94%20UX2-R2-F.md
+PASS  6b. reserved teacher content never leaks through the student payload — no reserved marker in student body
+PASS  9. Teacher Material is hidden and refuses publication — read=404 publish=400 listed=false
+PASS  7. teacher withdraws v1 (DELETE /publication) — status=200 publication=withdrawn
+PASS  8. withdrawn v1 disappears from the public student surface — read=404 download=404 listed=false
+PASS  10b. CSRF blocks withdrawal and preserves the withdrawn state — no-origin=403 state=withdrawn
+PASS  10c. repeated withdrawal is idempotent and appends no event — status=200 outcome=already_withdrawn
+acceptance_exit=0 (15 checks passed)
+
+## Production defaults (same image, NODE_ENV=production)
+health=200 spa=200 anon_teacher_api=401 synthetic_principal=403 student_public=200
+
+## Image hygiene (candidate A)
+top_level=bin client node_modules package.json pnpm-lock.yaml src storage
+env_files=0 git_metadata=0 evidence_dirs=0 tests_dir=absent
+src_files=30 (matches 30 tracked JS files at the source commit)

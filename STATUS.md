@@ -1,11 +1,32 @@
 # Teacher Service — Stato operativo
 
-**Aggiornato:** 2026-10-29 (Europe/Rome)
-**Produzione CURRENT:** Teacher Service R3 già distribuito tramite C7B su K3s. UX1–UX2-C e le correzioni UX2-D non sono in produzione; ogni modifica o deploy produttivo resta non autorizzato.
-**Sviluppo CURRENT:** UX1, UX2-A, UX2-B, UX2-C e UX2-D sono presenti esclusivamente nel branch locale `codex/teacher-service-c6` e non sono distribuiti (nessun push, merge o deploy).
+**Aggiornato:** 2026-10-30 (Europe/Rome)
+**Produzione CURRENT:** Teacher Service R3 già distribuito tramite C7B su K3s. UX1–UX2-D e la candidata UX2-R3 non sono in produzione; ogni modifica o deploy produttivo resta non autorizzato.
+**Sviluppo CURRENT:** UX1, UX2-A, UX2-B, UX2-C, UX2-D e la chiusura sorgenti/build UX2-R3 sono presenti esclusivamente nel branch locale `codex/teacher-service-c6` e non sono distribuiti (nessun push, merge o deploy).
 **Perimetro:** Workspace locale `teacher-service-design`.
 **Fonte normativa:** `docs/` e decisioni del Domain Owner (13 ottobre 2026); **evidenze storiche:** `validation/results/`.
 
+
+## UX2-R3 — Chiusura sorgenti, build OCI riproducibile e accettazione funzionale (2026-10-30)
+
+**CURRENT (solo locale; nessuna pubblicazione GHCR):**
+- **Causa confermata:** `.gitignore` escludeva `src/storage/` tramite il pattern non ancorato `storage/`; `git ls-files src/storage` restituiva 0 file. Il commit `5205441` conteneva 28 file JS sotto `src`, l'immagine `sha256:6c5594285bab…` altrettanti e non si avviava (`ERR_MODULE_NOT_FOUND`). La candidata UX2-R2-F è **invalidata**.
+- **Correzione:** commit `cdbc421` ancora i pattern a `/storage/` e `/.tmp/` in `.gitignore`, a `/storage` e `/.tmp` in `.dockerignore`, versiona `src/storage/filestore.js` e `src/storage/store-snapshot.js` (solo moduli Node builtin, nessun segreto) e aggiunge `tests/unit/source-closure.test.js` registrato in `tests/run-all.js`. Nessun altro modulo risultava non versionato: 0 import non risolti dopo la correzione.
+- **Build:** commit `40791eb` fissa la base `node:22.23.2-bookworm-slim@sha256:48e4b67d85f8…` e accetta `SOURCE_DATE_EPOCH` più le etichette OCI `revision`/`version`/`created`/`source`. Due build da worktree detached indipendenti dello stesso commit hanno prodotto config e albero applicativo identici (`301f54c85f7e…`), ma non lo stesso Image ID: i layer divergono dallo step `pnpm install`. Riproducibile per contenuto, non bit-identica.
+- **Candidata:** `teacher-service:ux2-r3-40791eb-A` (`sha256:a2e321b05a87…`), `linux/amd64`. Non pubblicata; nessun digest GHCR.
+- **Accettazione nel container reale** (`faf245be1e9a…`, `--read-only`, storage `tmpfs`, principal sintetici): 15 controlli superati — health, docente autorizzato, non docente respinto, v1 non pubblicata, pubblicazione 201, elenco studente 200, lettura/download identici, Teacher Material nascosto (404/400), ritiro 200, indisponibilità pubblica 404, CSRF 403 su entrambe le mutazioni senza Origin, ritiro ripetuto idempotente. Nessun server Node avviato dal checkout.
+- **Hardening produzione** (`NODE_ENV=production`): health e SPA 200, API docente anonima 401, header sintetico 403, API studente pubblica 200; senza `TEACHER_SERVICE_WEB_CF_ACCESS_AUD` la risposta è 500 fail-closed esplicita.
+- **Limite operativo rilevato:** l'immagine gira come `node` (uid 1000); un volume su `/app/storage` deve essere scrivibile da quell'utente.
+
+**Verifiche locali (2026-10-30):**
+- `pnpm test`: **39 suite passate, 0 fallite** (38 preesistenti + source closure).
+- `node --test tests/unit/source-closure.test.js`: 4 passati.
+- Build A e build B riuscite da worktree puliti; avvio di entrambe con `/health` 200.
+- `pnpm-lock.yaml` invariato.
+
+**Limiti residui:** build amd64 eseguita in emulazione su host arm64; autenticazione Cloudflare Access reale non esercitata; differenze di layer tra build. Backup storico C7B-G1 non riverificato in questa fase: resta valido il risultato integrale di UX2-R2-F e resta obbligatorio il nuovo snapshot pre-UX2 in manutenzione autorizzata.
+
+**Esito:** READY FOR GHCR PUBLICATION APPROVAL. Evidenze in `.impeccable/ux2-r3/`.
 
 ## UX2-R1 — Evidenza recovery e candidate image (2026-10-29)
 
