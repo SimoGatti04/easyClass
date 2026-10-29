@@ -1,14 +1,34 @@
 # Teacher Service — Stato operativo
 
 **Aggiornato:** 2026-10-29 (Europe/Rome)
-**Fase attiva:** C7B-R3 implementato e verificato localmente; UX2-B completato localmente e in attesa revisione; C7B produzione resta BLOCKED / NOT AUTHORIZED (Supervisione: ChatGPT)
+**Produzione CURRENT:** Teacher Service R3 già distribuito tramite C7B su K3s. UX1–UX2-C non sono in produzione; ogni modifica o deploy produttivo resta non autorizzato.
+**Sviluppo CURRENT:** UX1, UX2-A, UX2-B e UX2-C sono presenti esclusivamente nel branch locale `codex/teacher-service-c6` e non sono distribuiti (nessun push, merge o deploy).
 **Perimetro:** Workspace locale `teacher-service-design`.
 **Fonte normativa:** `docs/` e decisioni del Domain Owner (13 ottobre 2026); **evidenze storiche:** `validation/results/`.
 
 
+## UX2-C — Integrazione pubblicazione version-bound (2026-10-29)
+
+**CURRENT (solo locale, branch `codex/teacher-service-c6`; base UX2-B `5ba6b97cb6da03b5f1438d8b1fd81e01a0c6ae3c`; checkpoint registrato in un commit locale dedicato):**
+- Aggiunte le rotte docente GET/POST/DELETE `/api/materials/:materialId/versions/:versionNumber/publication`, con versione positiva esatta, autenticazione e autorizzazione docente esplicita, CSRF sulle mutazioni e attore derivato dal principal verificato.
+- Riutilizzato `MaterialService`: pubblicazione ammessa per Student Material e Support Material idonei; esclusi Teacher Material, Teacher Script, Lesson Plan e Assessment. Date di scadenza non valide/passate rifiutate.
+- Stato GET: `never_published`, `available`, `expired`, `withdrawn`, `unavailable`; nessun contenuto, attore o nota riservata nella risposta. Duplicati equivalenti non aggiungono eventi. Pubblicazione e ritiro sono indipendenti per versione; nuove versioni non ereditano disponibilità.
+- UI Disponibilità UX2-C collegata alla versione esatta del Student Material selezionato: stato API, retry/errori/conflitti, scadenza facoltativa, conferma di pubblicazione/ritiro e indicazione di altre versioni disponibili. La conferma del pacchetto non pubblica.
+- Limite: l’interfaccia di questo flusso gestisce il Student Material del pacchetto; Support Material eleggibili sono coperti da API e test, senza un selettore UI dedicato in questa schermata.
+
+**Verifiche locali finali (dati/utenti sintetici, ambiente isolato):**
+- `node --test tests/server/material-publication-api.test.js`: 10 test passati, 0 falliti.
+- `UX2C_SCREENSHOTS_DIR=.impeccable/ux2c/screenshots pnpm run test:browser:ux2c`: 1 percorso passato, 0 falliti, 0 skip; build client superata; include 503/retry, 409, conferma, pubblicazione, verifica studente e ritiro isolato per versione.
+- `UX2B_SCREENSHOTS_DIR=.impeccable/ux2/screenshots pnpm run test:browser:ux2b`: 1 passato, 0 falliti, 0 skip; `pnpm run test:browser:c5`: 1 passato, 0 falliti, 0 skip.
+- `pnpm test`: 38 suite passate, 0 fallite.
+- Impeccable 4.8.0 layout detector su `PreparationFlow.js` e `client/app.css`: `[]`; screenshot desktop/tablet/mobile e portale studente in `.impeccable/ux2c/screenshots/`.
+- Report completo: `.impeccable/ux2c/UX2-C-report.md`.
+
+**Produzione:** invariata e non verificata. Nessuna operazione K3s, Cloudflare, Infisical, database/FileStore produttivi, GHCR, push, merge o deployment autorizzata o eseguita.
+
 ## UX2-B — Percorso di preparazione docente (2026-10-29)
 
-**CURRENT (solo locale, branch `codex/teacher-service-c6`):**
+**HISTORICAL — checkpoint UX2-B (solo locale, branch `codex/teacher-service-c6`):**
 - Percorso guidato: classe → materia → lezione → fonti → materiale → revisione → disponibilità.
 - Contesto persistente; cambio contesto protetto dalle bozze non salvate; stati di versione, bozza e conferma distinti.
 - La conferma congela le versioni selezionate e non pubblica i materiali. In assenza di REST docente, la disponibilità è indicata come non consultabile; nessuna pubblicazione è simulata.

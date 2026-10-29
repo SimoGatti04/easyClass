@@ -169,7 +169,7 @@ export async function createHttpApp(options = {}) {
       }
       res.writeHead(204, {
         'Access-Control-Allow-Origin': origin || '*',
-        'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+        'Access-Control-Allow-Methods': 'GET, POST, DELETE, OPTIONS',
         'Access-Control-Allow-Headers': 'Content-Type, Authorization, Cf-Access-Jwt-Assertion, Mcp-Session-Id',
         'Access-Control-Max-Age': '86400'
       });
@@ -1281,6 +1281,67 @@ async function handleRestApi(req, res, pathname, parsedUrl, service, authResult,
       });
       res.writeHead(201);
       res.end(JSON.stringify(result));
+      return;
+    }
+
+    // Version-bound teacher publication contract. This REST API branch is
+    // reached only after authentication, explicit teacher authorization and
+    // the shared CSRF check above have succeeded.
+    const publicationRoute = pathname.match(/^\/api\/materials\/([^/]+)\/versions\/([^/]+)\/publication$/);
+    if (publicationRoute && ['GET', 'POST', 'DELETE'].includes(req.method)) {
+      const materialId = publicationRoute[1];
+      const rawVersionNumber = publicationRoute[2];
+      if (!/^[1-9]\d*$/.test(rawVersionNumber) || !Number.isSafeInteger(Number(rawVersionNumber))) {
+        throw new ValidationError('versionNumber must be an exact positive integer');
+      }
+      const versionNumber = Number(rawVersionNumber);
+
+      if (req.method !== 'GET') {
+        const hasBody = Number(req.headers['content-length'] || 0) > 0 || Boolean(req.headers['transfer-encoding']);
+        if (hasBody && (parsedBody === null || typeof parsedBody !== 'object' || Array.isArray(parsedBody))) {
+          throw new ValidationError('Publication request body must be a JSON object');
+        }
+        const allowedFields = req.method === 'POST' ? new Set(['availableUntil']) : new Set();
+        for (const field of Object.keys(parsedBody || {})) {
+          if (['publishedBy', 'unpublishedBy', 'actor', 'principal', 'actorId', 'teacherPrincipal'].includes(field)) {
+            throw new ValidationError('Publication actor identity is derived from the authenticated teacher principal');
+          }
+          if (!allowedFields.has(field)) throw new ValidationError(`Unsupported publication request field: ${field}`);
+        }
+      }
+
+      if (req.method === 'GET') {
+        const publication = service.getVersionPublicationStatus(materialId, versionNumber);
+        res.writeHead(200);
+        res.end(JSON.stringify({ publication }));
+        return;
+      }
+
+      if (req.method === 'POST') {
+        const result = service.publishMaterial(materialId, {
+          versionNumber,
+          availableUntil: parsedBody?.availableUntil ?? null,
+          publishedBy: authResult.principal
+        });
+        const publication = service.getVersionPublicationStatus(materialId, versionNumber);
+        res.writeHead(result.alreadyPublished ? 200 : 201);
+        res.end(JSON.stringify({
+          publication,
+          outcome: result.alreadyPublished ? 'already_available' : 'published'
+        }));
+        return;
+      }
+
+      const result = service.unpublishMaterial(materialId, {
+        versionNumber,
+        unpublishedBy: authResult.principal
+      });
+      const publication = service.getVersionPublicationStatus(materialId, versionNumber);
+      res.writeHead(200);
+      res.end(JSON.stringify({
+        publication,
+        outcome: result.alreadyUnpublished ? 'already_withdrawn' : 'withdrawn'
+      }));
       return;
     }
 

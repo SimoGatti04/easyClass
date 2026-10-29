@@ -232,10 +232,11 @@ test('UX2-B teacher preparation journey: context, version review and student ava
   assert.match(keyboardFocus.label, /Fonti/);
   assert.equal(keyboardFocus.outlineStyle, 'solid');
   assert.notEqual(keyboardFocus.outlineWidth, '0px');
-  assert.equal(await teacherPage.locator('#preparation-availability').getByText('Stato non consultabile in UX2-B').count(), 1);
+  assert.equal(await teacherPage.locator('#preparation-availability').getByText('Mai pubblicata').count(), 1);
+  await teacherPage.locator('#preparation-availability').getByRole('button', { name: /Pubblica v1 agli studenti/ }).waitFor();
+  assert.equal(dbManager.prepare('SELECT COUNT(*) AS count FROM material_publication_events').get().count, 0, 'showing an allowed action must not publish');
   assert.ok(await textContrastRatio(teacherPage.locator('.preparation-confirmation-copy p:last-child')) >= 4.5, 'confirmation guidance meets AA text contrast');
   assert.ok(await textContrastRatio(teacherPage.locator('#preparation-availability .availability-state p:last-child')) >= 4.5, 'availability guidance meets AA text contrast');
-  assert.equal(await teacherPage.getByRole('button', { name: /pubblica|ritira/i }).count(), 0);
 
   const sourceTitles = await teacherPage.locator('.source-title').allTextContents();
   assert.deepEqual(sourceTitles, ['Fonte sintetica — chiavi e relazioni']);
@@ -321,7 +322,7 @@ test('UX2-B teacher preparation journey: context, version review and student ava
   await mobilePage.locator('.teacher-mobile-nav select').selectOption('prep');
   await mobilePage.waitForFunction(expectedId => document.querySelector('#lesson-select')?.value === expectedId, lessonA.id);
   await mobilePage.getByText('Nuova bozza · non inclusa nell’ultima conferma').waitFor();
-  await mobilePage.getByText('Stato non consultabile in UX2-B').waitFor();
+  await mobilePage.getByText('Mai pubblicata').waitFor();
   assert.equal(await mobilePage.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth), true, 'mobile layout should not scroll horizontally');
   const mobileAvailabilityLayout = await mobilePage.locator('.availability-panel').evaluate(node => {
     const state = node.querySelector('.availability-state').getBoundingClientRect();
@@ -372,7 +373,8 @@ test('UX2-B teacher preparation journey: context, version review and student ava
   await teacherPage.getByRole('button', { name: 'Conferma pacchetto' }).last().click();
   await confirmDialog.waitFor({ state: 'hidden' });
   await teacherPage.locator('.artifact-version-state.confirmed').filter({ hasText: 'Inclusa nell’ultima conferma del pacchetto' }).waitFor();
-  await teacherPage.getByText('Stato non consultabile in UX2-B').waitFor();
+  await teacherPage.getByText('Mai pubblicata').waitFor();
+  await teacherPage.getByRole('button', { name: /Pubblica v1 agli studenti/ }).waitFor();
   assert.equal(service.getLessonPack(lessonA.id).confirmation.artifactVersions.lessonPlan.version, 2);
   assert.equal(dbManager.prepare('SELECT COUNT(*) AS count FROM material_publication_events').get().count, 0);
   assert.equal(observedWrites.some(request => /publish|unpublish/i.test(request)), false);

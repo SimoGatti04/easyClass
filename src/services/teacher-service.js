@@ -114,6 +114,7 @@ export class TeacherService {
   deleteMaterial(id, options) { return this.materials.deleteMaterial(id, options); }
   deleteMaterialPermanently(id) { return this.materials.deleteMaterial(id, { permanent: true }); }
   publishMaterial(id, options) { return this.materials.publishMaterial(id, options); }
+  getVersionPublicationStatus(id, versionNumber, options) { return this.materials.getVersionPublicationStatus(id, versionNumber, options); }
   unpublishMaterial(id, options) { return this.materials.unpublishMaterial(id, options); }
   getVersionPublication(id, version, options) { return this.materials.getVersionPublication(id, version, options); }
   listPublishedStudentMaterials(classId) { return this.materials.listPublishedStudentMaterials(classId); }

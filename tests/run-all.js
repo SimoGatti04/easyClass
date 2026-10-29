@@ -27,6 +27,7 @@ const testFiles = [
   'tests/server/pre-release-corrections.test.js',
   'tests/server/client-ip.test.js',
   'tests/server/application-routing.test.js',
+  'tests/server/material-publication-api.test.js',
   'tests/server/classroom-rate-limiting.test.js',
   'tests/server/class-public-portal.test.js',
   'tests/server/pre-opening-smoke.test.js',

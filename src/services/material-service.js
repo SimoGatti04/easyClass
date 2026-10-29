@@ -10,7 +10,7 @@
  */
 import crypto from 'node:crypto';
 import path from 'node:path';
-import { NotFoundError, ValidationError } from '../core/errors.js';
+import { ConflictError, NotFoundError, ValidationError } from '../core/errors.js';
 import { PedagogicalRoles, ResourceTypes, ContentFormats, ProvenanceKinds } from '../core/contracts.js';
 
 export class MaterialService {
@@ -704,55 +704,77 @@ export class MaterialService {
         [ResourceTypes.TEACHER_SCRIPT, ResourceTypes.LESSON_PLAN, ResourceTypes.ASSESSMENT].includes(material.resource_type)) {
       throw new ValidationError('Only student-facing Student Material or Support Material can be published for student availability');
     }
-    if (availableUntil !== null && (!Number.isFinite(Date.parse(availableUntil)) || Date.parse(availableUntil) <= Date.now())) {
+    if (availableUntil !== null && (
+      typeof availableUntil !== 'string' ||
+      !Number.isFinite(Date.parse(availableUntil)) ||
+      Date.parse(availableUntil) <= Date.now()
+    )) {
       throw new ValidationError('availableUntil must be a valid future date');
     }
 
-    const event = {
-      id: `pub-${crypto.randomUUID()}`,
-      resource_id: resourceId,
-      version_number: material.selected_version,
-      state: 'published',
-      pedagogical_role: material.pedagogical_role,
-      occurred_at: new Date().toISOString(),
-      available_until: availableUntil ? new Date(availableUntil).toISOString() : null,
-      actor: publishedBy,
-      notes
-    };
-    this.dbManager.prepare(`
-      INSERT INTO material_publication_events
-        (id, resource_id, version_number, state, pedagogical_role, occurred_at, available_until, actor, notes)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `).run(event.id, event.resource_id, event.version_number, event.state, event.pedagogical_role,
-      event.occurred_at, event.available_until, event.actor, event.notes);
-    return { ...event, isAvailable: true };
+    const availableUntilIso = availableUntil === null ? null : new Date(availableUntil).toISOString();
+
+    return this.dbManager.transaction(() => {
+      const currentPublication = this.getVersionPublication(resourceId, material.selected_version);
+      if (
+        currentPublication?.isAvailable &&
+        currentPublication.state === 'published' &&
+        currentPublication.available_until === availableUntilIso
+      ) {
+        return { ...currentPublication, isAvailable: true, alreadyPublished: true };
+      }
+
+      const event = {
+        id: `pub-${crypto.randomUUID()}`,
+        resource_id: resourceId,
+        version_number: material.selected_version,
+        state: 'published',
+        pedagogical_role: material.pedagogical_role,
+        occurred_at: new Date().toISOString(),
+        available_until: availableUntilIso,
+        actor: publishedBy,
+        notes
+      };
+      this.dbManager.prepare(`
+        INSERT INTO material_publication_events
+          (id, resource_id, version_number, state, pedagogical_role, occurred_at, available_until, actor, notes)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `).run(event.id, event.resource_id, event.version_number, event.state, event.pedagogical_role,
+        event.occurred_at, event.available_until, event.actor, event.notes);
+      return { ...event, isAvailable: true, alreadyPublished: false };
+    });
   }
 
   unpublishMaterial(resourceId, { versionNumber = null, unpublishedBy = 'teacher', notes = '' } = {}) {
     if (!Number.isInteger(versionNumber) || versionNumber < 1) throw new ValidationError('An exact positive versionNumber is required to unpublish material');
     const material = this.getMaterial(resourceId, versionNumber);
-    const publication = this.getVersionPublication(resourceId, material.selected_version);
-    if (!publication?.isAvailable) {
-      throw new ValidationError(`Material ${resourceId} v${material.selected_version} is not currently published`);
-    }
-    const event = {
-      id: `pub-${crypto.randomUUID()}`,
-      resource_id: resourceId,
-      version_number: material.selected_version,
-      state: 'unpublished',
-      pedagogical_role: publication.pedagogical_role,
-      occurred_at: new Date().toISOString(),
-      available_until: null,
-      actor: unpublishedBy,
-      notes
-    };
-    this.dbManager.prepare(`
-      INSERT INTO material_publication_events
-        (id, resource_id, version_number, state, pedagogical_role, occurred_at, available_until, actor, notes)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `).run(event.id, event.resource_id, event.version_number, event.state, event.pedagogical_role,
-      event.occurred_at, event.available_until, event.actor, event.notes);
-    return { ...event, isAvailable: false };
+    return this.dbManager.transaction(() => {
+      const publication = this.getVersionPublication(resourceId, material.selected_version);
+      if (publication?.state === 'unpublished') {
+        return { ...publication, isAvailable: false, alreadyUnpublished: true };
+      }
+      if (!publication?.isAvailable) {
+        throw new ConflictError(`Material ${resourceId} v${material.selected_version} is not currently published`);
+      }
+      const event = {
+        id: `pub-${crypto.randomUUID()}`,
+        resource_id: resourceId,
+        version_number: material.selected_version,
+        state: 'unpublished',
+        pedagogical_role: publication.pedagogical_role,
+        occurred_at: new Date().toISOString(),
+        available_until: null,
+        actor: unpublishedBy,
+        notes
+      };
+      this.dbManager.prepare(`
+        INSERT INTO material_publication_events
+          (id, resource_id, version_number, state, pedagogical_role, occurred_at, available_until, actor, notes)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `).run(event.id, event.resource_id, event.version_number, event.state, event.pedagogical_role,
+        event.occurred_at, event.available_until, event.actor, event.notes);
+      return { ...event, isAvailable: false, alreadyUnpublished: false };
+    });
   }
 
   getVersionPublication(resourceId, versionNumber, { at = new Date() } = {}) {
@@ -771,6 +793,98 @@ export class MaterialService {
       ![ResourceTypes.TEACHER_SCRIPT, ResourceTypes.LESSON_PLAN, ResourceTypes.ASSESSMENT].includes(material.resource_type)
     );
     return event ? { ...event, isAvailable } : null;
+  }
+
+  getVersionPublicationStatus(resourceId, versionNumber, { at = new Date() } = {}) {
+    const material = this.getMaterial(resourceId, versionNumber);
+    const atIso = (at instanceof Date ? at : new Date(at)).toISOString();
+    const event = this.getVersionPublication(resourceId, material.selected_version, { at });
+    const eligibleRole = [PedagogicalRoles.STUDENT_MATERIAL, PedagogicalRoles.SUPPORT_MATERIAL]
+      .includes(material.pedagogical_role);
+    const eligibleType = ![
+      ResourceTypes.TEACHER_SCRIPT,
+      ResourceTypes.LESSON_PLAN,
+      ResourceTypes.ASSESSMENT
+    ].includes(material.resource_type);
+    const eligible = eligibleRole && eligibleType;
+    const lastPublishedEvent = this.dbManager.prepare(`
+      SELECT occurred_at, available_until FROM material_publication_events
+      WHERE resource_id = ? AND version_number = ? AND state = 'published' AND occurred_at <= ?
+      ORDER BY occurred_at DESC, rowid DESC LIMIT 1
+    `).get(resourceId, material.selected_version, atIso) || null;
+
+    let status = 'never_published';
+    let blockedReason = null;
+    if (event?.state === 'unpublished') {
+      status = 'withdrawn';
+    } else if (event?.state === 'published') {
+      if (!eligible) {
+        status = 'unavailable';
+        blockedReason = event.pedagogical_role !== material.pedagogical_role
+          ? 'pedagogical_role_changed'
+          : 'not_student_facing';
+      } else if (material.status !== 'active') {
+        status = 'unavailable';
+        blockedReason = 'material_inactive';
+      } else if (event.available_until && event.available_until <= atIso) {
+        status = 'expired';
+      } else if (event.isAvailable) {
+        status = 'available';
+      } else {
+        status = 'unavailable';
+        blockedReason = 'publication_unavailable';
+      }
+    }
+
+    const otherAvailableVersions = eligible && material.status === 'active'
+      ? this.dbManager.prepare(`
+        SELECT v.version_number, v.title, e.occurred_at AS published_at, e.available_until
+        FROM resource_versions v
+        JOIN material_publication_events e
+          ON e.resource_id = v.resource_id AND e.version_number = v.version_number
+        WHERE v.resource_id = ? AND v.version_number != ?
+          AND e.rowid = (
+            SELECT e2.rowid FROM material_publication_events e2
+            WHERE e2.resource_id = v.resource_id AND e2.version_number = v.version_number
+              AND e2.occurred_at <= ?
+            ORDER BY e2.occurred_at DESC, e2.rowid DESC LIMIT 1
+          )
+          AND e.state = 'published'
+          AND e.pedagogical_role = ?
+          AND (e.available_until IS NULL OR e.available_until > ?)
+        ORDER BY v.version_number DESC
+      `).all(resourceId, material.selected_version, atIso, material.pedagogical_role, atIso)
+        .map((row) => ({
+          versionNumber: row.version_number,
+          title: row.title,
+          publishedAt: row.published_at,
+          availableUntil: row.available_until
+        }))
+      : [];
+
+    return {
+      material: {
+        id: material.id,
+        title: material.version_details?.title || material.title,
+        versionNumber: material.selected_version,
+        currentVersion: material.current_version,
+        pedagogicalRole: material.pedagogical_role,
+        resourceType: material.resource_type,
+        resourceStatus: material.status
+      },
+      status,
+      isAvailable: status === 'available',
+      canPublish: eligible && material.status === 'active' && status !== 'available',
+      canUnpublish: status === 'available',
+      publishedAt: lastPublishedEvent?.occurred_at || null,
+      availableUntil: event?.state === 'published'
+        ? event.available_until
+        : lastPublishedEvent?.available_until || null,
+      withdrawnAt: event?.state === 'unpublished' ? event.occurred_at : null,
+      lastChangedAt: event?.occurred_at || null,
+      blockedReason,
+      otherAvailableVersions
+    };
   }
 
   authorizeAssessable(resourceId, { lessonId = null, authorizedBy = 'teacher', notes = '', versionNumber = null } = {}) {
