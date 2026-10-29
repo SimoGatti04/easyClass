@@ -1,5 +1,8 @@
 # Stage 1: Client Build
-FROM node:22.23.2-bookworm-slim AS build
+FROM node:22.23.2-bookworm-slim@sha256:48e4b67d85f87bd551df43704e24d252f56cc5f8e9718841aace50f19948f0f9 AS build
+
+# Reproducible build inputs (supplied by the release build).
+ARG SOURCE_DATE_EPOCH
 
 WORKDIR /app
 
@@ -20,7 +23,14 @@ COPY vite.config.js ./
 RUN pnpm run build:client
 
 # Stage 2: Production Runtime
-FROM node:22.23.2-bookworm-slim AS runtime
+FROM node:22.23.2-bookworm-slim@sha256:48e4b67d85f87bd551df43704e24d252f56cc5f8e9718841aace50f19948f0f9 AS runtime
+
+# Reproducible build inputs and OCI metadata (supplied by the release build).
+ARG SOURCE_DATE_EPOCH
+ARG BUILD_REVISION=""
+ARG BUILD_VERSION=""
+ARG BUILD_CREATED=""
+ARG BUILD_SOURCE=""
 
 # Install runtime tools: pdftotext (poppler-utils) and pandoc
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -30,6 +40,12 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
+
+LABEL org.opencontainers.image.revision=$BUILD_REVISION \
+      org.opencontainers.image.version=$BUILD_VERSION \
+      org.opencontainers.image.created=$BUILD_CREATED \
+      org.opencontainers.image.source=$BUILD_SOURCE \
+      org.opencontainers.image.title="teacher-service"
 
 # Ensure storage directories exist and are owned by node user
 RUN mkdir -p /app/storage/files /app/storage/db && chown -R node:node /app
