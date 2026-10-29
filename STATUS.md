@@ -7,6 +7,17 @@
 **Fonte normativa:** `docs/` e decisioni del Domain Owner (13 ottobre 2026); **evidenze storiche:** `validation/results/`.
 
 
+## UX2-R1 — Evidenza recovery e candidate image (2026-10-29)
+
+**CURRENT (preparazione locale/read-only; nessun cutover):**
+- Sorgente candidata verificata su `codex/teacher-service-c6`, commit `5205441eb30ddb8a332e9f90a647549a4ea24026`; working tree pulito e discendente dalla R3 produttiva `12e5a9490fb3c639ed3534cd0a51fda2d9923e32`.
+- La CLI `bin/teacher-service-store-snapshot.js` espone `create`, `verify`, `restore` e `verify-target`; restore richiede destinazioni nuove e non sovrascrive target esistenti.
+- Le suite locali di snapshot, fault injection e SIGKILL su fixture sintetiche hanno superato 11 test; la publication API è risultata skip per loopback non disponibile in questa esecuzione. La suite completa `pnpm test` è stata rieseguita con esito precedente registrato PASS (37 suite, 0 fallimenti).
+- La destinazione storica C7B-G1 `<backup-host>:/srv/backup/teacher-service/pre-r3-cutover/` è risultata presente, con directory `0700`, manifest `0600` e 81 GiB disponibili sul filesystem remoto secondo evidenza read-only precedente. Il contenuto del manifest non è stato rilevato in questo checkpoint perché l’accesso SSH è risultato non disponibile; l’integrità hash resta quindi NOT VERIFIED.
+- Build OCI `linux/amd64` e smoke test container non eseguiti: Docker/OrbStack non era accessibile e la creazione del worktree temporaneo è stata impedita dai permessi del repository Git. Nessun artefatto o immagine è stato prodotto o pubblicato.
+
+**Decisione:** `CONDITIONAL` per la preparazione della release candidate; `HOLD` per qualsiasi cutover. Serve una nuova snapshot UX2 verificata, una verifica integrale del manifest, build/test container isolati e successiva pubblicazione autorizzata con digest immutabile.
+
 ## UX2-C — Integrazione pubblicazione version-bound (2026-10-29)
 
 **CURRENT (solo locale, branch `codex/teacher-service-c6`; base UX2-B `5ba6b97cb6da03b5f1438d8b1fd81e01a0c6ae3c`; checkpoint registrato in un commit locale dedicato):**

@@ -62,12 +62,13 @@ retired Mac mini/PM2 deployment.
 ## Persistent data and recovery risk
 
 The `class-teacher-db` and `class-teacher-files` PVCs and their node-local
-folders are production data. They are deliberately retained. **Independent
-backup to separate storage is deferred by Domain Owner direction.** Therefore
-SQLite and FileStore currently share the failure domain of `<backup-host>` and
-its local storage. PVC retention is not a backup and does not protect against
-node/disk loss, corruption, or accidental deletion. No new backup system is
-part of this checkpoint.
+folders are production data. They are deliberately retained. SQLite and
+FileStore still share the failure domain of `<backup-host>` and its local storage;
+PVC retention is not a backup and does not protect against node/disk loss,
+corruption, or accidental deletion. A historical C7B-G1 snapshot was written
+to the off-node host `<backup-host>` under `/srv/backup/teacher-service/pre-r3-cutover/`.
+That evidence does not make the process automatic, off-site, or a substitute
+for a fresh pre-release snapshot.
 
 The former portal-classi PostgreSQL database, uploads, and SQL dump are not a
 Teacher Service recovery mechanism and are retired only after their pod and
@@ -97,11 +98,12 @@ snapshot or restore has been run, and no production PVC has been read.**
 ### PLANNED — production procedure, requires separate authorization
 
 Before any production operation, the Domain Owner must approve the maintenance
-window, destination path, retention, free-space check and operator. Independent
-backup storage remains deferred; no destination has been selected or proven to
-survive `<backup-host>`/node-local storage loss. A snapshot on the existing node
-would help with application/schema rollback but would not be an independent
-backup. Do not create one in this checkpoint.
+window, destination path, retention, free-space check and operator. The
+historical `<backup-host>` destination is a candidate recovery location, not a
+completed pre-UX2 backup. Confirm its access, capacity and retention again,
+then create and verify a new snapshot during the authorized quiescence. It is
+off-node but not necessarily off-site; the single-location data-loss risk
+remains open.
 
 After the procedure is authorized and the CLI is included in a reviewed image:
 
@@ -168,8 +170,11 @@ PVC untouched and recover the previous schema/data into new targets, then
 change the workload/PVC references only under a separately authorized C7B
 plan. No destructive reverse migration is implemented.
 
-**Production backup: NOT VERIFIED. Production restore: NOT VERIFIED.** The two
-PVCs remain node-local and their loss/corruption risk remains open.
+**UX2-R1 production backup: NOT RUN. Production restore: NOT RUN.** A
+historical C7B-G1 snapshot destination was verified as present and readable by
+metadata on 2026-10-29, but its manifest contents and hashes were not re-read
+in this checkpoint. The two PVCs remain node-local and the single-location
+loss/corruption risk remains open.
 
 ## Teacher access and MCP
 
