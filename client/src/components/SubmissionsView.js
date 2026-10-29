@@ -53,7 +53,7 @@ export function SubmissionsView({ initialAssessmentId, initialSubmissionId, init
   const visibleSubmissions = useMemo(() => submissions.filter(submission =>
     statusFilter === 'reviewed'
       ? submission.status === 'reviewed' && Boolean(submission.final_grade)
-      : submission.status !== 'reviewed' || !submission.final_grade
+      : submission.attempt_status !== 'in_progress' && (submission.status !== 'reviewed' || !submission.final_grade)
   ), [submissions, statusFilter]);
 
   useEffect(() => {
@@ -464,8 +464,8 @@ export function SubmissionsView({ initialAssessmentId, initialSubmissionId, init
           h('button', { className: `btn btn-sm ${correctionMode === 'question' ? 'btn-primary' : 'btn-secondary'}`, onClick: () => setCorrectionMode('question') }, 'Per quesito')
         ]),
         h('div', { className: 'review-filter-switch', role: 'group', 'aria-label': 'Filtra valutazioni' }, [
-          h('button', { className: `btn btn-sm ${statusFilter === 'pending' ? 'btn-primary' : 'btn-secondary'}`, onClick: () => setStatusFilter('pending') }, 'Da completare'),
-          h('button', { className: `btn btn-sm ${statusFilter === 'reviewed' ? 'btn-primary' : 'btn-secondary'}`, onClick: () => setStatusFilter('reviewed') }, 'Concluse')
+          h('button', { type: 'button', 'aria-pressed': statusFilter === 'pending', className: `btn btn-sm ${statusFilter === 'pending' ? 'btn-primary' : 'btn-secondary'}`, onClick: () => setStatusFilter('pending') }, 'Da correggere'),
+          h('button', { type: 'button', 'aria-pressed': statusFilter === 'reviewed', className: `btn btn-sm ${statusFilter === 'reviewed' ? 'btn-primary' : 'btn-secondary'}`, onClick: () => setStatusFilter('reviewed') }, 'Concluse')
         ]),
         h('button', { className: 'btn btn-secondary', onClick: () => loadAssessmentWorkspace(), disabled: !selectedAssessmentId || loading }, loading ? 'Aggiornamento…' : 'Aggiorna')
       ])
@@ -476,7 +476,10 @@ export function SubmissionsView({ initialAssessmentId, initialSubmissionId, init
     correctionMode === 'student'
       ? h('section', { className: 'card submissions-list-card', key: 'student-list' }, [
         h('div', { className: 'teacher-section-heading' }, [
-          h('div', null, [h('h3', { className: 'card-title' }, 'Consegne'), h('p', { className: 'text-muted text-sm' }, `${visibleSubmissions.length} elementi in questa vista`)])
+          h('div', null, [
+            h('h3', { className: 'card-title' }, 'Consegne'),
+            h('p', { className: 'text-muted text-sm' }, `${visibleSubmissions.length} ${visibleSubmissions.length === 1 ? 'consegna' : 'consegne'} in questa vista`)
+          ])
         ]),
         loading ? h('p', { className: 'text-muted' }, 'Caricamento consegne…') : visibleSubmissions.length === 0
           ? h('div', { className: 'teacher-queue-empty' }, 'Nessuna consegna corrisponde al filtro selezionato.')

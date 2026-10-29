@@ -2,7 +2,7 @@
   "name": "teacher-service",
   "version": "0.1.0",
   "packageManager": "pnpm@10.32.1",
-  "description": "Teacher Service \u2014 Domain Core, Materials Management, and MCP Service",
+  "description": "Teacher Service — Domain Core, Materials Management, and MCP Service",
   "type": "module",
   "main": "src/index.js",
   "bin": {
@@ -23,7 +23,8 @@
     "test:browser:c4": "pnpm run build:client && node --test tests/browser/student-c4-browser.test.js",
     "test:browser:c5": "pnpm run build:client && node --test tests/browser/teacher-c5-browser.test.js",
     "test:browser:c6": "pnpm run build:client && node --test tests/browser/integrity-c6-browser.test.js",
-    "test:browser:c7a": "pnpm run build:client && node --test tests/browser/c7a-unified-browser.test.js"
+    "test:browser:c7a": "pnpm run build:client && node --test tests/browser/c7a-unified-browser.test.js",
+    "test:browser:ux2b": "pnpm run build:client && node --test tests/browser/teacher-ux2b-browser.test.js"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "1.29.0",

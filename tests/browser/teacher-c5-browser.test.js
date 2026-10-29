@@ -109,9 +109,64 @@ test('C5 teacher dashboard end-to-end: author, monitor, operate, correct, confir
   const unauthenticatedTeacherApi = await mobileStudentContext.request.get(`${url}/api/classes`);
   assert.equal(unauthenticatedTeacherApi.status(), 401, 'teacher REST endpoints reject unauthenticated principals');
 
-  // Teacher creates the assessment and its questions through the actual React dashboard.
+  // Dashboard load failure is recoverable, and genuinely empty queues read clearly.
+  await teacherPage.route('**/api/assessments', route => route.abort());
   await teacherPage.goto(`${url}/docente`);
-  await teacherPage.getByRole('heading', { name: 'Panoramica verifiche' }).waitFor();
+  const overviewError = teacherPage.getByRole('alert');
+  await overviewError.getByText('La panoramica non è disponibile').waitFor();
+  await teacherPage.unroute('**/api/assessments');
+  await overviewError.getByRole('button', { name: 'Riprova' }).click();
+  await teacherPage.getByText('Nessuna attività da preparare.').waitFor();
+  await teacherPage.getByText('Nessuna valutazione conclusa.').waitFor();
+
+  // A failed supporting lookup is visible as partial context, and its retry restores complete context.
+  await teacherPage.route('**/api/classes', route => route.abort());
+  await teacherPage.getByRole('button', { name: 'Aggiorna', exact: true }).click();
+  const contextWarning = teacherPage.getByRole('status').filter({ hasText: 'Contesto incompleto' });
+  await contextWarning.waitFor();
+  await contextWarning.getByText(/classi/).waitFor();
+  await teacherPage.unroute('**/api/classes');
+  await contextWarning.getByRole('button', { name: 'Riprova caricamento' }).click();
+  await contextWarning.waitFor({ state: 'detached' });
+
+  // The responsive teacher navigation keeps every section reachable without horizontal tab scrolling.
+  const screenshotsDir = path.resolve(process.cwd(), '.impeccable/ux2/screenshots');
+  fs.mkdirSync(screenshotsDir, { recursive: true });
+  for (const viewport of [
+    { width: 1024, height: 768 },
+    { width: 768, height: 1024 },
+    { width: 390, height: 844 },
+    { width: 320, height: 740 }
+  ]) {
+    const { width } = viewport;
+    await teacherPage.setViewportSize(viewport);
+    const mobileNavigation = teacherPage.getByRole('combobox', { name: 'Sezione docente' });
+    await mobileNavigation.waitFor();
+    assert.equal(await mobileNavigation.isVisible(), true, `responsive navigation is visible at ${width}px`);
+    assert.equal(await teacherPage.locator('.teacher-nav-groups').isVisible(), false, `desktop tabs are hidden at ${width}px`);
+    assert.deepEqual(
+      (await mobileNavigation.locator('optgroup').evaluateAll(groups => groups.map(group => group.label))).slice(0, 2),
+      ['Insegnamento', 'Verifiche'],
+      `native selector exposes section groups at ${width}px`
+    );
+    const authLabel = teacherPage.locator('.user-email-text');
+    assert.equal(await authLabel.innerText(), 'Sessione autorizzata', `authorization status is fully readable at ${width}px`);
+    assert.equal(await authLabel.evaluate(element => element.scrollWidth <= element.clientWidth), true, `authorization status is not clipped at ${width}px`);
+    assert.equal(await teacherPage.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth), true, `no horizontal page overflow at ${width}px`);
+    const homeButton = teacherPage.getByRole('button', { name: /Home Portale/ });
+    await homeButton.focus();
+    await homeButton.press('Tab');
+    assert.equal(await mobileNavigation.evaluate(element => document.activeElement === element), true, `Tab reaches responsive navigation at ${width}px`);
+    assert.equal(await mobileNavigation.evaluate(element => element.matches(':focus-visible')), true, `keyboard focus remains visible at ${width}px`);
+    await mobileNavigation.selectOption('activities');
+    assert.equal(await mobileNavigation.inputValue(), 'activities');
+    await mobileNavigation.selectOption('overview');
+    await teacherPage.getByRole('heading', { name: 'Panoramica docente' }).waitFor();
+  }
+  await teacherPage.setViewportSize({ width: 1440, height: 1000 });
+  assert.equal(await teacherPage.locator('.teacher-nav-groups').isVisible(), true, 'desktop navigation remains available at wide viewports');
+
+  // Teacher creates the assessment and its questions through the actual React dashboard.
   await teacherPage.getByRole('button', { name: /Attività/ }).click();
   await teacherPage.getByRole('button', { name: /Nuova Attività \/ Verifica/ }).click();
   await teacherPage.getByPlaceholder('Es: Verifica su Basi di Dati e SQL').fill('C5 — Chiavi e relazioni');
@@ -121,7 +176,7 @@ test('C5 teacher dashboard end-to-end: author, monitor, operate, correct, confir
   assessment = service.listAssessments({ classId: classroom.id }).find(item => item.title === 'C5 — Chiavi e relazioni');
   assert.ok(assessment, 'the assessment created in the UI is persisted in the isolated SQLite database');
 
-  await assessmentRow.getByRole('button', { name: /Quesiti/ }).click();
+  await assessmentRow.getByRole('button', { name: /quesiti/i }).click();
   const itemForm = teacherPage.locator('.item-form-section');
   await itemForm.locator('select.form-select').first().selectOption('open_question');
   await itemForm.locator('input[type="number"]').fill('5');
@@ -143,6 +198,7 @@ test('C5 teacher dashboard end-to-end: author, monitor, operate, correct, confir
   await assessmentRow.getByRole('combobox').selectOption('active');
   await teacherPage.waitForResponse(response => response.url().endsWith(`/api/assessments/${assessment.id}/status`) && response.request().method() === 'PUT' && response.status() === 200);
   assert.equal(await assessmentRow.getByRole('combobox').inputValue(), 'active', 'the teacher dashboard reflects the active lifecycle state');
+  await assessmentRow.getByRole('button', { name: 'Modifica quesiti (2)' }).waitFor();
 
   // Teacher creates one shared class PIN in the roster UI. It is not tied to a student's identity.
   await teacherPage.getByRole('button', { name: 'Registro studenti' }).click();
@@ -240,6 +296,50 @@ test('C5 teacher dashboard end-to-end: author, monitor, operate, correct, confir
   await announcement.getByText('Rossi Ada').waitFor();
   await teacherPage.getByRole('button', { name: 'Aggiorna ora' }).click();
   assert.equal(await announcement.locator('.c5-announcement-row').count(), 1, 'repeated polling does not repeat a submission announcement');
+
+  // The dashboard count and correction list exclude the still-in-progress attempt.
+  await teacherPage.getByRole('button', { name: 'Panoramica' }).click();
+  await teacherPage.getByRole('heading', { name: 'Panoramica docente' }).waitFor();
+  const overviewMetrics = teacherPage.locator('.teacher-overview-metrics');
+  await overviewMetrics.locator('.teacher-metric').nth(1).getByText('Attività attive').waitFor();
+  await overviewMetrics.locator('.teacher-metric').nth(1).getByText('1', { exact: true }).waitFor();
+  await overviewMetrics.locator('.teacher-metric').nth(2).getByText('1', { exact: true }).waitFor();
+  assert.equal(await teacherPage.getByRole('button', { name: 'Panoramica' }).getAttribute('aria-current'), 'page');
+  assert.equal(await teacherPage.getByRole('button', { name: 'Monitoraggio' }).getAttribute('aria-current'), null);
+  assert.equal(await teacherPage.locator('.teacher-nav-tab.tab-active').count(), 1, 'only the current desktop section receives active styling');
+  const inactiveNavigationItem = teacherPage.getByRole('button', { name: 'Monitoraggio' });
+  await teacherPage.evaluate(() => document.activeElement instanceof HTMLElement && document.activeElement.blur());
+  await teacherPage.mouse.move(1430, 900);
+  assert.equal(await inactiveNavigationItem.evaluate(element => element.matches(':hover, :focus-visible')), false, 'screenshot captures an idle, unfocused navigation state');
+  assert.equal(await inactiveNavigationItem.evaluate(element => getComputedStyle(element).backgroundColor), 'rgba(0, 0, 0, 0)', 'non-current section has no selected background');
+  await teacherPage.screenshot({ path: path.join(screenshotsDir, 'after-desktop-1440.png'), fullPage: true });
+  for (const viewport of [
+    { width: 1024, height: 768, label: 'tablet-landscape-1024' },
+    { width: 768, height: 1024, label: 'tablet-768' },
+    { width: 390, height: 844, label: 'mobile-390' }
+  ]) {
+    const { width, label } = viewport;
+    await teacherPage.setViewportSize(viewport);
+    assert.equal(await teacherPage.getByRole('combobox', { name: 'Sezione docente' }).isVisible(), true, `responsive navigation is visible at ${width}px`);
+    assert.equal(await teacherPage.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth), true, `no horizontal page overflow at ${width}px`);
+    await teacherPage.evaluate(() => document.activeElement instanceof HTMLElement && document.activeElement.blur());
+    await teacherPage.mouse.move(1, 1);
+    await teacherPage.screenshot({ path: path.join(screenshotsDir, `after-${label}.png`), fullPage: true });
+  }
+  await teacherPage.setViewportSize({ width: 1440, height: 1000 });
+  const attentionQueue = teacherPage.locator('.teacher-attention-list');
+  await attentionQueue.waitFor();
+  assert.equal(await attentionQueue.locator('.teacher-attention-item').count(), 1, 'an activity needing both monitoring and correction appears only once');
+  await attentionQueue.getByText('1 consegna da correggere').waitFor();
+  await attentionQueue.getByText(/1 tentativo in corso · 1 consegna inviata/).waitFor();
+  await attentionQueue.getByRole('button', { name: /Correggi consegne: C5 — Chiavi e relazioni/ }).waitFor();
+  await attentionQueue.getByRole('button', { name: /Monitora: C5 — Chiavi e relazioni/ }).waitFor();
+  await attentionQueue.getByRole('button', { name: /Correggi consegne: C5 — Chiavi e relazioni/ }).click();
+  await teacherPage.getByRole('heading', { name: 'Consegne da correggere' }).waitFor();
+  await teacherPage.getByText('1 consegna in questa vista').waitFor();
+  assert.equal(await teacherPage.locator('.submission-summary-card').count(), 1, 'the correction queue matches the dashboard count and excludes the in-progress attempt');
+  await teacherPage.getByRole('button', { name: 'Monitoraggio' }).click();
+  await teacherPage.getByRole('button', { name: 'Aggiorna ora' }).waitFor();
 
   await student2Card.getByRole('button', { name: 'Dettagli e azioni' }).click();
   await student2Detail.locator('.c5-teacher-actions textarea').fill('La prova viene terminata per una necessità organizzativa');

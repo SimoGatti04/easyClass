@@ -1,9 +1,72 @@
 # Teacher Service — Stato operativo
 
-**Aggiornato:** 2026-10-28 (Europe/Rome)
-**Fase attiva:** C7B-R3 implementato e verificato localmente; C7B produzione resta BLOCKED / NOT AUTHORIZED (Supervisione: ChatGPT)
+**Aggiornato:** 2026-10-29 (Europe/Rome)
+**Fase attiva:** C7B-R3 implementato e verificato localmente; UX2-B completato localmente e in attesa revisione; C7B produzione resta BLOCKED / NOT AUTHORIZED (Supervisione: ChatGPT)
 **Perimetro:** Workspace locale `teacher-service-design`.
 **Fonte normativa:** `docs/` e decisioni del Domain Owner (13 ottobre 2026); **evidenze storiche:** `validation/results/`.
+
+
+## UX2-B — Percorso di preparazione docente (2026-10-29)
+
+**CURRENT (solo locale, branch `codex/teacher-service-c6`):**
+- Percorso guidato: classe → materia → lezione → fonti → materiale → revisione → disponibilità.
+- Contesto persistente; cambio contesto protetto dalle bozze non salvate; stati di versione, bozza e conferma distinti.
+- La conferma congela le versioni selezionate e non pubblica i materiali. In assenza di REST docente, la disponibilità è indicata come non consultabile; nessuna pubblicazione è simulata.
+- Nessuna modifica a backend, API, database, autenticazione, MCP, logica verifiche o contratti di pubblicazione.
+
+**Verifiche locali finali:**
+- `UX2B_SCREENSHOTS_DIR=.impeccable/ux2/screenshots pnpm run test:browser:ux2b`: 1 passato, 0 falliti, 0 skip; Chromium headless su fixture sintetiche, viewport 1440×1000 / 768×1024 / 390×844; build client superata.
+- `pnpm run test:browser:c5`: 1 passato, 0 falliti, 0 skip.
+- `pnpm test`: 37 suite passate, 0 fallite; esecuzione finale con loopback consentito, senza skip.
+- Impeccable 4.8.0: detector `--scope layout` senza finding; scansione completa 355 match (9 warning side-tab e 346 advisory di tipografia/radius/colore, non attribuibili tutti al diff UX2-B). Verifica automatica non equivale a certificazione WCAG.
+- Evidenze prima/dopo, errore 503, contesto sticky e conferma in `.impeccable/ux2/screenshots/`; report `.impeccable/ux2/UX2-B-report.md`.
+- Viewport emulati in Chromium, nessun device fisico/screen reader e nessuna verifica a 320/1024 px. Nessun deployment, push o merge.
+
+**PLANNED / dipendenza residua:** proporre e validare il contratto REST docente per leggere, pubblicare e ritirare versioni esatte; non implementato in UX2-B. La UI non deve esporre comandi di pubblicazione finché tale API non esiste.
+
+
+
+## UX2-A — Navigazione responsive e coda unica docente (2026-10-28)
+
+**CURRENT (solo locale, branch `codex/teacher-service-c6`):**
+- La navigazione docente usa link raggruppati su desktop e un selettore nativo etichettato con gruppi fino a 1024 px; la dicitura di sessione autorizzata resta completa su smartphone.
+- La dashboard mostra una sola riga per attività che richiede correzione e monitoraggio, conservando indicatori di stato e azioni separati. Non aggiunge scadenze o priorità assenti dal servizio.
+- Reso immediato il cambio di evidenza della navigazione per evitare un’apparente doppia sezione attiva durante la transizione CSS.
+- Nessuna modifica a backend, API, database, autenticazione, MCP, scoring o logica di correzione; nessun deployment, push o merge.
+
+**Verifiche locali:**
+- `pnpm run test:browser:c5`: 1 test passato, 0 fallimenti, 0 skip; fixture C5 sintetica, ordine Tab/focus visibile, gruppi del selettore, una riga con due azioni e viewport 1024/768/390/320 px. La build client eseguita dal comando è passata.
+- `pnpm test`: 37 suite passate, 0 fallite, 2 skip (Docker/image indisponibili e un test HTTP saltato per policy di bind loopback nell’esecuzione non elevata).
+- Impeccable 4.8.0 `detect --json --scope layout` su `client/app.css`, `TeacherArea.js` e `TeacherOverviewView.js`: `[]`; è un controllo statico e non certifica WCAG o qualità visiva.
+- Chrome visibile ispezionato su desktop; gli altri breakpoint sono stati verificati con Chromium automatizzato, non su dispositivi fisici. Screenshot in `.impeccable/ux2/screenshots/`; report `.impeccable/ux2/UX2-A-report.md`.
+- Nessun commit locale creato; le modifiche UX1 già presenti nel working tree sono state preservate.
+
+**Limiti:** gli screenshot UX1 “before” e C5 “after” usano fixture sintetiche diverse. La coda è verificata sul caso sintetico, non su tutti i dati possibili.
+
+**Stato alla chiusura UX2-A:** UX2-B era il passo successivo; è stato poi approvato e completato localmente (vedi sezione UX2-B sopra).
+
+## UX1 — Design foundation e revisione dashboard docente (2026-10-28)
+
+**CURRENT (solo locale, branch `codex/teacher-service-c6`):**
+- Registrate in `PRODUCT.md` e `DESIGN.md` le decisioni approvate: console operativa (B) per docenti, studio didattico (A) per studenti, con un’unica fondazione condivisa. Il redesign studenti resta pianificato, non implementato.
+- Rivista la dashboard docente con metriche esplicite, contesto classe/materia/lezione, code operative separate dagli altri stati, azione di creazione non più dominante quando è presente lavoro operativo, messaggi di caricamento/errore e recupero.
+- Resi espliciti i livelli di conteggio: le metriche misurano consegne/valutazioni, mentre le code contano attività; “attività attive” include verifiche ed esercitazioni.
+- Gli errori delle richieste di classi, materie o lezioni non vengono più convertiti silenziosamente in liste vuote: la dashboard mantiene conteggi e code e segnala il contesto incompleto con riprova.
+- Non modificati backend, API, database, autenticazione, contratti MCP, scoring o transizioni di stato delle verifiche. `SubmissionsView` esclude dalla vista di correzione gli attempt `in_progress`: modifica del solo filtro UI, da includere nella revisione. Nessun deployment o verifica live.
+
+**Rilievi e limiti aperti:**
+- Il caso UX0 “attività attiva con zero quesiti” non è stato riprodotto nel dataset sintetico UX1: l’attività attiva ispezionata contiene 2 quesiti. Tuttavia `updateAssessment` non verifica il numero di quesiti prima di accettare lo stato `active`; il rischio resta funzionale e richiede un successivo intervento di dominio/backend, non una correzione cosmetica del frontend.
+- Su viewport stretti la navigazione docente eccede la larghezza e richiede scorrimento orizzontale: il documento non ha overflow, ma le ultime voci non sono tutte visibili contemporaneamente. Nessun dispositivo fisico o gesto touch reale è stato usato.
+
+**Verifiche locali:**
+- `pnpm run test:browser:c5`: PASS, 1 test browser; il test include la build del frontend. Verificato flusso di riprova per errore totale e parziale con database isolato e dati sintetici.
+- `pnpm test`: 37 suite PASS, 0 fallite; 2 test saltati per Docker/image non accessibile e policy loopback nel run generale. Nessuna verifica live.
+- `pnpm run build:client`: PASS (Vite 8.3.4; verificato anche nel test browser).
+- Browser: Chrome desktop aperto sulla preview sintetica; Playwright/Chromium ha prodotto screenshot a 2560×1318, 1440×1000, 768×1024 e 390×844. Su 390px, `document.scrollWidth` = 390px; la barra di navigazione interna misura 868px e resta scorribile. Sequenza Tab verificata su 12 controlli, con indicatori focus visibili. Nessuna prova con screen reader o touch fisico.
+- Impeccable 4.8.0: `detect --json client/src/components/TeacherOverviewView.js` -> `[]`; la scansione successiva di `TeacherArea.js`, `TeacherOverviewView.js` e `client/app.css` ha restituito 8 warning `side-tab` (7 fuori dal route dashboard, 1 stato warning intenzionale). Critique qualitativa: 28/40; audit tecnico: 15/20; dettagli in `.impeccable/ux1/UX1-report.md`. Il detector non certifica qualità visiva o WCAG.
+- Screenshot sintetici e rapporto sono conservati sotto `.impeccable/ux1/`; lo snapshot UX0 e le evidenze storiche C0–C13 restano invariati.
+
+**Non eseguito:** deployment, push, merge, modifica di dati di produzione o build/push di immagini Docker.
 
 
 ## C7B-G2-R1 — Chiusura accettazione funzionale e correzione smoke test CSRF (2026-10-28)

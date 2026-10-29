@@ -9,6 +9,7 @@ import React, { createElement as h, useState, useEffect, useCallback, useRef } f
 
 import { Header } from './Header.js';
 import { ContextBar } from './ContextBar.js';
+import { AvailabilityPanel, PreparationFlowNav } from './PreparationFlow.js';
 import { LessonHeader } from './LessonHeader.js';
 import { SourceManager } from './SourceManager.js';
 import { StepProgressCard } from './StepProgressCard.js';
@@ -28,6 +29,19 @@ export function TeacherPreparationView() {
   const [classes, setClasses] = useState([]);
   const [subjects, setSubjects] = useState([]);
   const [lessons, setLessons] = useState([]);
+  const [classesLoading, setClassesLoading] = useState(true);
+  const [subjectsLoading, setSubjectsLoading] = useState(false);
+  const [lessonsLoading, setLessonsLoading] = useState(false);
+  const [packLoading, setPackLoading] = useState(false);
+  const [materialsLoading, setMaterialsLoading] = useState(false);
+  const [classesError, setClassesError] = useState('');
+  const [subjectsError, setSubjectsError] = useState('');
+  const [lessonsError, setLessonsError] = useState('');
+  const [packError, setPackError] = useState('');
+  const [materialsError, setMaterialsError] = useState('');
+  const [subjectRetryIndex, setSubjectRetryIndex] = useState(0);
+  const [lessonRetryIndex, setLessonRetryIndex] = useState(0);
+  const [savingArtifactDraft, setSavingArtifactDraft] = useState(false);
 
   const [selectedClassId, setSelectedClassId] = useState(null);
   const [selectedSubjectId, setSelectedSubjectId] = useState(null);
@@ -41,6 +55,10 @@ export function TeacherPreparationView() {
 
   const [durationMinutes, setDurationMinutes] = useState(60);
   const [additionalPrompt, setAdditionalPrompt] = useState('');
+  const [artifactDraftDirty, setArtifactDraftDirty] = useState(false);
+  const [discardDraftToken, setDiscardDraftToken] = useState(0);
+  const [pendingTransition, setPendingTransition] = useState(null);
+  const [isConfirmingPreparation, setIsConfirmingPreparation] = useState(false);
 
   // Step states: 'idle' | 'running' | 'completed' | 'failed'
   const [stepStates, setStepStates] = useState({
@@ -58,6 +76,24 @@ export function TeacherPreparationView() {
   // Notice toast
   const [notice, setNotice] = useState(null);
   const noticeTimerRef = useRef(null);
+  const classRequestRef = useRef(0);
+  const subjectRequestRef = useRef(0);
+  const lessonRequestRef = useRef(0);
+  const packRequestRef = useRef(0);
+  const materialsRequestRef = useRef(0);
+  const activeContextRef = useRef({ classId: null, subjectId: null, lessonId: null });
+  const transitionTriggerRef = useRef(null);
+
+  activeContextRef.current = {
+    classId: selectedClassId,
+    subjectId: selectedSubjectId,
+    lessonId: selectedLessonId
+  };
+
+  const hasUnsavedPreparationInputs = Boolean(
+    selectedSourceIds.length || additionalPrompt.trim() || sourceSelectionMode !== 'selected_only'
+  );
+  const hasUnsavedChanges = artifactDraftDirty || hasUnsavedPreparationInputs;
 
   const showNotice = useCallback((type, message) => {
     if (noticeTimerRef.current) clearTimeout(noticeTimerRef.current);
@@ -65,142 +101,271 @@ export function TeacherPreparationView() {
     noticeTimerRef.current = setTimeout(() => setNotice(null), 5000);
   }, []);
 
-  // 1. Initial Authentication & Class Discovery
+  const loadClasses = useCallback(async () => {
+    const requestId = ++classRequestRef.current;
+    setClassesLoading(true);
+    setClassesError('');
+    try {
+      const response = await fetch('/api/classes');
+      if (!response.ok) throw new Error(`Risposta non riuscita (${response.status})`);
+      const data = await response.json();
+      if (requestId !== classRequestRef.current) return;
+      const list = data.classes || [];
+      setClasses(list);
+      setSelectedClassId(current => list.some(item => item.id === current) ? current : list[0]?.id || null);
+    } catch (error) {
+      if (requestId === classRequestRef.current) setClassesError(error.message || 'Errore durante il caricamento delle classi.');
+    } finally {
+      if (requestId === classRequestRef.current) setClassesLoading(false);
+    }
+  }, []);
+
+  // Authentication and initial class discovery.
   useEffect(() => {
+    let mounted = true;
     async function loadInitial() {
       try {
-        const authRes = await fetch('/api/auth/me');
-        if (authRes.ok) {
-          const authData = await authRes.json();
-          setUser(authData);
-        } else {
-          setUser({ authenticated: false, teacherAuthorized: false });
-        }
-      } catch (err) {
-        setUser({ authenticated: false, teacherAuthorized: false, error: err.message });
+        const response = await fetch('/api/auth/me');
+        if (!mounted) return;
+        setUser(response.ok ? await response.json() : { authenticated: false, teacherAuthorized: false });
+      } catch (error) {
+        if (mounted) setUser({ authenticated: false, teacherAuthorized: false, error: error.message });
       }
-
-      try {
-        const clsRes = await fetch('/api/classes');
-        if (clsRes.ok) {
-          const clsData = await clsRes.json();
-          const clsList = clsData.classes || [];
-          setClasses(clsList);
-          if (clsList.length > 0) {
-            setSelectedClassId(clsList[0].id);
-          }
-        }
-      } catch (err) {
-        showNotice('error', `Errore caricamento classi: ${err.message}`);
-      }
+      if (mounted) await loadClasses();
     }
     loadInitial();
-  }, [showNotice]);
+    return () => { mounted = false; classRequestRef.current += 1; };
+  }, [loadClasses]);
 
-  // 2. Load Subjects when selectedClassId changes
   useEffect(() => {
+    const requestId = ++subjectRequestRef.current;
+    ++lessonRequestRef.current;
+    setSubjects([]);
+    setLessons([]);
+    setSubjectsError('');
+    setLessonsError('');
+    setSubjectsLoading(Boolean(selectedClassId));
+    setLessonsLoading(false);
     if (!selectedClassId) {
-      setSubjects([]);
       setSelectedSubjectId(null);
-      return;
-    }
-    async function fetchSubjects() {
-      try {
-        const res = await fetch(`/api/subjects?classId=${encodeURIComponent(selectedClassId)}`);
-        if (res.ok) {
-          const data = await res.json();
-          const list = data.subjects || [];
-          setSubjects(list);
-          if (list.length > 0) {
-            setSelectedSubjectId(list[0].id);
-          } else {
-            setSelectedSubjectId(null);
-          }
-        }
-      } catch (err) {
-        showNotice('error', `Errore materie: ${err.message}`);
-      }
-    }
-    fetchSubjects();
-  }, [selectedClassId, showNotice]);
-
-  // 3. Load Lessons when selectedSubjectId changes
-  useEffect(() => {
-    if (!selectedClassId || !selectedSubjectId) {
-      setLessons([]);
       setSelectedLessonId(null);
-      return;
+      setSubjectsLoading(false);
+      return undefined;
     }
-    async function fetchLessons() {
-      try {
-        const res = await fetch(`/api/lessons?classId=${encodeURIComponent(selectedClassId)}&subjectId=${encodeURIComponent(selectedSubjectId)}`);
-        if (res.ok) {
-          const data = await res.json();
-          const list = data.lessons || [];
-          setLessons(list);
-          if (list.length > 0) {
-            setSelectedLessonId(list[0].id);
-          } else {
-            setSelectedLessonId(null);
-          }
-        }
-      } catch (err) {
-        showNotice('error', `Errore lezioni: ${err.message}`);
-      }
-    }
-    fetchLessons();
-  }, [selectedClassId, selectedSubjectId, showNotice]);
 
-  // 4. Load Lesson Pack & Materials when selectedLessonId changes
+    let cancelled = false;
+    (async () => {
+      try {
+        const response = await fetch(`/api/subjects?classId=${encodeURIComponent(selectedClassId)}`);
+        if (!response.ok) throw new Error(`Risposta non riuscita (${response.status})`);
+        const data = await response.json();
+        if (cancelled || requestId !== subjectRequestRef.current) return;
+        const list = data.subjects || [];
+        setSubjects(list);
+        setSelectedSubjectId(current => list.some(item => item.id === current) ? current : list[0]?.id || null);
+      } catch (error) {
+        if (!cancelled && requestId === subjectRequestRef.current) setSubjectsError(error.message || 'Errore durante il caricamento delle materie.');
+      } finally {
+        if (!cancelled && requestId === subjectRequestRef.current) setSubjectsLoading(false);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [selectedClassId, subjectRetryIndex]);
+
+  useEffect(() => {
+    const requestId = ++lessonRequestRef.current;
+    setLessons([]);
+    setLessonsError('');
+    setLessonsLoading(Boolean(selectedClassId && selectedSubjectId));
+    if (!selectedClassId || !selectedSubjectId) {
+      setSelectedLessonId(null);
+      setLessonsLoading(false);
+      return undefined;
+    }
+
+    let cancelled = false;
+    (async () => {
+      try {
+        const response = await fetch(`/api/lessons?classId=${encodeURIComponent(selectedClassId)}&subjectId=${encodeURIComponent(selectedSubjectId)}`);
+        if (!response.ok) throw new Error(`Risposta non riuscita (${response.status})`);
+        const data = await response.json();
+        if (cancelled || requestId !== lessonRequestRef.current) return;
+        const list = data.lessons || [];
+        setLessons(list);
+        setSelectedLessonId(current => list.some(item => item.id === current) ? current : list[0]?.id || null);
+      } catch (error) {
+        if (!cancelled && requestId === lessonRequestRef.current) setLessonsError(error.message || 'Errore durante il caricamento delle lezioni.');
+      } finally {
+        if (!cancelled && requestId === lessonRequestRef.current) setLessonsLoading(false);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [selectedClassId, selectedSubjectId, lessonRetryIndex]);
+
   const reloadPack = useCallback(async (lessonId) => {
+    const requestId = ++packRequestRef.current;
     if (!lessonId) {
       setLessonPack(null);
+      setPackError('');
+      setPackLoading(false);
       return;
     }
+    setPackLoading(true);
+    setPackError('');
     try {
-      const res = await fetch(`/api/lessons/${encodeURIComponent(lessonId)}/pack`);
-      if (res.ok) {
-        const data = await res.json();
-        setLessonPack(data.pack);
-        if (data.pack?.lesson?.duration_minutes) {
-          setDurationMinutes(data.pack.lesson.duration_minutes);
-        }
+      const response = await fetch(`/api/lessons/${encodeURIComponent(lessonId)}/pack`);
+      if (!response.ok) throw new Error(`Risposta non riuscita (${response.status})`);
+      const data = await response.json();
+      const active = activeContextRef.current;
+      if (requestId !== packRequestRef.current || active.lessonId !== lessonId) return;
+      setLessonPack(data.pack);
+      if (data.pack?.lesson?.duration_minutes) setDurationMinutes(data.pack.lesson.duration_minutes);
+    } catch (error) {
+      if (requestId === packRequestRef.current && activeContextRef.current.lessonId === lessonId) {
+        setPackError(error.message || 'Errore durante il caricamento del pacchetto.');
       }
-    } catch (err) {
-      showNotice('error', `Errore caricamento pack: ${err.message}`);
+    } finally {
+      if (requestId === packRequestRef.current && activeContextRef.current.lessonId === lessonId) setPackLoading(false);
     }
-  }, [showNotice]);
+  }, []);
 
   const reloadMaterials = useCallback(async (classId, subjectId, lessonId) => {
-    if (!classId) return;
+    const requestId = ++materialsRequestRef.current;
+    if (!classId) {
+      setMaterials([]);
+      setMaterialsLoading(false);
+      setMaterialsError('');
+      return;
+    }
+    setMaterialsLoading(true);
+    setMaterialsError('');
     try {
       let url = `/api/materials?classId=${encodeURIComponent(classId)}`;
       if (subjectId) url += `&subjectId=${encodeURIComponent(subjectId)}`;
       if (lessonId) url += `&lessonId=${encodeURIComponent(lessonId)}`;
-      const res = await fetch(url);
-      if (res.ok) {
-        const data = await res.json();
-        const allMats = data.materials || [];
-        // Requirement 2: Do NOT include generated lesson pack artifacts in candidate sources
-        const packTypes = ['lesson_plan', 'teacher_script', 'exercise_sheet', 'student_material'];
-        const candidateSources = allMats.filter(m => !(packTypes.includes(m.resource_type) && m.lesson_id === lessonId));
-        setMaterials(candidateSources);
-        // Requirement 2: No indiscriminate preselection of artifacts! Initialize empty
-        setSelectedSourceIds([]);
+      const response = await fetch(url);
+      if (!response.ok) throw new Error(`Risposta non riuscita (${response.status})`);
+      const data = await response.json();
+      const active = activeContextRef.current;
+      if (requestId !== materialsRequestRef.current || active.classId !== classId || active.subjectId !== subjectId || active.lessonId !== lessonId) return;
+      const allMaterials = data.materials || [];
+      const packTypes = ['lesson_plan', 'teacher_script', 'exercise_sheet', 'student_material', 'student_note'];
+      const candidateSources = allMaterials.filter(material => !(packTypes.includes(material.resource_type) && material.lesson_id === lessonId));
+      setMaterials(candidateSources);
+    } catch (error) {
+      const active = activeContextRef.current;
+      if (requestId === materialsRequestRef.current && active.classId === classId && active.subjectId === subjectId && active.lessonId === lessonId) {
+        setMaterialsError(error.message || 'Errore durante il caricamento delle fonti.');
       }
-    } catch {}
+    } finally {
+      const active = activeContextRef.current;
+      if (requestId === materialsRequestRef.current && active.classId === classId && active.subjectId === subjectId && active.lessonId === lessonId) setMaterialsLoading(false);
+    }
   }, []);
 
   useEffect(() => {
+    ++packRequestRef.current;
+    ++materialsRequestRef.current;
+    setLessonPack(null);
+    setMaterials([]);
+    setSelectedSourceIds([]);
+    setAdditionalPrompt('');
+    setSourceSelectionMode('selected_only');
+    setPackError('');
+    setMaterialsError('');
     if (selectedLessonId) {
       reloadPack(selectedLessonId);
       reloadMaterials(selectedClassId, selectedSubjectId, selectedLessonId);
     } else {
-      setLessonPack(null);
-      setMaterials([]);
-      setSelectedSourceIds([]);
+      setPackLoading(false);
+      setMaterialsLoading(false);
     }
   }, [selectedLessonId, selectedClassId, selectedSubjectId, reloadPack, reloadMaterials]);
+
+  function requestTransition(label, action, { contextChange = false } = {}) {
+    const discardArtifactDraft = artifactDraftDirty;
+    const discardPreparationInputs = contextChange && hasUnsavedPreparationInputs;
+    if (discardArtifactDraft || discardPreparationInputs) {
+      transitionTriggerRef.current = document.activeElement;
+      setPendingTransition({ label, action, discardArtifactDraft, discardPreparationInputs });
+      return;
+    }
+    action();
+  }
+
+  function cancelPendingTransition() {
+    setPendingTransition(null);
+    requestAnimationFrame(() => transitionTriggerRef.current?.focus?.());
+  }
+
+  function continuePendingTransition() {
+    if (!pendingTransition) return;
+    const transition = pendingTransition;
+    setPendingTransition(null);
+    if (transition.discardArtifactDraft) {
+      setDiscardDraftToken(value => value + 1);
+      setArtifactDraftDirty(false);
+    }
+    if (transition.discardPreparationInputs) {
+      setSelectedSourceIds([]);
+      setAdditionalPrompt('');
+      setSourceSelectionMode('selected_only');
+    }
+    transition.action();
+  }
+
+  function resetLessonWorkspace() {
+    setLessonPack(null);
+    setMaterials([]);
+    setSelectedSourceIds([]);
+    setSourceSelectionMode('selected_only');
+    setAdditionalPrompt('');
+    setActiveTab('lessonPlan');
+    setStepStates({ lessonPlan: 'idle', teacherScript: 'idle', exercises: 'idle', studentMaterial: 'idle' });
+    setArtifactDraftDirty(false);
+    setDiscardDraftToken(value => value + 1);
+  }
+
+  function selectClassNow(classId) {
+    setSelectedClassId(classId);
+    setSelectedSubjectId(null);
+    setSelectedLessonId(null);
+    setSubjects([]);
+    setLessons([]);
+    resetLessonWorkspace();
+  }
+
+  function selectSubjectNow(subjectId) {
+    setSelectedSubjectId(subjectId);
+    setSelectedLessonId(null);
+    setLessons([]);
+    resetLessonWorkspace();
+  }
+
+  function selectLessonNow(lessonId) {
+    setSelectedLessonId(lessonId);
+    resetLessonWorkspace();
+  }
+
+  const handleSelectClass = classId => requestTransition(
+    `passare alla classe ${classes.find(item => item.id === classId)?.name || 'selezionata'}`,
+    () => selectClassNow(classId),
+    { contextChange: true }
+  );
+  const handleSelectSubject = subjectId => requestTransition(
+    `passare alla materia ${subjects.find(item => item.id === subjectId)?.name || 'selezionata'}`,
+    () => selectSubjectNow(subjectId),
+    { contextChange: true }
+  );
+  const handleSelectLesson = lessonId => requestTransition(
+    `passare alla lezione ${lessons.find(item => item.id === lessonId)?.title || 'selezionata'}`,
+    () => selectLessonNow(lessonId),
+    { contextChange: true }
+  );
+
+  function openContextModal(modalName, label) {
+    requestTransition(label, () => setActiveModal(modalName), { contextChange: true });
+  }
 
   // Context Actions
   const handleCreateClass = async (form) => { 
@@ -215,7 +380,7 @@ export function TeacherPreparationView() {
     }
     const data = await res.json();
     setClasses(prev => [...prev, data.class]);
-    setSelectedClassId(data.class.id);
+    selectClassNow(data.class.id);
     showNotice('success', `Classe "${data.class.name}" creata con successo`);
   };
 
@@ -231,7 +396,7 @@ export function TeacherPreparationView() {
     }
     const data = await res.json();
     setSubjects(prev => [...prev, data.subject]);
-    setSelectedSubjectId(data.subject.id);
+    selectSubjectNow(data.subject.id);
     showNotice('success', `Materia "${data.subject.name}" creata con successo`);
   };
 
@@ -247,7 +412,7 @@ export function TeacherPreparationView() {
     }
     const data = await res.json();
     setLessons(prev => [...prev, data.lesson]);
-    setSelectedLessonId(data.lesson.id);
+    selectLessonNow(data.lesson.id);
     setDurationMinutes(data.lesson.duration_minutes || 60);
     showNotice('success', `Lezione "${data.lesson.title}" programmata`);
   };
@@ -455,22 +620,48 @@ export function TeacherPreparationView() {
 
   // Preparation Confirmation
   const handleConfirmPrep = async (notes) => {
-    const res = await fetch(`/api/lessons/${encodeURIComponent(selectedLessonId)}/confirm-preparation`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ notes })
-    });
-
-    if (!res.ok) {
-      const err = await res.json();
-      throw new Error(err.message || 'Errore conferma preparazione');
+    const lessonId = selectedLessonId;
+    setIsConfirmingPreparation(true);
+    try {
+      const response = await fetch(`/api/lessons/${encodeURIComponent(lessonId)}/confirm-preparation`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ notes })
+      });
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Errore conferma preparazione');
+      }
+      showNotice('success', 'Pacchetto della lezione confermato. La disponibilità agli studenti resta separata.');
+      await reloadPack(lessonId);
+    } catch (error) {
+      showNotice('error', `La preparazione non è stata confermata: ${error.message}`);
+      throw error;
+    } finally {
+      setIsConfirmingPreparation(false);
     }
-
-    showNotice('success', 'Preparazione congelata e confermata per la lezione di domani!');
-    await reloadPack(selectedLessonId);
   };
 
-  const selectedLesson = lessons.find(l => l.id === selectedLessonId);
+  const selectedClass = classes.find(item => item.id === selectedClassId);
+  const selectedSubject = subjects.find(item => item.id === selectedSubjectId);
+  const selectedLesson = lessons.find(item => item.id === selectedLessonId);
+  const currentPreparationContext = [selectedClass?.name, selectedSubject?.name, selectedLesson?.title]
+    .filter(Boolean)
+    .join(' / ');
+  const contextLoadingLabel = classesLoading
+    ? 'Caricamento delle classi…'
+    : subjectsLoading
+      ? 'Caricamento delle materie…'
+      : lessonsLoading
+        ? 'Caricamento delle lezioni…'
+        : '';
+  const contextEmptyCopy = classesError || subjectsError || lessonsError
+    ? 'Il contesto non è completo. Usa il comando “Riprova” accanto al campo che non è stato caricato.'
+    : !selectedClassId
+      ? 'Seleziona o crea una classe per iniziare.'
+      : !selectedSubjectId
+        ? 'Seleziona o crea una materia per questa classe.'
+        : 'Seleziona o crea una lezione per questa materia.';
 
   return h('div', { className: 'teacher-app' }, [
     // Header with User Auth State
@@ -485,13 +676,25 @@ export function TeacherPreparationView() {
       selectedClassId,
       selectedSubjectId,
       selectedLessonId,
-      onSelectClass: setSelectedClassId,
-      onSelectSubject: setSelectedSubjectId,
-      onSelectLesson: setSelectedLessonId,
-      onOpenNewClass: () => setActiveModal('newClass'),
-      onOpenNewSubject: () => setActiveModal('newSubject'),
-      onOpenNewLesson: () => setActiveModal('newLesson')
+      onSelectClass: handleSelectClass,
+      onSelectSubject: handleSelectSubject,
+      onSelectLesson: handleSelectLesson,
+      onOpenNewClass: () => openContextModal('newClass', 'creare una nuova classe'),
+      onOpenNewSubject: () => openContextModal('newSubject', 'creare una nuova materia'),
+      onOpenNewLesson: () => openContextModal('newLesson', 'creare una nuova lezione'),
+      classLoading: classesLoading,
+      subjectLoading: subjectsLoading,
+      lessonLoading: lessonsLoading,
+      classError: classesError,
+      subjectError: subjectsError,
+      lessonError: lessonsError,
+      onRetryClasses: loadClasses,
+      onRetrySubjects: () => setSubjectRetryIndex(value => value + 1),
+      onRetryLessons: () => setLessonRetryIndex(value => value + 1),
+      locked: isGenerating || isConfirmingPreparation || savingArtifactDraft || Boolean(activeModal || pendingTransition)
     }),
+
+    selectedLesson ? h(PreparationFlowNav, { key: 'flow-nav', currentContext: currentPreparationContext }) : null,
 
     // Notice banner
     notice ? h('div', {
@@ -503,10 +706,9 @@ export function TeacherPreparationView() {
     // Main workspace container
     h('main', { key: 'main', className: 'main-container' }, [
       !selectedLesson
-        ? h('div', { key: 'no-les', className: 'empty-state' }, [
-            h('div', { key: 'i', style: { fontSize: '3rem', marginBottom: '1rem' } }, '📋'),
-            h('h3', { key: 't' }, 'Nessuna lezione selezionata'),
-            h('p', { key: 'd' }, 'Seleziona o crea una classe, una materia e una lezione per iniziare a preparare i materiali.')
+        ? h('section', { key: 'no-les', className: 'preparation-empty-state', role: contextLoadingLabel ? 'status' : undefined, 'aria-live': 'polite' }, [
+            h('h2', { key: 'title' }, contextLoadingLabel || 'Preparazione lezione'),
+            h('p', { key: 'description' }, contextEmptyCopy)
           ])
         : [
             // Lesson Header with Status and Duration configuration
@@ -515,9 +717,13 @@ export function TeacherPreparationView() {
               lesson: selectedLesson,
               pack: lessonPack,
               durationMinutes,
-              onChangeDuration: handleChangeDuration,
-              onOpenConfirmModal: () => setActiveModal('confirm')
+              onChangeDuration: handleChangeDuration
             }),
+            packLoading ? h('p', { key: 'pack-loading', className: 'inline-status', role: 'status' }, 'Caricamento del pacchetto della lezione…') : null,
+            packError ? h('div', { key: 'pack-error', className: 'inline-error', role: 'alert' }, [
+              h('p', { key: 'message' }, `Il pacchetto non è disponibile. ${packError}`),
+              h('button', { key: 'retry', type: 'button', className: 'btn btn-secondary btn-sm', onClick: () => reloadPack(selectedLessonId) }, 'Riprova caricamento')
+            ]) : null,
 
             // Source Set Manager (Checkboxes and real multipart upload)
             h(SourceManager, {
@@ -525,11 +731,14 @@ export function TeacherPreparationView() {
               materials,
               selectedSourceIds,
               sourceSelectionMode,
+              loading: materialsLoading,
+              error: materialsError,
+              onRetry: () => reloadMaterials(selectedClassId, selectedSubjectId, selectedLessonId),
               onChangeSelectionMode: setSourceSelectionMode,
               onToggleSource: handleToggleSource,
               onSelectAllSources: handleSelectAllSources,
               onClearSources: handleClearSources,
-              onOpenUploadModal: () => setActiveModal('upload')
+              onOpenUploadModal: () => openContextModal('upload', 'caricare una fonte')
             }),
 
             // Step Progress Card (Sequential 4 steps + selective retry)
@@ -538,6 +747,7 @@ export function TeacherPreparationView() {
               pack: lessonPack,
               stepStates,
               isGenerating,
+              hasUnsavedChanges: artifactDraftDirty,
               additionalPrompt,
               onChangePrompt: setAdditionalPrompt,
               onStartFullGeneration: handleStartFullGeneration,
@@ -546,11 +756,19 @@ export function TeacherPreparationView() {
 
             // Artifact Workspace (Tabs, MarkdownViewer, In-place Edit, AI Revision, Multi-format Export)
             h(ArtifactWorkspace, {
-              key: 'art-ws',
+              key: `art-ws-${selectedLessonId}`,
               pack: lessonPack,
               activeTab,
               onSelectTab: setActiveTab,
               onSaveEdit: handleSaveEdit,
+              onDraftStateChange: setArtifactDraftDirty,
+              onSavingStateChange: setSavingArtifactDraft,
+              discardDraftToken,
+              onRequestTransition: requestTransition,
+              onOpenConfirmModal: () => requestTransition(
+                'confermare il pacchetto della lezione',
+                () => setActiveModal('confirm')
+              ),
               onOpenRevisionModal: (art) => {
                 setModalArtifact(art);
                 setActiveModal('revision');
@@ -559,7 +777,8 @@ export function TeacherPreparationView() {
                 setModalArtifact(art);
                 setActiveModal('export');
               }
-            })
+            }),
+            h(AvailabilityPanel, { key: 'availability', pack: lessonPack })
           ]
     ]),
 
@@ -619,6 +838,39 @@ export function TeacherPreparationView() {
         setActiveModal(null);
         setModalArtifact(null);
       }
-    }) : null
+    }) : null,
+
+    pendingTransition ? h('div', { key: 'unsaved-backdrop', className: 'unsaved-draft-backdrop' },
+      h('section', {
+        className: 'unsaved-draft-dialog',
+        role: 'alertdialog',
+        'aria-modal': 'true',
+        'aria-labelledby': 'unsaved-draft-title',
+        'aria-describedby': 'unsaved-draft-description',
+        onKeyDown: event => {
+          if (event.key === 'Escape') {
+            event.preventDefault();
+            cancelPendingTransition();
+            return;
+          }
+          if (event.key !== 'Tab') return;
+          const controls = Array.from(event.currentTarget.querySelectorAll('button:not([disabled])'));
+          if (!controls.length) return;
+          const first = controls[0];
+          const last = controls[controls.length - 1];
+          if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last.focus(); }
+          else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); }
+        }
+      }, [
+        h('h2', { key: 'title', id: 'unsaved-draft-title' }, 'Modifiche non salvate'),
+        h('p', { key: 'description', id: 'unsaved-draft-description' }, pendingTransition.discardPreparationInputs
+          ? `Fonti, istruzioni o una modifica del materiale non sono state salvate. Se continui per ${pendingTransition.label}, queste modifiche locali verranno scartate.`
+          : `La modifica corrente non è stata salvata. Se continui per ${pendingTransition.label}, la bozza nell’editor verrà scartata.`),
+        h('div', { key: 'actions', className: 'unsaved-draft-actions' }, [
+          h('button', { key: 'stay', type: 'button', className: 'btn btn-secondary', autoFocus: true, onClick: cancelPendingTransition }, 'Resta nella bozza'),
+          h('button', { key: 'continue', type: 'button', className: 'btn btn-danger', onClick: continuePendingTransition }, 'Scarta e continua')
+        ])
+      ])
+    ) : null
   ]);
 }

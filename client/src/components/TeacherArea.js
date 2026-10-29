@@ -37,29 +37,27 @@ export function TeacherArea({ onNavigate }) {
 
   const navGroups = [
     {
-      label: 'Lavoro docente',
+      label: 'Insegnamento',
       items: [
-        { id: 'overview', label: 'Panoramica', icon: '▦' },
-        { id: 'prep', label: 'Preparazione lezioni', icon: '📖' },
-        { id: 'activities', label: 'Attività', icon: '📝' },
-        { id: 'students', label: 'Registro studenti', icon: '👥' }
+        { id: 'overview', label: 'Panoramica' },
+        { id: 'prep', label: 'Preparazione' },
+        { id: 'activities', label: 'Attività' },
+        { id: 'students', label: 'Registro studenti' }
       ]
     },
     {
       label: 'Verifiche',
       items: [
-        { id: 'live', label: 'Monitoraggio live', icon: '◉' },
-        { id: 'submissions', label: 'Da correggere', icon: '📥' },
-        { id: 'reviewed', label: 'Valutazioni concluse', icon: '✓' }
+        { id: 'live', label: 'Monitoraggio' },
+        { id: 'submissions', label: 'Da correggere' },
+        { id: 'reviewed', label: 'Valutazioni concluse' }
       ]
     },
 ...(features.integrityAnalysis ? [{
-      label: 'Checkpoint successivo',
-      items: [{ id: 'integrity', label: 'Integrità ed evidenze', icon: '◇' }]
+      label: 'Integrità',
+      items: [{ id: 'integrity', label: 'Evidenze' }]
     }] : [])
   ];
-  const navItems = navGroups.flatMap(group => group.items);
-
   let content;
   switch (activeTab) {
     case 'overview':
@@ -105,11 +103,12 @@ export function TeacherArea({ onNavigate }) {
     h('header', { key: 'teacher-header', className: 'teacher-top-navbar' }, [
       h('div', { className: 'navbar-left' }, [
         h('button', {
+          type: 'button',
           className: 'btn btn-sm btn-ghost back-to-home-btn',
           onClick: () => onNavigate ? onNavigate('home') : (window.location.hash = '#/')
         }, '← Home Portale'),
         h('div', { className: 'portal-branding' }, [
-          h('span', { className: 'brand-logo' }, '🎓'),
+          h('span', { className: 'brand-logo', 'aria-hidden': 'true' }, 'TS'),
           h('div', null, [
             h('h1', { className: 'brand-title' }, 'Teacher Service'),
             h('span', { className: 'brand-tag' }, 'Area Docente')
@@ -126,16 +125,25 @@ export function TeacherArea({ onNavigate }) {
     h('nav', { key: 'tabs-nav', className: 'teacher-tabs-nav', 'aria-label': 'Navigazione docente' }, [
       h('div', { className: 'teacher-nav-groups' }, navGroups.map(group => h('div', { className: 'teacher-nav-group', key: group.label }, [
         h('span', { className: 'teacher-nav-group-label' }, group.label),
-        h('div', { className: 'tabs-scroll-container' }, group.items.map(item => h('button', {
+        h('div', { className: 'tabs-scroll-container', role: 'group', 'aria-label': group.label }, group.items.map(item => h('button', {
+          type: 'button',
           key: item.id,
           className: `teacher-nav-tab ${activeTab === item.id ? 'tab-active' : ''}`,
           'aria-current': activeTab === item.id ? 'page' : undefined,
           onClick: () => navigate(item.id)
-        }, [
-          h('span', { className: 'tab-icon' }, item.icon),
-          h('span', { className: 'tab-label' }, item.label)
-        ])))
-      ])))
+        }, item.label)))
+      ]))),
+      h('label', { className: 'teacher-mobile-nav' }, [
+        h('span', { className: 'field-label' }, 'Vai a'),
+        h('select', {
+          className: 'select-input',
+          'aria-label': 'Sezione docente',
+          value: activeTab,
+          onChange: event => navigate(event.target.value)
+        }, navGroups.map(group => h('optgroup', { key: group.label, label: group.label }, group.items.map(item =>
+          h('option', { key: item.id, value: item.id }, item.label)
+        ))))
+      ])
     ]),
     h('main', { key: 'main-workspace', className: 'teacher-main-workspace' }, content)
   ]);

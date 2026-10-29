@@ -4,13 +4,11 @@ export function LessonHeader({
   lesson,
   pack,
   durationMinutes,
-  onChangeDuration,
-  onOpenConfirmModal
+  onChangeDuration
 }) {
   if (!lesson) return null;
 
   const prepStatus = pack?.preparationStatus || 'incomplete';
-  const isComplete = Boolean(pack?.isComplete);
 
   let badgeClass = 'prep-badge incomplete';
   let badgeText = '⚪ Preparazione Incompleta';
@@ -36,23 +34,9 @@ export function LessonHeader({
           h('span', { key: 'date' }, `📅 Data: ${lesson.date || 'Non pianificata'}`),
           h('span', { key: 'dur' }, `⏱️ Durata: ${durationMinutes || lesson.duration_minutes || 60} minuti`),
           pack?.confirmation?.confirmedAt
-            ? h('span', { key: 'conf' }, `🔒 Congelata il: ${new Date(pack.confirmation.confirmedAt).toLocaleString('it-IT')}`)
+            ? h('span', { key: 'conf' }, `Ultima conferma: ${new Date(pack.confirmation.confirmedAt).toLocaleString('it-IT')}`)
             : null
         ])
-      ]),
-      h('div', { key: 'actions' }, [
-        h(
-          'button',
-          {
-            key: 'confirm-btn',
-            type: 'button',
-            id: 'btn-confirm-prep', className: 'btn btn-success btn-sm',
-            onClick: onOpenConfirmModal,
-            disabled: !isComplete,
-            title: isComplete ? 'Congela le versioni attuali e conferma la preparazione' : 'Genera tutti e 4 gli artefatti per confermare'
-          },
-          prepStatus === 'confirmed' ? '✓ Riconferma Versioni' : '🔒 Congela e Conferma'
-        )
       ])
     ]),
 

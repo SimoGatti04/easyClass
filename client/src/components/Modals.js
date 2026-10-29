@@ -316,44 +316,53 @@ export function RevisionModal({ artifact, onClose, onSubmitRevision, onSubmitReg
 export function ConfirmPrepModal({ pack, onClose, onConfirm }) {
   const [notes, setNotes] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState('');
 
-  async function handleConfirmSubmit(e) {
-    e.preventDefault();
+  async function handleConfirmSubmit(event) {
+    event.preventDefault();
     setSubmitting(true);
+    setSubmitError('');
     try {
       await onConfirm(notes);
       onClose();
+    } catch (error) {
+      setSubmitError(error?.message || 'Non è stato possibile confermare il pacchetto. Riprova.');
     } finally {
       setSubmitting(false);
     }
   }
 
-  const arts = pack?.artifacts || {};
+  const artifacts = pack?.artifacts || {};
+  const versions = [
+    ['Piano di lezione', artifacts.lessonPlan],
+    ['Copione docente', artifacts.teacherScript],
+    ['Esercizi graduati', artifacts.exercises],
+    ['Dispensa studenti', artifacts.studentMaterial]
+  ];
 
-  return h(ModalBackdrop, { title: 'Congela e Conferma Preparazione Lezione', onClose }, [
-    h('form', { onSubmit: handleConfirmSubmit }, [
-      h('p', { style: { fontSize: '0.9rem', marginBottom: '1rem', color: 'var(--text-muted)' } },
-        'La conferma congela le versioni esatte dei 4 artefatti didattici per la lezione di domani, attestando che il docente ha revisionato e approvato il materiale.'
+  return h(ModalBackdrop, { title: 'Conferma le versioni del pacchetto', onClose }, [
+    h('form', { key: 'form', onSubmit: handleConfirmSubmit }, [
+      h('p', { key: 'intro', className: 'confirmation-explainer' },
+        'Confermi di aver revisionato le versioni esatte elencate qui sotto? La conferma le congela nel pacchetto della lezione; non pubblica i materiali e non li rende disponibili agli studenti.'
       ),
-      h('div', { style: { background: 'var(--bg-subtle)', padding: '0.75rem', borderRadius: 'var(--radius-sm)', marginBottom: '1rem', fontSize: '0.85rem' } }, [
-        h('div', null, `• Piano Lezione: v${arts.lessonPlan?.current_version}`),
-        h('div', null, `• Copione Docente: v${arts.teacherScript?.current_version}`),
-        h('div', null, `• Esercizi Graduati: v${arts.exercises?.current_version}`),
-        h('div', null, `• Dispensa Studenti: v${arts.studentMaterial?.current_version}`)
-      ]),
-      h('div', { className: 'form-group' }, [
-        h('label', { className: 'form-label' }, 'Note per il docente (opzionali)'),
+      h('ul', { key: 'versions', className: 'confirmation-version-list', 'aria-label': 'Versioni incluse nel pacchetto' }, versions.map(([label, artifact]) =>
+        h('li', { key: label }, [
+          h('span', { key: 'name' }, label),
+          h('strong', { key: 'version' }, artifact?.current_version ? `v${artifact.current_version}` : 'Non disponibile')
+        ])
+      )),
+      h('div', { key: 'notes', className: 'form-group' }, [
+        h('label', { className: 'form-label', htmlFor: 'confirm-notes' }, 'Nota di conferma · facoltativa'),
         h('input', {
-          type: 'text',
-          className: 'form-control',
-          id: 'confirm-notes', placeholder: 'Es. Verificato e approvato per laboratorio aula 4',
-          value: notes,
-          onChange: (e) => setNotes(e.target.value)
+          type: 'text', className: 'form-control', id: 'confirm-notes',
+          placeholder: 'Aggiungi una nota per il registro docente',
+          value: notes, onChange: event => setNotes(event.target.value)
         })
       ]),
-      h('div', { className: 'modal-footer' }, [
+      submitError ? h('p', { key: 'error', className: 'inline-error', role: 'alert' }, submitError) : null,
+      h('div', { key: 'actions', className: 'modal-footer' }, [
         h('button', { type: 'button', className: 'btn btn-secondary', onClick: onClose, disabled: submitting }, 'Annulla'),
-        h('button', { id: 'modal-btn-submit-confirm', type: 'submit', className: 'btn btn-success', disabled: submitting }, submitting ? 'Salvataggio...' : '✓ Conferma Preparazione')
+        h('button', { id: 'modal-btn-submit-confirm', type: 'submit', className: 'btn btn-success', disabled: submitting }, submitting ? 'Conferma in corso…' : 'Conferma pacchetto')
       ])
     ])
   ]);

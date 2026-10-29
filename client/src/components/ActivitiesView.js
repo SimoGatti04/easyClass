@@ -58,8 +58,21 @@ export function ActivitiesView({ onSelectLiveMonitor }) {
     setLoading(true);
     fetch(`/api/assessments?classId=${encodeURIComponent(classId)}`)
       .then(res => res.json())
-      .then(data => {
-        setActivities(data.assessments || []);
+      .then(async data => {
+        const listedAssessments = data.assessments || [];
+        const assessmentsWithActiveQuestionCounts = await Promise.all(listedAssessments.map(async assessment => {
+          if (Number.isInteger(assessment.itemCount) || assessment.status !== 'active') return assessment;
+          try {
+            const detailResponse = await fetch(`/api/assessments/${encodeURIComponent(assessment.id)}`);
+            if (!detailResponse.ok) return assessment;
+            const detailBody = await detailResponse.json();
+            const itemCount = detailBody.assessment?.itemCount ?? detailBody.assessment?.items?.length;
+            return Number.isInteger(itemCount) ? { ...assessment, itemCount } : assessment;
+          } catch {
+            return assessment;
+          }
+        }));
+        setActivities(assessmentsWithActiveQuestionCounts);
         setLoading(false);
       })
       .catch(err => {
@@ -336,7 +349,11 @@ export function ActivitiesView({ onSelectLiveMonitor }) {
                   type: 'button',
                   className: 'btn btn-secondary btn-sm',
                   onClick: () => openItemEditor(a)
-                }, `✏️ Quesiti (${a.itemCount || 0})`)
+                }, Number.isInteger(a.itemCount)
+                  ? `Modifica quesiti (${a.itemCount})`
+                  : a.status === 'active'
+                    ? 'Quesiti (conteggio non disponibile)'
+                    : 'Modifica quesiti')
               ]),
               h('td', { className: 'text-right space-x-2' }, [
                 h('button', {
