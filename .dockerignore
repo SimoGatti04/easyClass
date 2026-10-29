@@ -1,8 +1,8 @@
 node_modules
 .pnpm-store
-storage
+/storage
+/.tmp
 .git
-.tmp
 .env*
 .DS_Store
 client/dist

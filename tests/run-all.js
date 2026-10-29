@@ -18,6 +18,7 @@ const testFiles = [
   'tests/unit/assessment-grading.test.js',
   'tests/unit/integrity-analysis.test.js',
   'tests/unit/teacher-authorization.test.js',
+  'tests/unit/source-closure.test.js',
   'tests/mcp/mcp-server.test.js',
   'tests/mcp/attachment-mcp.test.js',
   'tests/mcp/context-aware-generation.test.js',

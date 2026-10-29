@@ -2,9 +2,9 @@
 node_modules/
 .pnpm-store/
 
-# Local data & temp
-storage/
-.tmp/
+# Local data & temp (anchored: src/storage/ is versioned source)
+/storage/
+/.tmp/
 
 # Local secrets & env
 .env
