@@ -1,0 +1,52 @@
+# UX2-R4-S2 — evidence (2026-10-30T10:45Z)
+
+## Repository under test
+repo=/private/tmp/easyclass-public-sanitized
+remote_count=0
+commits=40
+public_commit=1b0ed8fd8b855586dd6f2fb995f34514213110f4
+evidence_commit=HEAD (documentation only; image revision stays 1b0ed8f)
+public_commit_subject=docs(publication): declare public mirror policy and withhold real corpus data
+tree_files=380
+tree_bytes=10850929
+history_paths=397
+reachable_blobs=984
+fsck=clean (--full --strict)
+loose_objects=0
+
+original_repo=~/Workspace/teacher-service-design
+original_head=4e8b3513d0eb8338893374d4e199793f5c06dc81
+original_touched=no
+
+## Sanitization (all 39 commits)
+excluded_files=47
+redacted_files=50
+rewritten_documents=2 (validation/corpus/SOURCES.md, docs/validation/01-benchmark-corpus.md)
+history_check=PASS (0 hits for every redacted pattern; 0 reachable excluded paths)
+
+## Builds (clean worktree of public_commit, pinned base, SOURCE_DATE_EPOCH=1793356681)
+tag=teacher-service:ux2-r4-s2-public-A id=sha256:ac2919fc1a6980f9a9b2e45e7bc6f560eb18736b2c67b76df6d4e0bd2471eff3 size=715479155 created=2026-10-30T10:38:01Z
+tag=teacher-service:ux2-r4-s2-public-B id=sha256:72161fe6e8333a0f742fbd45dada80130cea9dbdb665c930d8a18fdf94d74767 size=715479075 created=2026-10-30T10:38:01Z
+platform=linux/amd64
+config_digest_A=6488829301f0c3c18eef333228ab2e032ebaf3b2bcb7325ebf1eeebc873332f1
+config_digest_B=6488829301f0c3c18eef333228ab2e032ebaf3b2bcb7325ebf1eeebc873332f1
+app_tree_hash_A=c1289b68156df79b6443bc1562788c9a2ce25d0abe128734dc7a5811e99469d1
+app_tree_hash_B=c1289b68156df79b6443bc1562788c9a2ce25d0abe128734dc7a5811e99469d1
+layers_A=14 layers_B=14
+labels=revision=1b0ed8fd8b855586dd6f2fb995f34514213110f4 version=ux2-r4-s2 created=2026-10-30T10:38:01Z source=https://github.com/SimoGatti04/easyClass title=teacher-service
+
+## Image content checks
+runtime_user=uid=1000(node)
+image_has_validation_dir=no
+image_sensitive_patterns=0 hits (personal e-mail, school domain, institution acronym, roster, home path)
+pem_key_files=0
+private_key_literal=only jose library PEM parser source (node_modules/jose), no key material
+
+## Container acceptance (image A, isolated tmpfs, synthetic principals)
+base_url=http://127.0.0.1:18892
+passed=16 failed=0
+log=acceptance-run.log
+
+## Production hardening (image A, NODE_ENV=production, strict auth)
+health=200  spa=/studenti 200  synthetic_header_auth_me=403  synthetic_header_materials=403
+mutating_post_without_cf_access_config=500 fail-closed (CF_ACCESS_AUD missing: expected misconfiguration path)

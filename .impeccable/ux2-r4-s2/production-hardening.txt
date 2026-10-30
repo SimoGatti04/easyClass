@@ -1,0 +1,15 @@
+# UX2-R4-S2 — production hardening probes (image A)
+
+container=ux2r4s2-prod  image=teacher-service:ux2-r4-s2-public-A
+flags=--read-only --tmpfs /app/storage:rw,mode=1777 --tmpfs /tmp:rw,mode=1777
+env=NODE_ENV=production TEACHER_SERVICE_AUTH_MODE=strict
+
+GET  /health                                   -> 200
+GET  /studenti                                 -> 200 (SPA deep link)
+GET  /api/auth/me   (x-test-synthetic-user)    -> 403
+GET  /api/materials (x-test-synthetic-user)    -> 403
+POST /api/classes   (no Origin, no body)       -> 500
+
+Nota: il 500 non è un difetto di autorizzazione ma il percorso fail-closed documentato in UX2-R3
+quando `TEACHER_SERVICE_WEB_CF_ACCESS_AUD` non è configurato in modalità strict; il corpo della
+risposta è il messaggio esplicito di misconfigurazione e la richiesta non viene elaborata.

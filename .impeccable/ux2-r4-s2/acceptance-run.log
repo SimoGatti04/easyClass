@@ -1,0 +1,106 @@
+PASS  0. health endpoint on container — status=200 service=teacher-service
+PASS  1. authorized synthetic teacher principal accepted — status=200 teacherAuthorized=true
+PASS  2. authenticated non-teacher rejected by teacher API — auth/me=200 teacherAuthorized=false /api/materials=403
+PASS  fixture. class/subject/lesson created inside container — class=class-6f6f965d-4c07-45e9-b199-ca1815c418da subject=subj-1ca0b5b5-7caa-4002-b6d7-a197774c5017 lesson=les-6c26c7f4-aeb6-4420-8a31-b6f8f5ca6fae
+PASS  3. synthetic v1 starts unpublished and hidden from students — publication=never_published visible=false
+PASS  10a. CSRF blocks publication mutation without Origin and writes nothing — no-origin=403 state=never_published
+PASS  2b. non-teacher cannot publish — status=403
+PASS  4. teacher publishes v1 (POST /publication) — status=201 publication=available
+PASS  5. anonymous student list confirms availability — status=200 version=1 listedCount=1
+PASS  6. student reads the correct content and downloads it unchanged — read=200 download=200 disposition=attachment; filename*=UTF-8''Dispensa%20relazioni%20%E2%80%94%20UX2-R2-F.md
+PASS  6b. reserved teacher content never leaks through the student payload — no reserved marker in student body
+PASS  9. Teacher Material is hidden and refuses publication — read=404 publish=400 listed=false
+PASS  7. teacher withdraws v1 (DELETE /publication) — status=200 publication=withdrawn
+PASS  8. withdrawn v1 disappears from the public student surface — read=404 download=404 listed=false
+PASS  10b. CSRF blocks withdrawal and preserves the withdrawn state — no-origin=403 state=withdrawn
+PASS  10c. repeated withdrawal is idempotent and appends no event — status=200 outcome=already_withdrawn
+
+{
+  "baseUrl": "http://127.0.0.1:18892",
+  "teacher": "ux2r4s2-teacher@example.test",
+  "nonTeacher": "ux2r4s2-outsider@example.test",
+  "checks": [
+    {
+      "name": "0. health endpoint on container",
+      "ok": true,
+      "detail": "status=200 service=teacher-service"
+    },
+    {
+      "name": "1. authorized synthetic teacher principal accepted",
+      "ok": true,
+      "detail": "status=200 teacherAuthorized=true"
+    },
+    {
+      "name": "2. authenticated non-teacher rejected by teacher API",
+      "ok": true,
+      "detail": "auth/me=200 teacherAuthorized=false /api/materials=403"
+    },
+    {
+      "name": "fixture. class/subject/lesson created inside container",
+      "ok": true,
+      "detail": "class=class-6f6f965d-4c07-45e9-b199-ca1815c418da subject=subj-1ca0b5b5-7caa-4002-b6d7-a197774c5017 lesson=les-6c26c7f4-aeb6-4420-8a31-b6f8f5ca6fae"
+    },
+    {
+      "name": "3. synthetic v1 starts unpublished and hidden from students",
+      "ok": true,
+      "detail": "publication=never_published visible=false"
+    },
+    {
+      "name": "10a. CSRF blocks publication mutation without Origin and writes nothing",
+      "ok": true,
+      "detail": "no-origin=403 state=never_published"
+    },
+    {
+      "name": "2b. non-teacher cannot publish",
+      "ok": true,
+      "detail": "status=403"
+    },
+    {
+      "name": "4. teacher publishes v1 (POST /publication)",
+      "ok": true,
+      "detail": "status=201 publication=available"
+    },
+    {
+      "name": "5. anonymous student list confirms availability",
+      "ok": true,
+      "detail": "status=200 version=1 listedCount=1"
+    },
+    {
+      "name": "6. student reads the correct content and downloads it unchanged",
+      "ok": true,
+      "detail": "read=200 download=200 disposition=attachment; filename*=UTF-8''Dispensa%20relazioni%20%E2%80%94%20UX2-R2-F.md"
+    },
+    {
+      "name": "6b. reserved teacher content never leaks through the student payload",
+      "ok": true,
+      "detail": "no reserved marker in student body"
+    },
+    {
+      "name": "9. Teacher Material is hidden and refuses publication",
+      "ok": true,
+      "detail": "read=404 publish=400 listed=false"
+    },
+    {
+      "name": "7. teacher withdraws v1 (DELETE /publication)",
+      "ok": true,
+      "detail": "status=200 publication=withdrawn"
+    },
+    {
+      "name": "8. withdrawn v1 disappears from the public student surface",
+      "ok": true,
+      "detail": "read=404 download=404 listed=false"
+    },
+    {
+      "name": "10b. CSRF blocks withdrawal and preserves the withdrawn state",
+      "ok": true,
+      "detail": "no-origin=403 state=withdrawn"
+    },
+    {
+      "name": "10c. repeated withdrawal is idempotent and appends no event",
+      "ok": true,
+      "detail": "status=200 outcome=already_withdrawn"
+    }
+  ],
+  "passed": 16,
+  "failed": 0
+}

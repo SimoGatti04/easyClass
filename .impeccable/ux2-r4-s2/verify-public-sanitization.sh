@@ -1,11 +1,12 @@
 #!/usr/bin/env bash
 # UX2-R4-S2 — verifica riproducibile del mirror pubblico.
 # Controlla l'intera cronologia raggiungibile: nessun dato escluso o redatto deve riapparire.
+# Lo script stesso contiene i pattern come letterali di ricerca e viene escluso dal grep.
 set -uo pipefail
 fail=0
 check_zero() { # $1 = label, $2 = grep -E pattern
   local n
-  n=$(git grep -I -l -e "$2" $(git rev-list --all) 2>/dev/null | wc -l | tr -d ' ')
+  n=$(git grep -I -l -e "$2" $(git rev-list --all) -- ':!*verify-public-sanitization.sh' 2>/dev/null | wc -l | tr -d ' ')
   if [ "$n" -eq 0 ]; then printf 'PASS  %-42s 0 hits\n' "$1"; else printf 'FAIL  %-42s %s hits\n' "$1" "$n"; fail=1; fi
 }
 check_zero "personal e-mail"            "simogatti004"

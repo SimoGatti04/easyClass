@@ -10,14 +10,17 @@
 ## UX2-R4-S2 — Audit contenuti pubblicabili e sanitizzazione cronologia (2026-10-30)
 
 **CURRENT (solo clone sanitizzato locale; nessuna pubblicazione):**
-- **Perimetro:** clone `/private/tmp/easyclass-public-sanitized`, nessun remote, 38 commit. Il repository originale `teacher-service-design` resta a `4e8b351` e non è stato modificato.
+- **Perimetro:** clone `/private/tmp/easyclass-public-sanitized`, nessun remote, 38 commit iniziali più il commit di policy (39 totali). Il repository originale `teacher-service-design` resta a `4e8b351` e non è stato modificato.
 - **Esclusi da tutta la cronologia (47 file):** corpus didattico reale (`validation/corpus/source/`), conversioni testuali integrali (`validation/artifacts/B1/`), chunk store (`validation/artifacts/B2/`), gold set e annotazioni (`validation/corpus/gold/`), artifact di gate con estratti testuali, copia duplicata `validation/validation/`, cache `__pycache__`, configurazione PM2 ritirata `ecosystem.config.cjs`.
 - **Redatti (cronologia inclusa):** indirizzo e-mail personale → `teacher@school.example`; principal di anteprima → `sha256:preview_teacher_synthetic`; nome nel mock di autenticazione → `Synthetic Teacher`; dominio scolastico → `scuola.example`; acronimo istituto → `CORPUS`; IP LAN e overlay → TEST-NET-3; alias host di backup → `<backup-host>`; percorso home → `~`; roster illustrativo → segnaposto. Mappa completa in `PUBLICATION.md`.
-- **Verifica:** `git grep` su tutti i 38 commit → 0 occorrenze per ogni pattern redatto e 0 percorsi esclusi raggiungibili; `git fsck --full --strict` pulito; `git count-objects -v` senza oggetti non raggiungibili.
+- **Verifica:** `git grep` sull'intera cronologia → 0 occorrenze per ogni pattern redatto e 0 percorsi esclusi raggiungibili; `git fsck --full --strict` pulito; `git count-objects -v` senza oggetti non raggiungibili.
 - **Contenuti conservati:** endpoint pubblici di produzione, IP interni K3s effimeri, hash di integrità, report aggregati `validation/results/`, screenshot sintetici `.impeccable/`.
 - **Validazione:** `python3 validation/scripts/verify_bundle.py` → `VALIDATION_BUNDLE: DATA WITHHELD (public mirror)`; `validation/BUNDLE_MANIFEST.json` rigenerato sui 175 file pubblici con sezione `withheld`.
 - **Test:** `pnpm test` → 39/39 suite verdi (38 in sandbox; `tests/server/application-routing.test.js` richiede Chromium e viene eseguito fuori sandbox, verde anche dopo la ricostruzione del bundle).
 - **Frontend:** `pnpm run build:client` ricostruito dai sorgenti redatti; bundle versionato aggiornato, 0 occorrenze dei pattern redatti in `client/dist`.
+- **Commit pubblicabile:** `1b0ed8f` (40 commit totali; l'ultimo commit aggiunge solo evidenze e report). Equivalenza applicativa con UX2-R3 `40791eb`: 99 file identici su 115, i 16 restanti differiscono solo per le redazioni dichiarate.
+- **Immagine OCI:** `teacher-service:ux2-r4-s2-public-A`, ID `sha256:ac2919fc1a6980f9a9b2e45e7bc6f560eb18736b2c67b76df6d4e0bd2471eff3`, `linux/amd64`, 715 479 155 byte, created `2026-10-30T10:38:01Z`, revision `1b0ed8f`, 14 layer, runtime `uid=1000(node)`. Due build indipendenti (la seconda `--no-cache`) con config digest e app tree hash identici; `validation/` assente dall'immagine e 0 occorrenze dei pattern redatti al suo interno.
+- **Accettazione container:** 16/16 controlli superati sull'immagine candidata in isolamento (`--read-only`, storage tmpfs, porte loopback, principal sintetici); hardening `NODE_ENV=production` con auth strict conforme (header sintetico 403). Evidenze: `.impeccable/ux2-r4-s2/`.
 - **Aperto (bloccante per la pubblicazione):** i metadati di 36 commit su 38 espongono ancora l'indirizzo e-mail personale in author/committer. La riscrittura richiede la conferma del Domain Owner e un indirizzo GitHub noreply verificato: fino ad allora la pubblicazione resta `HOLD`.
 - **Non eseguito:** push, GHCR, merge, modifiche K3s/Cloudflare, snapshot o restore produttivi, accessi ai PVC.
 
