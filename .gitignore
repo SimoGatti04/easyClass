@@ -1,24 +1,23 @@
-# Node
-node_modules/
-.pnpm-store/
 
 # Local data & temp (anchored: src/storage/ is versioned source)
-/storage/
-/.tmp/
-
 # Local secrets & env
-.env
-.env.local
-.env.*.local
-
+# Node
 # OS
-.DS_Store
-Thumbs.db
-
 # Validation outputs that may contain live or non-public data
-validation/live-integrations/
-validation/artifacts/**/index/*.sqlite*
-validation/**/*.sqlite*
+.DS_Store
+.env
+.env.*.local
+.env.local
+.pnpm-store/
+/.tmp/
+/storage/
+Thumbs.db
+node_modules/
+validation/**/*.bak
 validation/**/*.db*
 validation/**/*.dump
-validation/**/*.bak
+validation/**/*.sqlite*
+validation/artifacts/**/index/*.npy
+validation/artifacts/**/index/*.sqlite*
+validation/live-integrations/
+validation/work/
