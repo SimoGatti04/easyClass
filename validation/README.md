@@ -23,6 +23,14 @@ Usiamo **ruoli riutilizzabili + task separati**:
 - `results/` contiene i report conclusivi;
 - `results/history/` conserva tentativi/precondition failure senza farli apparire come risultati attivi.
 
+## Pubblicazione
+
+Questo albero di validazione è pubblicato in un mirror pubblico. Il corpus didattico reale, le sue
+conversioni testuali, i chunk store e i gold set **non** sono distribuiti: restano presso il Domain
+Owner. I report in `results/` sono conservati come evidenza storica aggregata.
+
+Politica completa ed elenco delle esclusioni: [`../PUBLICATION.md`](../PUBLICATION.md).
+
 ## Sequenza e stato attuale
 
 La matrice `LAUNCH_MATRIX.md` descrive la **sequenza storica** B0–B6; non è più un elenco aggiornato delle attività ancora da eseguire. B1, B2, B3, B4, B5–B6 e Gate A/B/C hanno prodotto report. Il benchmark storico local-only B5–B6 rimane `NOT YET FEASIBLE`; la successiva architettura ibrida prevede Gate C e Gate D distinti.

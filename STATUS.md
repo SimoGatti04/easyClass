@@ -7,6 +7,20 @@
 **Fonte normativa:** `docs/` e decisioni del Domain Owner (13 ottobre 2026); **evidenze storiche:** `validation/results/`.
 
 
+## UX2-R4-S2 — Audit contenuti pubblicabili e sanitizzazione cronologia (2026-10-30)
+
+**CURRENT (solo clone sanitizzato locale; nessuna pubblicazione):**
+- **Perimetro:** clone `/private/tmp/easyclass-public-sanitized`, nessun remote, 38 commit. Il repository originale `teacher-service-design` resta a `4e8b351` e non è stato modificato.
+- **Esclusi da tutta la cronologia (47 file):** corpus didattico reale (`validation/corpus/source/`), conversioni testuali integrali (`validation/artifacts/B1/`), chunk store (`validation/artifacts/B2/`), gold set e annotazioni (`validation/corpus/gold/`), artifact di gate con estratti testuali, copia duplicata `validation/validation/`, cache `__pycache__`, configurazione PM2 ritirata `ecosystem.config.cjs`.
+- **Redatti (cronologia inclusa):** indirizzo e-mail personale → `teacher@school.example`; principal di anteprima → `sha256:preview_teacher_synthetic`; nome nel mock di autenticazione → `Synthetic Teacher`; dominio scolastico → `scuola.example`; acronimo istituto → `CORPUS`; IP LAN e overlay → TEST-NET-3; alias host di backup → `<backup-host>`; percorso home → `~`; roster illustrativo → segnaposto. Mappa completa in `PUBLICATION.md`.
+- **Verifica:** `git grep` su tutti i 38 commit → 0 occorrenze per ogni pattern redatto e 0 percorsi esclusi raggiungibili; `git fsck --full --strict` pulito; `git count-objects -v` senza oggetti non raggiungibili.
+- **Contenuti conservati:** endpoint pubblici di produzione, IP interni K3s effimeri, hash di integrità, report aggregati `validation/results/`, screenshot sintetici `.impeccable/`.
+- **Validazione:** `python3 validation/scripts/verify_bundle.py` → `VALIDATION_BUNDLE: DATA WITHHELD (public mirror)`; `validation/BUNDLE_MANIFEST.json` rigenerato sui 175 file pubblici con sezione `withheld`.
+- **Test:** `pnpm test` → 39/39 suite verdi (38 in sandbox; `tests/server/application-routing.test.js` richiede Chromium e viene eseguito fuori sandbox, verde anche dopo la ricostruzione del bundle).
+- **Frontend:** `pnpm run build:client` ricostruito dai sorgenti redatti; bundle versionato aggiornato, 0 occorrenze dei pattern redatti in `client/dist`.
+- **Aperto (bloccante per la pubblicazione):** i metadati di 36 commit su 38 espongono ancora l'indirizzo e-mail personale in author/committer. La riscrittura richiede la conferma del Domain Owner e un indirizzo GitHub noreply verificato: fino ad allora la pubblicazione resta `HOLD`.
+- **Non eseguito:** push, GHCR, merge, modifiche K3s/Cloudflare, snapshot o restore produttivi, accessi ai PVC.
+
 ## UX2-R3 — Chiusura sorgenti, build OCI riproducibile e accettazione funzionale (2026-10-30)
 
 **CURRENT (solo locale; nessuna pubblicazione GHCR):**
